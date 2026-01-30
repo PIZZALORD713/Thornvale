@@ -25,7 +25,7 @@ export class PhysicsWorld {
     
     // Debug rendering
     this.debugLines = null;
-    this.debugEnabled = true;
+    this.debugEnabled = false;
     
     // Collision groups
     this.GROUPS = {
@@ -107,6 +107,40 @@ export class PhysicsWorld {
     }
     
     return groundBody;
+  }
+
+  /**
+   * Create a static box collider with optional visual mesh
+   */
+  createStaticBox(position, size = { x: 1, y: 1, z: 1 }, scene, options = {}) {
+    const { RAPIER } = this;
+
+    const bodyDesc = RAPIER.RigidBodyDesc.fixed()
+      .setTranslation(position.x, position.y, position.z);
+    const body = this.world.createRigidBody(bodyDesc);
+
+    const colliderDesc = RAPIER.ColliderDesc.cuboid(size.x / 2, size.y / 2, size.z / 2)
+      .setFriction(options.friction ?? 0.9)
+      .setCollisionGroups(
+        this.makeCollisionGroups(this.GROUPS.GROUND, this.GROUPS.ALL)
+      );
+    const collider = this.world.createCollider(colliderDesc, body);
+
+    let mesh = null;
+    if (scene) {
+      const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
+      const mat = new THREE.MeshStandardMaterial({
+        color: options.color ?? 0x8b8b8b,
+        roughness: 0.9,
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(position.x, position.y, position.z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+    }
+
+    return { body, collider, mesh };
   }
 
   /**
@@ -221,7 +255,15 @@ export class PhysicsWorld {
    * Update debug line rendering
    */
   updateDebugRender(scene) {
-    if (!this.debugEnabled || !this.world) return;
+    if (!this.debugEnabled || !this.world) {
+      if (this.debugLines) {
+        scene.remove(this.debugLines);
+        this.debugLines.geometry.dispose();
+        this.debugLines.material.dispose();
+        this.debugLines = null;
+      }
+      return;
+    }
     
     // Remove old lines
     if (this.debugLines) {

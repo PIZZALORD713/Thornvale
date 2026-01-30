@@ -65,6 +65,31 @@ Keywords: *cottagecore, folk-horror, uncanny social pressure, “nice” dystopi
 - **Core loop definition:** ✅
 - **Prototype target:** third-person exploration + day/night toggle + first anomaly set
 
+## MVP Controls (Playable Slice)
+- **WASD**: Move
+- **Mouse**: Look
+- **E**: Interact
+- **N**: Toggle Day/Night
+- **`**: Toggle debug overlay
+- **ESC**: Release cursor
+
+## Run & Deploy
+### Local Dev
+```bash
+npm install
+npm run dev
+```
+
+### Build for Production
+```bash
+npm run build
+npm run preview
+```
+
+### Deployment Notes
+- The project is a static Vite build. Deploy the `dist/` output to any static host (Vercel, Netlify, GitHub Pages).
+- If you add `public/assets/town.glb`, collider meshes named `COLLIDER_*` will auto-generate physics colliders.
+
 ## Roadmap (High-Level)
 1. **Prototype**
    - Third-person controller + camera

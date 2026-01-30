@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>fRiENDSiES - Rapier Physics</title>
+    <title>Thornvale</title>
     <style>
       * {
         margin: 0;
@@ -15,7 +15,9 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        background: #0b0e14;
+        color: #f5f5f5;
       }
 
       #app {
@@ -27,120 +29,88 @@
         display: block;
       }
 
-      /* UI Panel */
-      #ui {
+      #hud {
         position: fixed;
         top: 20px;
         left: 20px;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        max-width: 360px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         z-index: 1000;
+      }
+
+      #statusLine,
+      #kindnessCounter {
+        background: rgba(10, 12, 18, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 8px 12px;
+        border-radius: 10px;
         font-size: 14px;
+        letter-spacing: 0.2px;
       }
 
-      #ui h1 {
-        margin: 0 0 15px 0;
-        font-size: 18px;
-        color: #333;
+      #kindnessCounter {
+        color: #ffd78a;
       }
 
-      #ui .section {
-        margin-bottom: 15px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #eee;
-      }
-
-      #ui .section:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-      }
-
-      #ui label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 500;
-        color: #555;
-      }
-
-      #ui input[type="range"] {
-        width: 100%;
-        margin-bottom: 8px;
-      }
-
-      #ui .value {
-        font-family: monospace;
-        background: #f0f0f0;
-        padding: 2px 6px;
-        border-radius: 4px;
+      #dayNightBadge {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 6px 12px;
+        border-radius: 999px;
         font-size: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background: rgba(10, 12, 18, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        z-index: 1000;
       }
 
-      #ui button {
+      #dayNightBadge[data-mode="day"] {
+        color: #ffe3a4;
+      }
+
+      #dayNightBadge[data-mode="night"] {
+        color: #8db3ff;
+      }
+
+      #interactionPrompt {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(10, 12, 18, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 10px 16px;
-        border: none;
-        border-radius: 6px;
-        background: #4CAF50;
-        color: white;
+        border-radius: 12px;
         font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        margin-right: 8px;
-        margin-bottom: 8px;
+        z-index: 1000;
       }
 
-      #ui button:hover {
-        background: #45a049;
-      }
-
-      #ui button.secondary {
-        background: #2196F3;
-      }
-
-      #ui button.secondary:hover {
-        background: #0b7dda;
-      }
-
-      #ui button.danger {
-        background: #f44336;
-      }
-
-      #ui button.danger:hover {
-        background: #da190b;
-      }
-
-      #status {
-        margin-top: 10px;
-        padding: 10px;
-        background: #f5f5f5;
-        border-radius: 6px;
-        font-size: 13px;
-        color: #666;
+      #interactionPrompt.hidden,
+      #kindnessCounter.hidden {
+        display: none;
       }
 
       /* Instructions overlay */
       #instructions {
         position: fixed;
         bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.85);
+        left: 20px;
+        background: rgba(0, 0, 0, 0.6);
         color: white;
-        padding: 15px 25px;
+        padding: 12px 16px;
         border-radius: 10px;
-        font-size: 14px;
-        text-align: center;
+        font-size: 13px;
+        text-align: left;
         pointer-events: none;
         z-index: 1000;
       }
 
       #instructions kbd {
         background: rgba(255, 255, 255, 0.2);
-        padding: 3px 8px;
+        padding: 2px 6px;
         border-radius: 4px;
         font-family: monospace;
         margin: 0 2px;
@@ -149,14 +119,15 @@
       /* Debug info */
       #debug {
         position: fixed;
-        top: 20px;
+        top: 60px;
         right: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        color: #0f0;
-        padding: 15px;
+        background: rgba(0, 0, 0, 0.75);
+        color: #8fff7a;
+        padding: 12px 14px;
         border-radius: 8px;
         font-family: monospace;
         font-size: 12px;
+        display: none;
         z-index: 1000;
         min-width: 200px;
       }
@@ -166,7 +137,7 @@
       }
 
       #debug .label {
-        color: #888;
+        color: #88a088;
       }
 
       /* Pointer lock overlay */
@@ -210,46 +181,24 @@
     <!-- Pointer lock overlay -->
     <div id="lockOverlay">
       <div class="content">
-        <h2>🎮 Click to Play</h2>
-        <p>Mouse controls camera • Press ESC to release</p>
+        <h2>🌲 Welcome to Thornvale</h2>
+        <p>Click to begin • Press ESC to release</p>
       </div>
     </div>
 
-    <!-- UI Panel -->
-    <div id="ui">
-      <h1>🎮 fRiENDSiES Physics</h1>
-      
-      <div class="section">
-        <label>Camera Distance: <span class="value" id="distanceVal">5.0</span></label>
-        <input type="range" id="cameraDistance" min="1" max="15" step="0.1" value="5">
-        
-        <label>Pivot Height: <span class="value" id="pivotHeightVal">1.5</span></label>
-        <input type="range" id="pivotHeight" min="0" max="4" step="0.1" value="1.5">
-        
-        <label>Shoulder Offset: <span class="value" id="shoulderVal">0.5</span></label>
-        <input type="range" id="shoulderOffset" min="-2" max="2" step="0.1" value="0.5">
-      </div>
-
-      <div class="section">
-        <button id="spawnBoxBtn">📦 Spawn Box</button>
-        <button id="spawnSphereBtn" class="secondary">⚽ Spawn Sphere</button>
-        <button id="resetBtn" class="danger">🔄 Reset</button>
-      </div>
-
-      <div class="section">
-        <label>
-          <input type="checkbox" id="debugToggle" checked> Show Debug
-        </label>
-      </div>
-
-      <div id="status">Initializing Rapier...</div>
+    <!-- HUD -->
+    <div id="hud">
+      <div id="statusLine">Initializing Thornvale...</div>
+      <div id="kindnessCounter" class="hidden">Kindness: 0</div>
     </div>
+
+    <div id="dayNightBadge" data-mode="day">DAY</div>
+    <div id="interactionPrompt" class="hidden">Press E — Interact</div>
 
     <!-- Instructions -->
     <div id="instructions">
-      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move |
-      <kbd>Mouse</kbd> Look |
-      <kbd>ESC</kbd> Release cursor
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move<br />
+      <kbd>Mouse</kbd> Look • <kbd>E</kbd> Interact • <kbd>N</kbd> Day/Night • <kbd>`</kbd> Debug
     </div>
 
     <!-- Debug panel -->
