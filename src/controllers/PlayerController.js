@@ -29,6 +29,8 @@ export class PlayerController {
     // Jump settings
     this.jumpStrength = 8.0;
     this.jumpCooldown = 0;
+    this.maxAirJumps = 1;
+    this.airJumpsRemaining = this.maxAirJumps;
   }
 
   /**
@@ -51,14 +53,24 @@ export class PlayerController {
     
     // --- Input → Motor ---
     const moveInput = this.input.getMovementInput();
+    moveInput.x *= -1; // Fix inverted left/right controls
     const cameraYaw = this.cameraRig.getYaw();
     
     this.motor.update(dt, moveInput, cameraYaw);
     
     // --- Jump ---
+    if (this.motor.isGrounded) {
+      this.airJumpsRemaining = this.maxAirJumps;
+    }
     if (this.input.keys.jump && this.jumpCooldown <= 0) {
-      this.motor.jump(this.jumpStrength);
-      this.jumpCooldown = 0.2; // Prevent spam
+      if (this.motor.canJump()) {
+        this.motor.jump(this.jumpStrength);
+        this.jumpCooldown = 0.2; // Prevent spam
+      } else if (this.airJumpsRemaining > 0) {
+        this.motor.jump(this.jumpStrength, true);
+        this.airJumpsRemaining -= 1;
+        this.jumpCooldown = 0.2;
+      }
     }
     this.jumpCooldown -= dt;
     

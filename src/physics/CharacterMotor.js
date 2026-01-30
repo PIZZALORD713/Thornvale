@@ -246,8 +246,8 @@ export class CharacterMotor {
   /**
    * Apply jump impulse
    */
-  jump(strength = 8) {
-    if (this.canJump()) {
+  jump(strength = 8, allowAir = false) {
+    if (this.canJump() || allowAir) {
       this.velocity.y = strength;
       this.groundedTimer = 0;
       this.isGrounded = false;
