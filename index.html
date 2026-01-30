@@ -173,13 +173,170 @@
       #lockOverlay.hidden {
         display: none;
       }
+
+      /* Character builder */
+      #characterBuilder {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at top, rgba(14, 18, 28, 0.96), rgba(6, 8, 12, 0.98));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+      }
+
+      #characterBuilder.hidden {
+        display: none;
+      }
+
+      .builder-panel {
+        width: min(520px, 92vw);
+        background: rgba(14, 18, 26, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+        border-radius: 18px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .builder-panel h2 {
+        font-size: 22px;
+        font-weight: 600;
+      }
+
+      .builder-panel p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .builder-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+      }
+
+      .builder-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .builder-field input,
+      .builder-field select {
+        background: rgba(8, 12, 18, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        padding: 8px 10px;
+        color: #f5f5f5;
+        font-size: 14px;
+      }
+
+      .builder-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .builder-actions .hint {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .builder-actions button {
+        background: linear-gradient(135deg, #f0cfa3, #d49657);
+        border: none;
+        color: #23180c;
+        padding: 10px 18px;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+      }
+
+      .builder-preview {
+        background: rgba(8, 12, 18, 0.75);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.75);
+        line-height: 1.4;
+      }
     </style>
   </head>
   <body>
     <div id="app"></div>
 
+    <!-- Character Builder -->
+    <div id="characterBuilder">
+      <div class="builder-panel">
+        <div>
+          <h2>Shape Your Arrival</h2>
+          <p>Pick the small details Thornvale remembers first.</p>
+        </div>
+        <div class="builder-grid">
+          <label class="builder-field">
+            Name
+            <input id="cb-name" type="text" placeholder="Rowan" maxlength="16" />
+          </label>
+          <label class="builder-field">
+            Pronouns
+            <select id="cb-pronouns">
+              <option value="she/her">she / her</option>
+              <option value="he/him">he / him</option>
+              <option value="they/them" selected>they / them</option>
+              <option value="she/they">she / they</option>
+              <option value="he/they">he / they</option>
+            </select>
+          </label>
+          <label class="builder-field">
+            Vibe
+            <select id="cb-vibe">
+              <option value="gentle">Gentle</option>
+              <option value="curious" selected>Curious</option>
+              <option value="steadfast">Steadfast</option>
+              <option value="mischievous">Mischievous</option>
+            </select>
+          </label>
+          <label class="builder-field">
+            Outfit
+            <select id="cb-outfit">
+              <option value="apron">Garden Apron</option>
+              <option value="cloak" selected>Travel Cloak</option>
+              <option value="overalls">Work Overalls</option>
+              <option value="vest">Storyteller Vest</option>
+            </select>
+          </label>
+          <label class="builder-field">
+            Accent Color
+            <input id="cb-accent" type="color" value="#f2b266" />
+          </label>
+          <label class="builder-field">
+            Totem
+            <select id="cb-totem">
+              <option value="thistle">Thistle</option>
+              <option value="lantern" selected>Lantern</option>
+              <option value="rook">Rook</option>
+              <option value="moon">Harvest Moon</option>
+            </select>
+          </label>
+        </div>
+        <div class="builder-preview" id="cb-preview">
+          A traveler with a lantern totem and a quiet curiosity. Thornvale will remember you.
+        </div>
+        <div class="builder-actions">
+          <span class="hint">You can edit later at the hearth.</span>
+          <button id="cb-confirm" type="button">Begin in Thornvale</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Pointer lock overlay -->
-    <div id="lockOverlay">
+    <div id="lockOverlay" class="hidden">
       <div class="content">
         <h2>🌲 Welcome to Thornvale</h2>
         <p>Click to begin • Press ESC to release</p>
