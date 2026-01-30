@@ -124,7 +124,12 @@ async function init() {
   }
 
   if (characterVisual) {
-    visualRig.setVisual(characterVisual);
+    visualRig.setVisual(characterVisual, {
+      autoAlign: true,
+      capsuleHalfHeight: characterMotor.halfHeight,
+      capsuleRadius: characterMotor.radius,
+      clearance: 0.015,
+    });
   } else {
     const capsuleVisual = createCapsuleMesh(0.35, 0.55);
     visualRig.setVisual(capsuleVisual);
@@ -225,6 +230,7 @@ function animate() {
 
   // --- Physics Step ---
   physicsWorld.step(dt);
+  physicsWorld.syncKinematicVisuals();
 
   // --- Player Controller ---
   if (playerController) {

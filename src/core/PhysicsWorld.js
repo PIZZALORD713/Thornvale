@@ -26,6 +26,9 @@ export class PhysicsWorld {
     // Debug rendering
     this.debugLines = null;
     this.debugEnabled = false;
+
+    // Tracked kinematic platform visuals
+    this.kinematicVisuals = [];
     
     // Collision groups
     this.GROUPS = {
@@ -86,7 +89,8 @@ export class PhysicsWorld {
     const { RAPIER } = this;
     
     // Rapier collider - thin box as ground
-    const groundBodyDesc = RAPIER.RigidBodyDesc.fixed();
+    const groundBodyDesc = RAPIER.RigidBodyDesc.fixed()
+      .setTranslation(0, -0.1, 0);
     const groundBody = this.world.createRigidBody(groundBodyDesc);
     
     const groundColliderDesc = RAPIER.ColliderDesc.cuboid(size, 0.1, size)
@@ -238,9 +242,32 @@ export class PhysicsWorld {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       scene.add(mesh);
+      this.syncMeshToBody(body, mesh);
+      this.kinematicVisuals.push({ body, mesh });
     }
     
     return { body, collider, mesh };
+  }
+
+  /**
+   * Sync a visual mesh transform to a rigid body
+   */
+  syncMeshToBody(body, mesh) {
+    if (!body || !mesh) return;
+    const pos = body.translation();
+    const rot = body.rotation();
+    mesh.position.set(pos.x, pos.y, pos.z);
+    mesh.quaternion.set(rot.x, rot.y, rot.z, rot.w);
+  }
+
+  /**
+   * Keep kinematic platform visuals aligned with their rigid bodies
+   */
+  syncKinematicVisuals() {
+    if (this.kinematicVisuals.length === 0) return;
+    for (const { body, mesh } of this.kinematicVisuals) {
+      this.syncMeshToBody(body, mesh);
+    }
   }
 
   /**

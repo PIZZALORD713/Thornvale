@@ -237,6 +237,40 @@ export class CharacterMotor {
   }
 
   /**
+   * Get capsule bottom Y position in world space
+   */
+  getCapsuleBottomY() {
+    if (!this.body) return 0;
+    const pos = this.body.translation();
+    return pos.y - (this.halfHeight + this.radius);
+  }
+
+  /**
+   * Get hover distance from capsule bottom to ground hit
+   * @returns {number|null}
+   */
+  getHoverDistance() {
+    if (!this.isGrounded || !this.body || !this.collider) {
+      return null;
+    }
+
+    const { RAPIER, world } = this.physics;
+    if (!RAPIER || !world) return null;
+
+    const pos = this.body.translation();
+    const rayOrigin = { x: pos.x, y: pos.y, z: pos.z };
+    const rayDir = { x: 0, y: -1, z: 0 };
+    const ray = new RAPIER.Ray(rayOrigin, rayDir);
+    const maxToi = this.halfHeight + this.radius + 1.0;
+    const hit = world.castRay(ray, maxToi, true, undefined, undefined, this.collider);
+    if (!hit) return null;
+
+    const hitY = rayOrigin.y + rayDir.y * hit.toi;
+    const capsuleBottomY = this.getCapsuleBottomY();
+    return capsuleBottomY - hitY;
+  }
+
+  /**
    * Check if grounded (with coyote time)
    */
   canJump() {

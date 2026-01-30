@@ -28,13 +28,16 @@ export class VisualRig {
     
     // State
     this.isMoving = false;
+
+    // Visual offset for aligning meshes to capsule
+    this.visualOffsetY = 0;
   }
 
   /**
    * Set the visual mesh/model
    * @param {THREE.Object3D} visual - The visual to display
    */
-  setVisual(visual) {
+  setVisual(visual, options = {}) {
     // Remove old visual
     if (this.visual) {
       this.group.remove(this.visual);
@@ -46,6 +49,46 @@ export class VisualRig {
       this.group.add(visual);
       visual.position.set(0, 0, 0);
       visual.rotation.set(0, 0, 0);
+
+      if (options.visualOffsetY !== undefined) {
+        this.visualOffsetY = options.visualOffsetY;
+      }
+
+      if (options.autoAlign && options.capsuleHalfHeight !== undefined && options.capsuleRadius !== undefined) {
+        this.calibrateVisualOffset(options.capsuleHalfHeight, options.capsuleRadius, options.clearance ?? 0.015);
+      } else {
+        visual.position.y = this.visualOffsetY;
+      }
+    }
+  }
+
+  /**
+   * Calibrate visual offset so model feet sit on capsule bottom
+   */
+  calibrateVisualOffset(capsuleHalfHeight, capsuleRadius, clearance = 0.015) {
+    if (!this.visual) return;
+
+    this.visual.position.set(0, 0, 0);
+    this.visual.rotation.set(0, 0, 0);
+    this.visual.updateMatrixWorld(true);
+
+    const bounds = new THREE.Box3().setFromObject(this.visual);
+    if (!Number.isFinite(bounds.min.y) || !Number.isFinite(bounds.max.y)) {
+      return;
+    }
+
+    const targetBottom = -(capsuleHalfHeight + capsuleRadius) + clearance;
+    this.visualOffsetY = targetBottom - bounds.min.y;
+    this.visual.position.y = this.visualOffsetY;
+  }
+
+  /**
+   * Set visual offset manually
+   */
+  setVisualOffsetY(offsetY) {
+    this.visualOffsetY = offsetY;
+    if (this.visual) {
+      this.visual.position.y = this.visualOffsetY;
     }
   }
 
