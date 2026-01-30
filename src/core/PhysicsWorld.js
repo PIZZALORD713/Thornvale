@@ -26,6 +26,9 @@ export class PhysicsWorld {
     // Debug rendering
     this.debugLines = null;
     this.debugEnabled = false;
+
+    // Tracked kinematic platform visuals
+    this.kinematicVisuals = [];
     
     // Collision groups
     this.GROUPS = {
@@ -85,8 +88,9 @@ export class PhysicsWorld {
   createGround(size = 50, scene) {
     const { RAPIER } = this;
     
-    // Rapier collider - thin box as ground
-    const groundBodyDesc = RAPIER.RigidBodyDesc.fixed();
+    // Rapier collider - thin box as ground (mesh top aligned at y = 0)
+    const groundBodyDesc = RAPIER.RigidBodyDesc.fixed()
+      .setTranslation(0, -0.1, 0);
     const groundBody = this.world.createRigidBody(groundBodyDesc);
     
     const groundColliderDesc = RAPIER.ColliderDesc.cuboid(size, 0.1, size)
@@ -101,7 +105,7 @@ export class PhysicsWorld {
         roughness: 0.8,
       });
       const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-      groundMesh.position.y = -0.1;
+      groundMesh.position.y = -0.1; // mesh centered on body; top surface at y = 0
       groundMesh.receiveShadow = true;
       scene.add(groundMesh);
     }
@@ -115,6 +119,7 @@ export class PhysicsWorld {
   createStaticBox(position, size = { x: 1, y: 1, z: 1 }, scene, options = {}) {
     const { RAPIER } = this;
 
+    // Mesh centered on body translation; top surface at y = position.y + size.y / 2
     const bodyDesc = RAPIER.RigidBodyDesc.fixed()
       .setTranslation(position.x, position.y, position.z);
     const body = this.world.createRigidBody(bodyDesc);
@@ -217,6 +222,7 @@ export class PhysicsWorld {
   createKinematicPlatform(position, size = { x: 4, y: 0.5, z: 4 }, scene) {
     const { RAPIER } = this;
     
+    // Mesh centered on body translation; top surface at y = position.y + size.y / 2
     const bodyDesc = RAPIER.RigidBodyDesc.kinematicPositionBased()
       .setTranslation(position.x, position.y, position.z);
     const body = this.world.createRigidBody(bodyDesc);
@@ -238,9 +244,32 @@ export class PhysicsWorld {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       scene.add(mesh);
+      this.syncMeshToBody(body, mesh);
+      this.kinematicVisuals.push({ body, mesh });
     }
     
     return { body, collider, mesh };
+  }
+
+  /**
+   * Sync a visual mesh transform to a rigid body
+   */
+  syncMeshToBody(body, mesh) {
+    if (!body || !mesh) return;
+    const pos = body.translation();
+    const rot = body.rotation();
+    mesh.position.set(pos.x, pos.y, pos.z);
+    mesh.quaternion.set(rot.x, rot.y, rot.z, rot.w);
+  }
+
+  /**
+   * Keep kinematic platform visuals aligned with their rigid bodies
+   */
+  syncKinematicVisuals() {
+    if (this.kinematicVisuals.length === 0) return;
+    for (const { body, mesh } of this.kinematicVisuals) {
+      this.syncMeshToBody(body, mesh);
+    }
   }
 
   /**

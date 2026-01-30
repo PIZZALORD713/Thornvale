@@ -28,13 +28,19 @@ export class VisualRig {
     
     // State
     this.isMoving = false;
+
+    // Visual offset for aligning meshes to capsule
+    this.visualOffsetY = 0;
+
+    // Calibrated offset from model bounds
+    this.calibratedOffsetY = 0;
   }
 
   /**
    * Set the visual mesh/model
    * @param {THREE.Object3D} visual - The visual to display
    */
-  setVisual(visual) {
+  setVisual(visual, options = {}) {
     // Remove old visual
     if (this.visual) {
       this.group.remove(this.visual);
@@ -46,7 +52,49 @@ export class VisualRig {
       this.group.add(visual);
       visual.position.set(0, 0, 0);
       visual.rotation.set(0, 0, 0);
+      this.calibratedOffsetY = 0;
+
+      if (options.visualOffsetY !== undefined) {
+        this.visualOffsetY = options.visualOffsetY;
+      }
+
+      if (options.autoAlign && options.capsuleHalfHeight !== undefined && options.capsuleRadius !== undefined) {
+        this.calibrateVisualOffset(options.capsuleHalfHeight, options.capsuleRadius, options.clearance ?? 0.015);
+      }
     }
+  }
+
+  /**
+   * Calibrate visual offset so model feet sit on capsule bottom
+   */
+  calibrateVisualOffset(capsuleHalfHeight, capsuleRadius, clearance = 0.015) {
+    if (!this.visual) return;
+
+    this.visual.position.set(0, 0, 0);
+    this.visual.rotation.set(0, 0, 0);
+    this.visual.updateMatrixWorld(true);
+
+    const bounds = new THREE.Box3().setFromObject(this.visual);
+    if (!Number.isFinite(bounds.min.y) || !Number.isFinite(bounds.max.y)) {
+      return;
+    }
+
+    const targetBottom = -(capsuleHalfHeight + capsuleRadius) + clearance;
+    this.calibratedOffsetY = targetBottom - bounds.min.y;
+  }
+
+  /**
+   * Set visual offset manually
+   */
+  setVisualOffsetY(offsetY) {
+    this.visualOffsetY = offsetY;
+  }
+
+  /**
+   * Get current visual offset
+   */
+  getVisualOffsetY() {
+    return this.visualOffsetY;
   }
 
   /**
@@ -57,7 +105,11 @@ export class VisualRig {
    */
   update(dt, position, targetYaw) {
     // Update position (direct follow, no smoothing needed as physics handles it)
-    this.group.position.copy(position);
+    this.group.position.set(
+      position.x,
+      position.y + this.calibratedOffsetY + this.visualOffsetY,
+      position.z
+    );
     
     // Update facing
     if (targetYaw !== null) {

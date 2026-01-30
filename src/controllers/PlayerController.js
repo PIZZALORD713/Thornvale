@@ -125,6 +125,8 @@ export class PlayerController {
   getDebugInfo() {
     const pos = this.motor.getPosition();
     const vel = this.motor.getVelocity();
+    const hover = this.motor.computeHoverMeters();
+    const visOffsetY = this.visualRig?.getVisualOffsetY?.();
     
     return {
       position: `${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}`,
@@ -132,6 +134,8 @@ export class PlayerController {
       speed: vel.length().toFixed(2),
       grounded: this.motor.isGrounded,
       platform: this.platformCarrier?.getCurrentPlatformName() || 'none',
+      hover: hover === null ? '—' : `${hover.toFixed(3)}m`,
+      visOffsetY: Number.isFinite(visOffsetY) ? visOffsetY.toFixed(3) : '—',
     };
   }
 }

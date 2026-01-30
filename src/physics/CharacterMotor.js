@@ -47,6 +47,9 @@ export class CharacterMotor {
     
     // Visual mesh (debug)
     this.debugMesh = null;
+
+    // Character controller skin width
+    this.controllerSkin = 0.01;
   }
 
   /**
@@ -73,7 +76,7 @@ export class CharacterMotor {
     this.collider = world.createCollider(colliderDesc, this.body);
     
     // Create character controller
-    this.controller = world.createCharacterController(0.01); // offset
+    this.controller = world.createCharacterController(this.controllerSkin); // skin width
     
     // Configure controller
     this.controller.enableAutostep(0.3, 0.2, true);  // maxHeight, minWidth, includeDynamic
@@ -234,6 +237,41 @@ export class CharacterMotor {
       return null; // No movement, keep current facing
     }
     return Math.atan2(vel.x, vel.z);
+  }
+
+  /**
+   * Get capsule bottom Y position in world space
+   */
+  getCapsuleBottomY() {
+    if (!this.body) return 0;
+    const pos = this.body.translation();
+    return pos.y - (this.halfHeight + this.radius);
+  }
+
+  /**
+   * Compute hover distance from capsule bottom to ground hit
+   * @returns {number|null}
+   */
+  computeHoverMeters() {
+    if (!this.body || !this.collider) {
+      return null;
+    }
+
+    const { RAPIER, world } = this.physics;
+    if (!RAPIER || !world) return null;
+
+    const pos = this.body.translation();
+    const bottomY = this.getCapsuleBottomY();
+    const rayOrigin = { x: pos.x, y: bottomY + 0.2, z: pos.z };
+    const rayDir = { x: 0, y: -1, z: 0 };
+    const ray = new RAPIER.Ray(rayOrigin, rayDir);
+    const maxToi = 1.0;
+    const hit = world.castRay(ray, maxToi, true, undefined, undefined, this.collider);
+    if (!hit) return null;
+
+    const hitY = rayOrigin.y - hit.toi;
+    const hover = bottomY - hitY;
+    return Number.isFinite(hover) ? hover : null;
   }
 
   /**
