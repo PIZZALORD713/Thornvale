@@ -19,6 +19,9 @@ export class InputManager {
       jump: false,
       sprint: false,
     };
+
+    this.activeKeys = new Set();
+    this.pressedKeys = new Set();
     
     // Mouse state
     this.mouseDelta = { x: 0, y: 0 };
@@ -119,6 +122,11 @@ export class InputManager {
   _onKeyDown(e) {
     // Ignore if typing in input field
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    if (!this.activeKeys.has(e.code)) {
+      this.pressedKeys.add(e.code);
+      this.activeKeys.add(e.code);
+    }
     
     switch (e.code) {
       case 'KeyW':
@@ -148,6 +156,7 @@ export class InputManager {
   }
 
   _onKeyUp(e) {
+    this.activeKeys.delete(e.code);
     switch (e.code) {
       case 'KeyW':
       case 'ArrowUp':
@@ -173,6 +182,18 @@ export class InputManager {
         this.keys.sprint = false;
         break;
     }
+  }
+
+  /**
+   * Consume a single key press event
+   * @param {string} code - KeyboardEvent.code
+   */
+  consumeKeyPress(code) {
+    if (this.pressedKeys.has(code)) {
+      this.pressedKeys.delete(code);
+      return true;
+    }
+    return false;
   }
 
   _onMouseMove(e) {
