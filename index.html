@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>fRiENDSiES - Rapier Physics</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+
+      #app {
+        width: 100%;
+        height: 100%;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      /* UI Panel */
+      #ui {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        max-width: 360px;
+        z-index: 1000;
+        font-size: 14px;
+      }
+
+      #ui h1 {
+        margin: 0 0 15px 0;
+        font-size: 18px;
+        color: #333;
+      }
+
+      #ui .section {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+      }
+
+      #ui .section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      #ui label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #555;
+      }
+
+      #ui input[type="range"] {
+        width: 100%;
+        margin-bottom: 8px;
+      }
+
+      #ui .value {
+        font-family: monospace;
+        background: #f0f0f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+
+      #ui button {
+        padding: 10px 16px;
+        border: none;
+        border-radius: 6px;
+        background: #4CAF50;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-right: 8px;
+        margin-bottom: 8px;
+      }
+
+      #ui button:hover {
+        background: #45a049;
+      }
+
+      #ui button.secondary {
+        background: #2196F3;
+      }
+
+      #ui button.secondary:hover {
+        background: #0b7dda;
+      }
+
+      #ui button.danger {
+        background: #f44336;
+      }
+
+      #ui button.danger:hover {
+        background: #da190b;
+      }
+
+      #status {
+        margin-top: 10px;
+        padding: 10px;
+        background: #f5f5f5;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #666;
+      }
+
+      /* Instructions overlay */
+      #instructions {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        font-size: 14px;
+        text-align: center;
+        pointer-events: none;
+        z-index: 1000;
+      }
+
+      #instructions kbd {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-family: monospace;
+        margin: 0 2px;
+      }
+
+      /* Debug info */
+      #debug {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #0f0;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        z-index: 1000;
+        min-width: 200px;
+      }
+
+      #debug .row {
+        margin-bottom: 4px;
+      }
+
+      #debug .label {
+        color: #888;
+      }
+
+      /* Pointer lock overlay */
+      #lockOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        cursor: pointer;
+      }
+
+      #lockOverlay .content {
+        text-align: center;
+        color: white;
+      }
+
+      #lockOverlay h2 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      #lockOverlay p {
+        font-size: 16px;
+        opacity: 0.8;
+      }
+
+      #lockOverlay.hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <!-- Pointer lock overlay -->
+    <div id="lockOverlay">
+      <div class="content">
+        <h2>🎮 Click to Play</h2>
+        <p>Mouse controls camera • Press ESC to release</p>
+      </div>
+    </div>
+
+    <!-- UI Panel -->
+    <div id="ui">
+      <h1>🎮 fRiENDSiES Physics</h1>
+      
+      <div class="section">
+        <label>Camera Distance: <span class="value" id="distanceVal">5.0</span></label>
+        <input type="range" id="cameraDistance" min="1" max="15" step="0.1" value="5">
+        
+        <label>Pivot Height: <span class="value" id="pivotHeightVal">1.5</span></label>
+        <input type="range" id="pivotHeight" min="0" max="4" step="0.1" value="1.5">
+        
+        <label>Shoulder Offset: <span class="value" id="shoulderVal">0.5</span></label>
+        <input type="range" id="shoulderOffset" min="-2" max="2" step="0.1" value="0.5">
+      </div>
+
+      <div class="section">
+        <button id="spawnBoxBtn">📦 Spawn Box</button>
+        <button id="spawnSphereBtn" class="secondary">⚽ Spawn Sphere</button>
+        <button id="resetBtn" class="danger">🔄 Reset</button>
+      </div>
+
+      <div class="section">
+        <label>
+          <input type="checkbox" id="debugToggle" checked> Show Debug
+        </label>
+      </div>
+
+      <div id="status">Initializing Rapier...</div>
+    </div>
+
+    <!-- Instructions -->
+    <div id="instructions">
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move |
+      <kbd>Mouse</kbd> Look |
+      <kbd>ESC</kbd> Release cursor
+    </div>
+
+    <!-- Debug panel -->
+    <div id="debug">
+      <div class="row"><span class="label">FPS:</span> <span id="fps">0</span></div>
+      <div class="row"><span class="label">Pos:</span> <span id="pos">0, 0, 0</span></div>
+      <div class="row"><span class="label">Vel:</span> <span id="vel">0, 0, 0</span></div>
+      <div class="row"><span class="label">Grounded:</span> <span id="grounded">?</span></div>
+      <div class="row"><span class="label">Platform:</span> <span id="platform">none</span></div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
