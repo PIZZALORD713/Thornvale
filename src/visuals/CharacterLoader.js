@@ -106,7 +106,7 @@ export class CharacterLoader {
 
     const group = new THREE.Group();
     group.name = `character_${tokenId}`;
-    group.scale.setScalar(15);
+    group.scale.setScalar(5);
     group.position.set(0, -2.5, 0);
 
     const traits = entry.attributes || [];
