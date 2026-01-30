@@ -15,6 +15,7 @@ import { CharacterMotor } from './physics/CharacterMotor.js';
 import { CameraRig } from './controllers/CameraRig.js';
 import { PlayerController } from './controllers/PlayerController.js';
 import { VisualRig } from './visuals/VisualRig.js';
+import { CharacterLoader } from './visuals/CharacterLoader.js';
 import { HUD } from './ui/HUD.js';
 import { DayNightSystem } from './game/DayNightSystem.js';
 import { InteractableSystem } from './game/InteractableSystem.js';
@@ -34,6 +35,7 @@ let playerController;
 let hud;
 let dayNightSystem;
 let interactableSystem;
+let characterLoader;
 let debugEnabled = false;
 
 const gameState = {
@@ -111,8 +113,23 @@ async function init() {
   visualRig = new VisualRig();
   visualRig.addToScene(scene);
 
-  const capsuleVisual = createCapsuleMesh(0.35, 0.55);
-  visualRig.setVisual(capsuleVisual);
+  characterLoader = new CharacterLoader().init();
+  hud.setStatus('Loading Friendsies metadata...');
+  const metadataLoaded = await characterLoader.loadMetadata();
+
+  let characterVisual = null;
+  if (metadataLoaded) {
+    hud.setStatus('Loading Friendsies character...');
+    characterVisual = await characterLoader.loadCharacter(1);
+  }
+
+  if (characterVisual) {
+    visualRig.setVisual(characterVisual);
+  } else {
+    const capsuleVisual = createCapsuleMesh(0.35, 0.55);
+    visualRig.setVisual(capsuleVisual);
+    hud.setStatus('Using placeholder character.');
+  }
 
   // --- Camera Rig ---
   cameraRig = new CameraRig(camera);
