@@ -17,6 +17,7 @@ export class HUD {
       grounded: document.getElementById('grounded'),
       platform: document.getElementById('platform'),
       hover: document.getElementById('hover'),
+      visOffsetY: document.getElementById('visOffsetY'),
     };
 
     this.hidePrompt();
@@ -82,5 +83,6 @@ export class HUD {
     if (this.elements.grounded) this.elements.grounded.textContent = info.grounded ? 'YES' : 'NO';
     if (this.elements.platform) this.elements.platform.textContent = info.platform;
     if (this.elements.hover) this.elements.hover.textContent = info.hover;
+    if (this.elements.visOffsetY) this.elements.visOffsetY.textContent = info.visOffsetY;
   }
 }

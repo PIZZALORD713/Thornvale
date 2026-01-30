@@ -37,6 +37,8 @@ let dayNightSystem;
 let interactableSystem;
 let characterLoader;
 let debugEnabled = false;
+const VISUAL_OFFSET_STORAGE_KEY = 'thornvale.visualOffsetY';
+const VISUAL_OFFSET_STEP = 0.002;
 
 const gameState = {
   kindnessCount: 0,
@@ -112,6 +114,10 @@ async function init() {
   // --- Visual Rig (debug capsule for now) ---
   visualRig = new VisualRig();
   visualRig.addToScene(scene);
+  const defaultVisualOffsetY = -characterMotor.controllerSkin;
+  const storedOffset = Number.parseFloat(localStorage.getItem(VISUAL_OFFSET_STORAGE_KEY));
+  const visualOffsetY = Number.isFinite(storedOffset) ? storedOffset : defaultVisualOffsetY;
+  visualRig.setVisualOffsetY(visualOffsetY);
 
   characterLoader = new CharacterLoader().init();
   hud.setStatus('Loading Friendsies metadata...');
@@ -277,6 +283,19 @@ function handleGlobalInput() {
     characterMotor.setDebugVisible(debugEnabled);
     hud.setDebugVisible(debugEnabled);
     hud.setStatus(debugEnabled ? 'Debug view enabled.' : 'Debug view disabled.');
+  }
+
+  if (debugEnabled && visualRig) {
+    if (inputManager.consumeKeyPress('BracketLeft')) {
+      const nextOffset = visualRig.getVisualOffsetY() - VISUAL_OFFSET_STEP;
+      visualRig.setVisualOffsetY(nextOffset);
+      localStorage.setItem(VISUAL_OFFSET_STORAGE_KEY, nextOffset.toFixed(3));
+    }
+    if (inputManager.consumeKeyPress('BracketRight')) {
+      const nextOffset = visualRig.getVisualOffsetY() + VISUAL_OFFSET_STEP;
+      visualRig.setVisualOffsetY(nextOffset);
+      localStorage.setItem(VISUAL_OFFSET_STORAGE_KEY, nextOffset.toFixed(3));
+    }
   }
 }
 

@@ -31,6 +31,9 @@ export class VisualRig {
 
     // Visual offset for aligning meshes to capsule
     this.visualOffsetY = 0;
+
+    // Calibrated offset from model bounds
+    this.calibratedOffsetY = 0;
   }
 
   /**
@@ -49,6 +52,7 @@ export class VisualRig {
       this.group.add(visual);
       visual.position.set(0, 0, 0);
       visual.rotation.set(0, 0, 0);
+      this.calibratedOffsetY = 0;
 
       if (options.visualOffsetY !== undefined) {
         this.visualOffsetY = options.visualOffsetY;
@@ -56,8 +60,6 @@ export class VisualRig {
 
       if (options.autoAlign && options.capsuleHalfHeight !== undefined && options.capsuleRadius !== undefined) {
         this.calibrateVisualOffset(options.capsuleHalfHeight, options.capsuleRadius, options.clearance ?? 0.015);
-      } else {
-        visual.position.y = this.visualOffsetY;
       }
     }
   }
@@ -78,8 +80,7 @@ export class VisualRig {
     }
 
     const targetBottom = -(capsuleHalfHeight + capsuleRadius) + clearance;
-    this.visualOffsetY = targetBottom - bounds.min.y;
-    this.visual.position.y = this.visualOffsetY;
+    this.calibratedOffsetY = targetBottom - bounds.min.y;
   }
 
   /**
@@ -87,9 +88,13 @@ export class VisualRig {
    */
   setVisualOffsetY(offsetY) {
     this.visualOffsetY = offsetY;
-    if (this.visual) {
-      this.visual.position.y = this.visualOffsetY;
-    }
+  }
+
+  /**
+   * Get current visual offset
+   */
+  getVisualOffsetY() {
+    return this.visualOffsetY;
   }
 
   /**
@@ -100,7 +105,11 @@ export class VisualRig {
    */
   update(dt, position, targetYaw) {
     // Update position (direct follow, no smoothing needed as physics handles it)
-    this.group.position.copy(position);
+    this.group.position.set(
+      position.x,
+      position.y + this.calibratedOffsetY + this.visualOffsetY,
+      position.z
+    );
     
     // Update facing
     if (targetYaw !== null) {

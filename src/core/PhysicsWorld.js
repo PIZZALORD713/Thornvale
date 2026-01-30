@@ -88,7 +88,7 @@ export class PhysicsWorld {
   createGround(size = 50, scene) {
     const { RAPIER } = this;
     
-    // Rapier collider - thin box as ground
+    // Rapier collider - thin box as ground (mesh top aligned at y = 0)
     const groundBodyDesc = RAPIER.RigidBodyDesc.fixed()
       .setTranslation(0, -0.1, 0);
     const groundBody = this.world.createRigidBody(groundBodyDesc);
@@ -105,7 +105,7 @@ export class PhysicsWorld {
         roughness: 0.8,
       });
       const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-      groundMesh.position.y = -0.1;
+      groundMesh.position.y = -0.1; // mesh centered on body; top surface at y = 0
       groundMesh.receiveShadow = true;
       scene.add(groundMesh);
     }
@@ -119,6 +119,7 @@ export class PhysicsWorld {
   createStaticBox(position, size = { x: 1, y: 1, z: 1 }, scene, options = {}) {
     const { RAPIER } = this;
 
+    // Mesh centered on body translation; top surface at y = position.y + size.y / 2
     const bodyDesc = RAPIER.RigidBodyDesc.fixed()
       .setTranslation(position.x, position.y, position.z);
     const body = this.world.createRigidBody(bodyDesc);
@@ -221,6 +222,7 @@ export class PhysicsWorld {
   createKinematicPlatform(position, size = { x: 4, y: 0.5, z: 4 }, scene) {
     const { RAPIER } = this;
     
+    // Mesh centered on body translation; top surface at y = position.y + size.y / 2
     const bodyDesc = RAPIER.RigidBodyDesc.kinematicPositionBased()
       .setTranslation(position.x, position.y, position.z);
     const body = this.world.createRigidBody(bodyDesc);
