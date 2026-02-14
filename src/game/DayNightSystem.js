@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { AmbientLight, HemisphereLight, DirectionalLight, Color, Fog } from 'three';
 
 export class DayNightSystem {
   constructor(scene) {
@@ -12,9 +12,9 @@ export class DayNightSystem {
   }
 
   init() {
-    this.ambient = new THREE.AmbientLight(0xffffff, 0.6);
-    this.hemi = new THREE.HemisphereLight(0xbcd6ff, 0x6b5f55, 0.6);
-    this.sun = new THREE.DirectionalLight(0xfff1d6, 1.0);
+    this.ambient = new AmbientLight(0xffffff, 0.6);
+    this.hemi = new HemisphereLight(0xbcd6ff, 0x6b5f55, 0.6);
+    this.sun = new DirectionalLight(0xfff1d6, 1.0);
     this.sun.position.set(12, 18, 8);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.width = 2048;
@@ -43,7 +43,7 @@ export class DayNightSystem {
 
   applyDay() {
     this.isNight = false;
-    this.scene.background = new THREE.Color(0xa7d2ff);
+    this.scene.background = new Color(0xa7d2ff);
     this.ambient.color.set(0xffffff);
     this.ambient.intensity = 0.6;
     this.hemi.color.set(0xbcd6ff);
@@ -57,7 +57,7 @@ export class DayNightSystem {
 
   applyNight() {
     this.isNight = true;
-    this.scene.background = new THREE.Color(0x0b1224);
+    this.scene.background = new Color(0x0b1224);
     this.ambient.color.set(0x223355);
     this.ambient.intensity = 0.18;
     this.hemi.color.set(0x1c2b4a);
@@ -66,6 +66,6 @@ export class DayNightSystem {
     this.sun.color.set(0x9bb7ff);
     this.sun.intensity = 0.35;
     this.sun.position.set(-8, 14, -6);
-    this.scene.fog = new THREE.Fog(0x0b1020, 12, 60);
+    this.scene.fog = new Fog(0x0b1020, 12, 60);
   }
 }

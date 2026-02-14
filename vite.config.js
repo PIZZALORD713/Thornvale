@@ -4,8 +4,16 @@ export default defineConfig({
   base: './',
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false,
     target: 'esnext',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three'],
+          rapier: ['@dimforge/rapier3d-compat'],
+        },
+      },
+    },
   },
   optimizeDeps: {
     exclude: ['@dimforge/rapier3d-compat'],

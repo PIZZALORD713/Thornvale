@@ -1,6 +1,6 @@
 /**
  * Thornvale - Main Entry Point
- * 
+ *
  * MVP slice:
  * - Third-person controller + camera
  * - Day/Night toggle
@@ -8,7 +8,11 @@
  * - Greybox town + collisions
  */
 
-import * as THREE from 'three';
+import {
+  Scene, PerspectiveCamera, WebGLRenderer, Clock, Group,
+  CylinderGeometry, SphereGeometry, MeshStandardMaterial, Mesh,
+  PCFSoftShadowMap, ACESFilmicToneMapping,
+} from 'three';
 import { PhysicsWorld } from './core/PhysicsWorld.js';
 import { InputManager } from './core/InputManager.js';
 import { CharacterMotor } from './physics/CharacterMotor.js';
@@ -57,9 +61,9 @@ async function init() {
   hud.setStatus('Initializing Thornvale...');
 
   // --- Three.js Setup ---
-  scene = new THREE.Scene();
+  scene = new Scene();
 
-  camera = new THREE.PerspectiveCamera(
+  camera = new PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
     0.1,
@@ -67,18 +71,18 @@ async function init() {
   );
   camera.position.set(0, 5, 10);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.type = PCFSoftShadowMap;
+  renderer.toneMapping = ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
 
   const app = document.getElementById('app');
   app.appendChild(renderer.domElement);
 
-  clock = new THREE.Clock();
+  clock = new Clock();
 
   // --- Lighting ---
   dayNightSystem = new DayNightSystem(scene);
@@ -147,6 +151,9 @@ async function init() {
   cameraRig.setTarget(characterMotor.getPosition());
   cameraRig.resetPosition();
 
+  // Cache collision objects once so CameraRig doesn't traverse scene every frame
+  cacheCollisionObjects();
+
   // --- Player Controller ---
   playerController = new PlayerController(
     inputManager,
@@ -195,28 +202,46 @@ async function init() {
   animate();
 }
 
-function createCapsuleMesh(radius, halfHeight) {
-  const group = new THREE.Group();
+/**
+ * Collect all visible meshes and cache them for camera collision.
+ * Call again if scene geometry changes significantly.
+ */
+function cacheCollisionObjects() {
+  const meshes = [];
+  scene.traverse((obj) => {
+    if (obj.isMesh &&
+        obj.visible &&
+        !obj.name.includes('debug') &&
+        !obj.name.includes('particle') &&
+        obj.geometry) {
+      meshes.push(obj);
+    }
+  });
+  cameraRig.setCollisionObjects(meshes);
+}
 
-  const mat = new THREE.MeshStandardMaterial({
+function createCapsuleMesh(radius, halfHeight) {
+  const group = new Group();
+
+  const mat = new MeshStandardMaterial({
     color: 0x4b88ff,
     roughness: 0.4,
     metalness: 0.1,
   });
 
-  const cylGeo = new THREE.CylinderGeometry(radius, radius, halfHeight * 2, 16);
-  const cylinder = new THREE.Mesh(cylGeo, mat);
+  const cylGeo = new CylinderGeometry(radius, radius, halfHeight * 2, 16);
+  const cylinder = new Mesh(cylGeo, mat);
   cylinder.castShadow = true;
   group.add(cylinder);
 
-  const topGeo = new THREE.SphereGeometry(radius, 16, 16);
-  const topSphere = new THREE.Mesh(topGeo, mat);
+  const topGeo = new SphereGeometry(radius, 16, 16);
+  const topSphere = new Mesh(topGeo, mat);
   topSphere.position.y = halfHeight;
   topSphere.castShadow = true;
   group.add(topSphere);
 
-  const botGeo = new THREE.SphereGeometry(radius, 16, 16);
-  const botSphere = new THREE.Mesh(botGeo, mat);
+  const botGeo = new SphereGeometry(radius, 16, 16);
+  const botSphere = new Mesh(botGeo, mat);
   botSphere.position.y = -halfHeight;
   botSphere.castShadow = true;
   group.add(botSphere);
