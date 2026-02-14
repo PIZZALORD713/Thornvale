@@ -1,6 +1,6 @@
 /**
  * InputManager - Unified input handling with pointer lock support
- * 
+ *
  * Responsibilities:
  * - Capture keyboard (WASD, Space, Shift)
  * - Capture mouse with pointer lock
@@ -22,19 +22,23 @@ export class InputManager {
 
     this.activeKeys = new Set();
     this.pressedKeys = new Set();
-    
+
     // Mouse state
     this.mouseDelta = { x: 0, y: 0 };
     this.mouseButtons = { left: false, right: false };
     this.sensitivity = 0.002;
-    
+
     // Pointer lock state
     this.isLocked = false;
     this.canvas = null;
-    
+
     // Callbacks
     this.onLockChange = null;
-    
+
+    // Pre-allocated reusable return objects
+    this._moveResult = { x: 0, z: 0 };
+    this._deltaResult = { x: 0, y: 0 };
+
     // Bind handlers
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onKeyUp = this._onKeyUp.bind(this);
@@ -50,19 +54,19 @@ export class InputManager {
    */
   init(canvas) {
     this.canvas = canvas;
-    
+
     // Keyboard
     document.addEventListener('keydown', this._onKeyDown);
     document.addEventListener('keyup', this._onKeyUp);
-    
+
     // Mouse
     document.addEventListener('mousemove', this._onMouseMove);
     document.addEventListener('mousedown', this._onMouseDown);
     document.addEventListener('mouseup', this._onMouseUp);
-    
+
     // Pointer lock
     document.addEventListener('pointerlockchange', this._onPointerLockChange);
-    
+
     console.log('[InputManager] Initialized');
     return this;
   }
@@ -84,37 +88,40 @@ export class InputManager {
   }
 
   /**
-   * Get normalized movement direction
+   * Get normalized movement direction (returns reusable object — do not store)
    * @returns {{ x: number, z: number }} - Movement input (-1 to 1)
    */
   getMovementInput() {
     let x = 0;
     let z = 0;
-    
+
     if (this.keys.forward) z -= 1;
     if (this.keys.backward) z += 1;
     if (this.keys.left) x -= 1;
     if (this.keys.right) x += 1;
-    
+
     // Normalize diagonal movement
     const length = Math.sqrt(x * x + z * z);
     if (length > 1) {
       x /= length;
       z /= length;
     }
-    
-    return { x, z };
+
+    this._moveResult.x = x;
+    this._moveResult.z = z;
+    return this._moveResult;
   }
 
   /**
-   * Get and reset mouse delta
+   * Get and reset mouse delta (returns reusable object — do not store)
    * @returns {{ x: number, y: number }}
    */
   consumeMouseDelta() {
-    const delta = { ...this.mouseDelta };
+    this._deltaResult.x = this.mouseDelta.x;
+    this._deltaResult.y = this.mouseDelta.y;
     this.mouseDelta.x = 0;
     this.mouseDelta.y = 0;
-    return delta;
+    return this._deltaResult;
   }
 
   // --- Private handlers ---
@@ -127,7 +134,7 @@ export class InputManager {
       this.pressedKeys.add(e.code);
       this.activeKeys.add(e.code);
     }
-    
+
     switch (e.code) {
       case 'KeyW':
       case 'ArrowUp':
@@ -198,7 +205,7 @@ export class InputManager {
 
   _onMouseMove(e) {
     if (!this.isLocked) return;
-    
+
     this.mouseDelta.x += e.movementX * this.sensitivity;
     this.mouseDelta.y += e.movementY * this.sensitivity;
   }
@@ -215,7 +222,7 @@ export class InputManager {
 
   _onPointerLockChange() {
     this.isLocked = document.pointerLockElement === this.canvas;
-    
+
     if (this.onLockChange) {
       this.onLockChange(this.isLocked);
     }

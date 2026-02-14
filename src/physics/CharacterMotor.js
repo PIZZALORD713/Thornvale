@@ -1,6 +1,6 @@
 /**
  * CharacterMotor - Rapier Character Controller (KCC) capsule
- * 
+ *
  * Responsibilities:
  * - Capsule collider for player
  * - computeColliderMovement for collision resolution
@@ -10,61 +10,68 @@
  * - Apply platform motion
  */
 
-import * as THREE from 'three';
+import { Vector3, Group, CylinderGeometry, SphereGeometry, MeshStandardMaterial, Mesh } from 'three';
 
 export class CharacterMotor {
   constructor(physicsWorld) {
     this.physics = physicsWorld;
-    
+
     /** @type {import('@dimforge/rapier3d-compat').KinematicCharacterController} */
     this.controller = null;
-    
+
     /** @type {import('@dimforge/rapier3d-compat').RigidBody} */
     this.body = null;
-    
+
     /** @type {import('@dimforge/rapier3d-compat').Collider} */
     this.collider = null;
-    
+
     // Capsule dimensions
     this.radius = 0.35;
     this.halfHeight = 0.55; // Total height = 2 * halfHeight + 2 * radius ≈ 1.8m
-    
+
     // Movement settings
     this.maxSpeed = 6.0;
     this.acceleration = 40.0;
     this.friction = 15.0;
     this.airControl = 0.3;
-    
+
     // State
-    this.velocity = new THREE.Vector3();
+    this.velocity = new Vector3();
     this.isGrounded = false;
     this.groundedTimer = 0;
     this.coyoteTime = 0.1; // Grace period after leaving ground
-    
+
     // Platform tracking
-    this.platformVelocity = new THREE.Vector3();
+    this.platformVelocity = new Vector3();
     this.lastPlatformCollider = null;
-    
+
     // Visual mesh (debug)
     this.debugMesh = null;
 
     // Character controller skin width
     this.controllerSkin = 0.01;
+
+    // Pre-allocated temp vectors to avoid per-frame GC pressure
+    this._tmpForward = new Vector3();
+    this._tmpRight = new Vector3();
+    this._tmpDesiredDir = new Vector3();
+    this._tmpTargetVel = new Vector3();
+    this._tmpMovement = new Vector3();
+    this._tmpPosition = new Vector3();
   }
 
   /**
    * Initialize the character controller
-   * @param {THREE.Vector3} position - Spawn position
-   * @param {THREE.Scene} scene - Scene for debug mesh
+   * @param {Vector3} position - Spawn position
    */
   init(position, scene) {
     const { RAPIER, world } = this.physics;
-    
+
     // Create kinematic rigidbody
     const bodyDesc = RAPIER.RigidBodyDesc.kinematicPositionBased()
       .setTranslation(position.x, position.y, position.z);
     this.body = world.createRigidBody(bodyDesc);
-    
+
     // Create capsule collider
     const colliderDesc = RAPIER.ColliderDesc.capsule(this.halfHeight, this.radius)
       .setCollisionGroups(
@@ -74,25 +81,25 @@ export class CharacterMotor {
         )
       );
     this.collider = world.createCollider(colliderDesc, this.body);
-    
+
     // Create character controller
     this.controller = world.createCharacterController(this.controllerSkin); // skin width
-    
+
     // Configure controller
     this.controller.enableAutostep(0.3, 0.2, true);  // maxHeight, minWidth, includeDynamic
     this.controller.enableSnapToGround(0.3);          // distance
     this.controller.setApplyImpulsesToDynamicBodies(true);
     this.controller.setCharacterMass(80);             // kg
-    
+
     // Slope handling
     this.controller.setMaxSlopeClimbAngle(Math.PI / 4); // 45 degrees
     this.controller.setMinSlopeSlideAngle(Math.PI / 4); // Start sliding at 45 degrees
-    
+
     // Debug mesh
     if (scene) {
       this._createDebugMesh(scene);
     }
-    
+
     console.log('[CharacterMotor] Initialized at', position);
     return this;
   }
@@ -105,37 +112,35 @@ export class CharacterMotor {
    */
   update(dt, inputDir, cameraYaw) {
     if (!this.controller || !this.body || !this.collider) return;
-    
-    const { world } = this.physics;
-    
+
     // Calculate world-space movement direction from camera
-    const forward = new THREE.Vector3(
+    const forward = this._tmpForward.set(
       Math.sin(cameraYaw),
       0,
       Math.cos(cameraYaw)
     );
-    const right = new THREE.Vector3(
+    const right = this._tmpRight.set(
       Math.cos(cameraYaw),
       0,
       -Math.sin(cameraYaw)
     );
-    
+
     // Desired horizontal velocity
-    const desiredDir = new THREE.Vector3();
+    const desiredDir = this._tmpDesiredDir.set(0, 0, 0);
     desiredDir.addScaledVector(forward, -inputDir.z);
     desiredDir.addScaledVector(right, inputDir.x);
-    
+
     const hasInput = desiredDir.lengthSq() > 0.001;
-    
+
     // Acceleration / friction
     if (hasInput) {
       desiredDir.normalize();
-      const targetVel = desiredDir.clone().multiplyScalar(this.maxSpeed);
-      
+      const targetVel = this._tmpTargetVel.copy(desiredDir).multiplyScalar(this.maxSpeed);
+
       // Interpolate toward target velocity
       const accelRate = this.isGrounded ? this.acceleration : this.acceleration * this.airControl;
       const accelVec = targetVel.sub(this.velocity).multiplyScalar(accelRate * dt);
-      
+
       this.velocity.x += accelVec.x;
       this.velocity.z += accelVec.z;
     } else {
@@ -144,12 +149,12 @@ export class CharacterMotor {
       const friction = Math.exp(-frictionRate * dt);
       this.velocity.x *= friction;
       this.velocity.z *= friction;
-      
+
       // Stop if very slow
       if (Math.abs(this.velocity.x) < 0.01) this.velocity.x = 0;
       if (Math.abs(this.velocity.z) < 0.01) this.velocity.z = 0;
     }
-    
+
     // Gravity
     if (!this.isGrounded) {
       this.velocity.y += -20 * dt; // Gravity
@@ -158,11 +163,13 @@ export class CharacterMotor {
       // Small downward force to maintain ground contact
       this.velocity.y = -2;
     }
-    
+
     // Add platform velocity
-    const movement = this.velocity.clone().multiplyScalar(dt);
-    movement.add(this.platformVelocity.clone().multiplyScalar(dt));
-    
+    const movement = this._tmpMovement.copy(this.velocity).multiplyScalar(dt);
+    movement.x += this.platformVelocity.x * dt;
+    movement.y += this.platformVelocity.y * dt;
+    movement.z += this.platformVelocity.z * dt;
+
     // Compute movement with collision
     this.controller.computeColliderMovement(
       this.collider,
@@ -170,13 +177,13 @@ export class CharacterMotor {
       undefined,  // filterFlags
       undefined   // filterGroups
     );
-    
+
     // Get corrected movement
     const corrected = this.controller.computedMovement();
-    
+
     // Update grounded state
     this.isGrounded = this.controller.computedGrounded();
-    
+
     if (this.isGrounded) {
       this.groundedTimer = this.coyoteTime;
       if (this.velocity.y < 0) {
@@ -185,7 +192,7 @@ export class CharacterMotor {
     } else {
       this.groundedTimer -= dt;
     }
-    
+
     // Apply movement to rigidbody
     const currentPos = this.body.translation();
     const newPos = {
@@ -193,9 +200,9 @@ export class CharacterMotor {
       y: currentPos.y + corrected.y,
       z: currentPos.z + corrected.z,
     };
-    
+
     this.body.setNextKinematicTranslation(newPos);
-    
+
     // Update debug mesh
     if (this.debugMesh) {
       this.debugMesh.position.set(newPos.x, newPos.y, newPos.z);
@@ -203,28 +210,28 @@ export class CharacterMotor {
   }
 
   /**
-   * Set platform velocity (called by PlatformCarrier)
+   * Set platform velocity
    */
   setPlatformVelocity(velocity) {
     this.platformVelocity.copy(velocity);
   }
 
   /**
-   * Get current position
-   * @returns {THREE.Vector3}
+   * Get current position (returns reusable vector — do not store)
+   * @returns {Vector3}
    */
   getPosition() {
-    if (!this.body) return new THREE.Vector3();
+    if (!this.body) return this._tmpPosition.set(0, 0, 0);
     const pos = this.body.translation();
-    return new THREE.Vector3(pos.x, pos.y, pos.z);
+    return this._tmpPosition.set(pos.x, pos.y, pos.z);
   }
 
   /**
-   * Get current velocity
-   * @returns {THREE.Vector3}
+   * Get current velocity (returns internal reference — do not mutate)
+   * @returns {Vector3}
    */
   getVelocity() {
-    return this.velocity.clone();
+    return this.velocity;
   }
 
   /**
@@ -310,39 +317,37 @@ export class CharacterMotor {
    * Create debug visualization
    */
   _createDebugMesh(scene) {
-    const totalHeight = this.halfHeight * 2 + this.radius * 2;
-    
     // Capsule approximation with cylinder + hemispheres
-    const group = new THREE.Group();
-    
+    const group = new Group();
+
     // Cylinder body
-    const cylGeo = new THREE.CylinderGeometry(
+    const cylGeo = new CylinderGeometry(
       this.radius,
       this.radius,
       this.halfHeight * 2,
       16
     );
-    const mat = new THREE.MeshStandardMaterial({
+    const mat = new MeshStandardMaterial({
       color: 0x00ff00,
       transparent: true,
       opacity: 0.5,
       wireframe: true,
     });
-    const cylinder = new THREE.Mesh(cylGeo, mat);
+    const cylinder = new Mesh(cylGeo, mat);
     group.add(cylinder);
-    
+
     // Top hemisphere
-    const topGeo = new THREE.SphereGeometry(this.radius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-    const topSphere = new THREE.Mesh(topGeo, mat);
+    const topGeo = new SphereGeometry(this.radius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+    const topSphere = new Mesh(topGeo, mat);
     topSphere.position.y = this.halfHeight;
     group.add(topSphere);
-    
+
     // Bottom hemisphere
-    const botGeo = new THREE.SphereGeometry(this.radius, 16, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
-    const botSphere = new THREE.Mesh(botGeo, mat);
+    const botGeo = new SphereGeometry(this.radius, 16, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+    const botSphere = new Mesh(botGeo, mat);
     botSphere.position.y = -this.halfHeight;
     group.add(botSphere);
-    
+
     this.debugMesh = group;
     scene.add(group);
   }

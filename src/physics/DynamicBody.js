@@ -1,18 +1,18 @@
 /**
  * DynamicBody - Helper for creating physics toys
- * 
+ *
  * A simple wrapper to keep track of dynamic rigidbody + mesh pairs.
  * Most functionality is in PhysicsWorld, this is for organization.
  */
 
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 
 export class DynamicBody {
   constructor(body, collider, mesh) {
     this.body = body;
     this.collider = collider;
     this.mesh = mesh;
-    
+
     // Track if disposed
     this.disposed = false;
   }
@@ -22,10 +22,10 @@ export class DynamicBody {
    */
   syncMesh() {
     if (!this.body || !this.mesh || this.disposed) return;
-    
+
     const pos = this.body.translation();
     const rot = this.body.rotation();
-    
+
     this.mesh.position.set(pos.x, pos.y, pos.z);
     this.mesh.quaternion.set(rot.x, rot.y, rot.z, rot.w);
   }
@@ -52,18 +52,18 @@ export class DynamicBody {
    * Get current position
    */
   getPosition() {
-    if (!this.body) return new THREE.Vector3();
+    if (!this.body) return new Vector3();
     const pos = this.body.translation();
-    return new THREE.Vector3(pos.x, pos.y, pos.z);
+    return new Vector3(pos.x, pos.y, pos.z);
   }
 
   /**
    * Get current velocity
    */
   getVelocity() {
-    if (!this.body) return new THREE.Vector3();
+    if (!this.body) return new Vector3();
     const vel = this.body.linvel();
-    return new THREE.Vector3(vel.x, vel.y, vel.z);
+    return new Vector3(vel.x, vel.y, vel.z);
   }
 
   /**
@@ -71,11 +71,11 @@ export class DynamicBody {
    */
   reset(position, rotation = null) {
     if (!this.body || this.disposed) return;
-    
+
     this.body.setTranslation(position, true);
     this.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
     this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-    
+
     if (rotation) {
       this.body.setRotation(rotation, true);
     }

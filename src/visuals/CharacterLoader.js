@@ -1,9 +1,6 @@
 /**
  * CharacterLoader - Loads fRiENDSiES characters from metadata
- * 
- * This is a placeholder that will be filled in during PR10-12
- * to port the character loading logic from the original HTML file.
- * 
+ *
  * Responsibilities:
  * - Fetch metadata from Gist
  * - Load body/head/parts GLBs
@@ -12,7 +9,10 @@
  * - Create VisualRig with loaded character
  */
 
-import * as THREE from 'three';
+import {
+  TextureLoader, LinearFilter, SRGBColorSpace, Object3D, Matrix4,
+  SkinnedMesh, Mesh, MeshStandardMaterial, Color, Group,
+} from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
@@ -23,11 +23,11 @@ export class CharacterLoader {
   constructor() {
     this.metadata = null;
     this.metadataLoaded = false;
-    
+
     // Loaders
     this.gltfLoader = null;
     this.textureLoader = null;
-    
+
     // Loaded characters
     this.characters = new Map();
 
@@ -41,15 +41,15 @@ export class CharacterLoader {
     // DRACO decoder
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
-    
+
     // GLTF loader
     this.gltfLoader = new GLTFLoader();
     this.gltfLoader.setDRACOLoader(dracoLoader);
-    
+
     // Texture loader
-    this.textureLoader = new THREE.TextureLoader();
+    this.textureLoader = new TextureLoader();
     this.textureLoader.setCrossOrigin('anonymous');
-    
+
     return this;
   }
 
@@ -60,10 +60,10 @@ export class CharacterLoader {
     try {
       const response = await fetch(METADATA_URL, { mode: 'cors' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
+
       this.metadata = await response.json();
       this.metadataLoaded = true;
-      
+
       console.log(`[CharacterLoader] Loaded ${this.metadata.length} tokens`);
       return true;
     } catch (err) {
@@ -77,7 +77,7 @@ export class CharacterLoader {
    */
   getEntryById(tokenId) {
     if (!this.metadata) return null;
-    
+
     return this.metadata[tokenId] ||
            this.metadata[tokenId - 1] ||
            this.metadata.find(x => Number(x?.token_id) === tokenId) ||
@@ -88,14 +88,14 @@ export class CharacterLoader {
   /**
    * Load a character by token ID
    * @param {number} tokenId
-   * @returns {Promise<THREE.Group|null>}
+   * @returns {Promise<Group|null>}
    */
   async loadCharacter(tokenId) {
     if (!this.metadataLoaded) {
       console.error('[CharacterLoader] Metadata not loaded');
       return null;
     }
-    
+
     const entry = this.getEntryById(tokenId);
     if (!entry) {
       console.error(`[CharacterLoader] Token #${tokenId} not found`);
@@ -104,22 +104,12 @@ export class CharacterLoader {
 
     const loadId = ++this.currentLoadId;
 
-    const group = new THREE.Group();
+    const group = new Group();
     group.name = `character_${tokenId}`;
     group.scale.setScalar(5);
     group.position.set(0, -2.5, 0);
 
     const traits = entry.attributes || [];
-
-    const faceAttr = traits.find((trait) => trait.trait_type === 'face');
-    let faceTexture = null;
-    if (faceAttr?.asset_url) {
-      faceTexture = this.textureLoader.load(faceAttr.asset_url);
-      faceTexture.minFilter = THREE.LinearFilter;
-      faceTexture.repeat.y = -1;
-      faceTexture.offset.y = 1;
-      faceTexture.colorSpace = THREE.SRGBColorSpace;
-    }
 
     const bodyAttr = traits.find((trait) => trait.trait_type === 'body');
     if (!bodyAttr?.asset_url) {
@@ -127,8 +117,18 @@ export class CharacterLoader {
       return null;
     }
 
-    const bodyRes = await loadGLB(this.gltfLoader, bodyAttr.asset_url);
+    const faceAttr = traits.find((trait) => trait.trait_type === 'face');
+    const headAttr = traits.find((trait) => trait.trait_type === 'head');
+
+    // Load body, head, and face texture in parallel
+    const [bodyRes, headRes, faceTexture] = await Promise.all([
+      loadGLB(this.gltfLoader, bodyAttr.asset_url),
+      headAttr?.asset_url ? loadGLB(this.gltfLoader, headAttr.asset_url) : Promise.resolve(null),
+      faceAttr?.asset_url ? loadTexture(this.textureLoader, faceAttr.asset_url) : Promise.resolve(null),
+    ]);
+
     if (loadId !== this.currentLoadId) return null;
+
     if (!bodyRes.ok) {
       console.error('[CharacterLoader] Body load failed:', bodyRes.error);
       return null;
@@ -145,7 +145,7 @@ export class CharacterLoader {
 
     const bodySkeleton = bodySkinned.skeleton;
 
-    const faceAnchor = new THREE.Object3D();
+    const faceAnchor = new Object3D();
     faceAnchor.name = 'FACE_ANCHOR';
     const headBone = getBodyBoneByKey(bodySkeleton, 'head') || getBodyBoneByKey(bodySkeleton, 'neck');
     if (headBone) headBone.add(faceAnchor);
@@ -153,41 +153,44 @@ export class CharacterLoader {
 
     tuneMaterialsForEnv(bodyRoot);
 
-    const headAttr = traits.find((trait) => trait.trait_type === 'head');
-    if (headAttr?.asset_url) {
-      const headRes = await loadGLB(this.gltfLoader, headAttr.asset_url);
-      if (loadId !== this.currentLoadId) return null;
-      if (headRes.ok) {
-        const headScene = headRes.gltf.scene;
-        group.add(headScene);
-        group.updateMatrixWorld(true);
+    if (headRes?.ok) {
+      const headScene = headRes.gltf.scene;
+      group.add(headScene);
+      group.updateMatrixWorld(true);
 
-        attachPartToBodySkeleton(headScene, bodySkeleton, bodySkinned);
-        createSkinnedFaceOverlayFromHead(headScene, faceTexture, bodySkeleton, faceAnchor);
-        retargetRigidAttachmentsToBodyBones(headScene, bodySkeleton);
-        boostHeadEmissive(headScene, 2.3);
-        tuneMaterialsForEnv(headScene);
-      }
+      attachPartToBodySkeleton(headScene, bodySkeleton, bodySkinned);
+      createSkinnedFaceOverlayFromHead(headScene, faceTexture, bodySkeleton, faceAnchor);
+      retargetRigidAttachmentsToBodyBones(headScene, bodySkeleton);
+      boostHeadEmissive(headScene, 2.3);
+      tuneMaterialsForEnv(headScene);
     }
 
     const partTraits = traits.filter(
       (trait) => !['body', 'head', 'face'].includes(trait.trait_type)
     );
 
-    for (const trait of partTraits) {
-      if (!trait.asset_url || !trait.asset_url.endsWith('.glb')) continue;
+    // Load remaining parts in parallel
+    const partUrls = partTraits
+      .filter((trait) => trait.asset_url && trait.asset_url.endsWith('.glb'))
+      .map((trait) => trait.asset_url);
 
-      const partRes = await loadGLB(this.gltfLoader, trait.asset_url);
+    if (partUrls.length > 0) {
+      const partResults = await Promise.all(
+        partUrls.map((url) => loadGLB(this.gltfLoader, url))
+      );
       if (loadId !== this.currentLoadId) return null;
-      if (!partRes.ok) continue;
 
-      const partScene = partRes.gltf.scene;
-      group.add(partScene);
-      group.updateMatrixWorld(true);
+      for (const partRes of partResults) {
+        if (!partRes.ok) continue;
 
-      attachPartToBodySkeleton(partScene, bodySkeleton, bodySkinned);
-      retargetRigidAttachmentsToBodyBones(partScene, bodySkeleton);
-      tuneMaterialsForEnv(partScene);
+        const partScene = partRes.gltf.scene;
+        group.add(partScene);
+        group.updateMatrixWorld(true);
+
+        attachPartToBodySkeleton(partScene, bodySkeleton, bodySkinned);
+        retargetRigidAttachmentsToBodyBones(partScene, bodySkeleton);
+        tuneMaterialsForEnv(partScene);
+      }
     }
 
     this.characters.set(tokenId, { group, entry });
@@ -196,12 +199,13 @@ export class CharacterLoader {
   }
 
   /**
-   * Remove a loaded character
+   * Remove a loaded character and dispose GPU resources
    */
   removeCharacter(tokenId) {
     const char = this.characters.get(tokenId);
     if (char) {
       char.group.parent?.remove(char.group);
+      disposeGroupResources(char.group);
       this.characters.delete(tokenId);
     }
   }
@@ -222,7 +226,7 @@ function loadGLB(loader, url, timeout = 30000) {
     const timer = setTimeout(() => {
       resolve({ ok: false, error: 'Timeout' });
     }, timeout);
-    
+
     loader.load(
       url,
       (gltf) => {
@@ -234,6 +238,24 @@ function loadGLB(loader, url, timeout = 30000) {
         clearTimeout(timer);
         resolve({ ok: false, error: err.message || 'Unknown error' });
       }
+    );
+  });
+}
+
+// Helper: Load texture and configure for face overlay
+function loadTexture(textureLoader, url) {
+  return new Promise((resolve) => {
+    textureLoader.load(
+      url,
+      (texture) => {
+        texture.minFilter = LinearFilter;
+        texture.repeat.y = -1;
+        texture.offset.y = 1;
+        texture.colorSpace = SRGBColorSpace;
+        resolve(texture);
+      },
+      undefined,
+      () => resolve(null)
     );
   });
 }
@@ -284,10 +306,9 @@ function attachPartToBodySkeleton(partScene, bodySkeleton, bodySkinned) {
 
     const bindMatrix = child.bindMatrix
       ? child.bindMatrix.clone()
-      : new THREE.Matrix4();
+      : new Matrix4();
     child.bind(bodySkeleton, bindMatrix);
     child.bindMode = bodySkinned.bindMode || child.bindMode;
-    child.frustumCulled = false;
     child.updateMatrixWorld(true);
   });
 
@@ -318,7 +339,7 @@ function reparentKeepWorld(obj, newParent) {
   newParent.updateMatrixWorld(true);
   newParent.add(obj);
 
-  const inv = new THREE.Matrix4().copy(newParent.matrixWorld).invert();
+  const inv = new Matrix4().copy(newParent.matrixWorld).invert();
   obj.matrix.copy(inv.multiply(world));
   obj.matrix.decompose(obj.position, obj.quaternion, obj.scale);
   obj.matrixAutoUpdate = true;
@@ -357,15 +378,14 @@ function retargetRigidAttachmentsToBodyBones(partScene, bodySkeleton) {
       const parent = src.parent;
       if (!parent) continue;
 
-      const skinned = new THREE.SkinnedMesh(src.geometry, src.material);
+      const skinned = new SkinnedMesh(src.geometry, src.material);
       skinned.name = `${src.name || 'mesh'}_SKINNED_FROM_MESH`;
       skinned.position.copy(src.position);
       skinned.quaternion.copy(src.quaternion);
       skinned.scale.copy(src.scale);
 
-      const bindMatrix = new THREE.Matrix4();
+      const bindMatrix = new Matrix4();
       skinned.bind(bodySkeleton, bindMatrix);
-      skinned.frustumCulled = false;
 
       parent.add(skinned);
       parent.remove(src);
@@ -382,7 +402,7 @@ function retargetRigidAttachmentsToBodyBones(partScene, bodySkeleton) {
 function createSkinnedFaceOverlayFromHead(headScene, faceTexture, bodySkeleton, faceAnchor) {
   if (!headScene || !faceTexture || !bodySkeleton || !faceAnchor) return;
 
-  const faceMaterial = new THREE.MeshStandardMaterial({
+  const faceMaterial = new MeshStandardMaterial({
     map: faceTexture,
     transparent: true,
     alphaTest: 0.5,
@@ -418,21 +438,20 @@ function createSkinnedFaceOverlayFromHead(headScene, faceTexture, bodySkeleton, 
 
     let overlay;
     if (src.isSkinnedMesh) {
-      overlay = new THREE.SkinnedMesh(src.geometry, faceMaterial);
+      overlay = new SkinnedMesh(src.geometry, faceMaterial);
       const bindMatrix = src.bindMatrix
         ? src.bindMatrix.clone()
-        : new THREE.Matrix4();
+        : new Matrix4();
       overlay.bind(bodySkeleton, bindMatrix);
       overlay.bindMode = src.bindMode || 'attached';
     } else {
-      overlay = new THREE.Mesh(src.geometry, faceMaterial);
+      overlay = new Mesh(src.geometry, faceMaterial);
     }
 
     overlay.name = `${src.name || 'headMesh'}_FACE_OVERLAY`;
     overlay.renderOrder = 999;
-    overlay.frustumCulled = false;
 
-    const local = new THREE.Matrix4()
+    const local = new Matrix4()
       .copy(faceAnchor.matrixWorld)
       .invert()
       .multiply(src.matrixWorld);
@@ -454,7 +473,7 @@ function boostHeadEmissive(headScene, intensity = 2.3) {
     for (const mat of mats) {
       if (!mat) continue;
       if (mat.emissiveMap) {
-        mat.emissive = new THREE.Color(0xffffff);
+        mat.emissive = new Color(0xffffff);
         mat.emissiveIntensity = intensity;
         mat.needsUpdate = true;
       }
@@ -476,6 +495,28 @@ function tuneMaterialsForEnv(root) {
           mat.envMapIntensity = Math.max(mat.envMapIntensity ?? 1, 1.05);
         }
         mat.needsUpdate = true;
+      }
+    }
+  });
+}
+
+/**
+ * Recursively dispose all GPU resources in a group
+ */
+function disposeGroupResources(group) {
+  group.traverse((child) => {
+    if (child.isMesh || child.isSkinnedMesh) {
+      child.geometry?.dispose();
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      for (const mat of materials) {
+        if (!mat) continue;
+        mat.map?.dispose();
+        mat.normalMap?.dispose();
+        mat.emissiveMap?.dispose();
+        mat.aoMap?.dispose();
+        mat.roughnessMap?.dispose();
+        mat.metalnessMap?.dispose();
+        mat.dispose();
       }
     }
   });
