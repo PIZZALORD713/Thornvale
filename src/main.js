@@ -1,17 +1,24 @@
 /**
- * Thornvale - Main Entry Point
+ * Thornvale Kawaii 2.0
  *
- * MVP slice:
- * - Third-person controller + camera
- * - Day/Night toggle
- * - Interactables with prompts
- * - Greybox town + collisions
+ * A presentation-first cozy village slice with:
+ * - a deterministic local chibi avatar and optional Friendsies model
+ * - animated procedural town art
+ * - cinematic day/night transitions
+ * - petals, fireflies, sparkles, bloom, color finishing, and cozy sound
  */
 
 import {
-  Scene, PerspectiveCamera, WebGLRenderer, Clock, Group,
-  CylinderGeometry, SphereGeometry, MeshStandardMaterial, Mesh,
-  PCFSoftShadowMap, ACESFilmicToneMapping,
+  ACESFilmicToneMapping,
+  Clock,
+  Color,
+  PCFSoftShadowMap,
+  PerspectiveCamera,
+  PointLight,
+  Scene,
+  SRGBColorSpace,
+  Vector3,
+  WebGLRenderer,
 } from 'three';
 import { PhysicsWorld } from './core/PhysicsWorld.js';
 import { InputManager } from './core/InputManager.js';
@@ -20,15 +27,20 @@ import { CameraRig } from './controllers/CameraRig.js';
 import { PlayerController } from './controllers/PlayerController.js';
 import { VisualRig } from './visuals/VisualRig.js';
 import { CharacterLoader } from './visuals/CharacterLoader.js';
+import { createKawaiiAvatar } from './visuals/KawaiiAvatar.js';
+import { KawaiiSky } from './visuals/KawaiiSky.js';
+import { PostProcessing } from './visuals/PostProcessing.js';
+import { KawaiiVFX } from './visuals/KawaiiVFX.js';
+import { PlayerAnimator } from './visuals/PlayerAnimator.js';
+import { CozySoundscape } from './audio/CozySoundscape.js';
 import { HUD } from './ui/HUD.js';
 import { DayNightSystem } from './game/DayNightSystem.js';
 import { InteractableSystem } from './game/InteractableSystem.js';
 import { buildTown } from './game/TownBuilder.js';
 
-// ============================================================
-// GLOBALS
-// ============================================================
-let scene, camera, renderer;
+let scene;
+let camera;
+let renderer;
 let clock;
 let physicsWorld;
 let inputManager;
@@ -36,278 +48,393 @@ let characterMotor;
 let cameraRig;
 let visualRig;
 let playerController;
+let playerAnimator;
 let hud;
 let dayNightSystem;
 let interactableSystem;
 let characterLoader;
+let worldAnimator;
+let sky;
+let postProcessing;
+let vfx;
+let soundscape;
+let animationStarted = false;
+let appReady = false;
 let debugEnabled = false;
-const VISUAL_OFFSET_STORAGE_KEY = 'thornvale.visualOffsetY';
+let footstepTimer = 0;
+let playerGlow;
+
+const playerGlowDay = new Color(0xffc9dc);
+const playerGlowNight = new Color(0xa9c4ff);
+
+const VISUAL_OFFSET_STORAGE_KEY = 'thornvale2.visualOffsetY';
 const VISUAL_OFFSET_STEP = 0.002;
+const params = new URLSearchParams(window.location.search);
+const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+const visualQuality = params.get('quality') || (reducedMotion ? 'medium' : 'high');
 
 const gameState = {
   kindnessCount: 0,
+  weather: reducedMotion ? 'clear' : 'mixed',
 };
 
-// FPS counter
 let frameCount = 0;
 let lastFpsUpdate = 0;
 let currentFps = 0;
 
-// ============================================================
-// INITIALIZATION
-// ============================================================
+function setLoading(progress, message) {
+  hud?.setStatus?.(message);
+  hud?.setLoadingProgress?.(progress, message);
+}
+
 async function init() {
   hud = new HUD().init();
-  hud.setStatus('Initializing Thornvale...');
+  setLoading(0.06, 'Waking the valley…');
 
-  // --- Three.js Setup ---
   scene = new Scene();
+  camera = new PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.08, 180);
+  camera.position.set(0, 4.8, 9);
 
-  camera = new PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.set(0, 5, 10);
-
-  renderer = new WebGLRenderer({ antialias: true });
+  renderer = new WebGLRenderer({
+    antialias: true,
+    alpha: false,
+    powerPreference: 'high-performance',
+  });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, reducedMotion ? 1.25 : 1.8));
+  renderer.outputColorSpace = SRGBColorSpace;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFSoftShadowMap;
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = 0.92;
 
-  const app = document.getElementById('app');
-  app.appendChild(renderer.domElement);
-
+  document.getElementById('app')?.appendChild(renderer.domElement);
   clock = new Clock();
 
-  // --- Lighting ---
-  dayNightSystem = new DayNightSystem(scene);
-  dayNightSystem.init();
+  dayNightSystem = new DayNightSystem(scene).init();
+  sky = new KawaiiSky(scene).init();
   hud.setDayNight('DAY');
 
-  // --- Rapier Physics ---
-  hud.setStatus('Loading Rapier physics...');
+  postProcessing = new PostProcessing(renderer, scene, camera, {
+    quality: ['low', 'medium', 'high'].includes(visualQuality) ? visualQuality : 'high',
+    enabled: params.get('post') !== 'off',
+    bloomStrength: reducedMotion ? 0.22 : 0.34,
+    bloomRadius: 0.48,
+    bloomThreshold: 0.82,
+    saturation: 1.15,
+    contrast: 1.08,
+    brightness: -0.01,
+    warmth: 0.045,
+    vignette: 0.18,
+  }).init();
+
+  vfx = new KawaiiVFX(scene, {
+    weather: gameState.weather,
+    fireflyCount: reducedMotion ? 14 : 44,
+    petalCount: reducedMotion ? 20 : 72,
+    sparkleCount: reducedMotion ? 10 : 32,
+    pixelRatio: renderer.getPixelRatio(),
+  }).init();
+  soundscape = new CozySoundscape({ volume: 0.3, ambienceVolume: 0.2 });
+  soundscape.attachUnlock(document);
+
+  startAnimationLoop();
+  setLoading(0.18, 'Gathering stardust…');
+
   physicsWorld = new PhysicsWorld();
   await physicsWorld.init();
+  setLoading(0.35, 'Growing clover paths…');
 
-  hud.setStatus('Building Thornvale...');
+  // Collision-only ground. TownBuilder supplies the authored visual terrain.
+  physicsWorld.createGround(55, null);
 
-  // Ground
-  physicsWorld.createGround(50, scene);
+  const town = await buildTown(physicsWorld, scene);
+  const interactables = town.interactables || [];
+  const spawnPoint = town.spawnPoint || new Vector3(0, 2, 14);
+  worldAnimator = town.worldAnimator || (town.updateWorld
+    ? { update: town.updateWorld }
+    : null);
 
-  // Greybox town
-  const { interactables, spawnPoint } = await buildTown(physicsWorld, scene);
+  setLoading(0.56, 'Inviting the fireflies…');
 
-  // --- Input ---
   inputManager = new InputManager();
   inputManager.init(renderer.domElement);
-
   inputManager.onLockChange = (locked) => {
     hud.elements.lockOverlay?.classList.toggle('hidden', locked);
+    hud.setPlaying?.(locked);
   };
 
-  // --- Character Motor ---
   characterMotor = new CharacterMotor(physicsWorld);
   characterMotor.init(spawnPoint, scene);
   characterMotor.setDebugVisible(false);
 
-  // --- Visual Rig (debug capsule for now) ---
   visualRig = new VisualRig();
   visualRig.addToScene(scene);
-  const defaultVisualOffsetY = -characterMotor.controllerSkin;
   const storedOffset = Number.parseFloat(localStorage.getItem(VISUAL_OFFSET_STORAGE_KEY));
-  const visualOffsetY = Number.isFinite(storedOffset) ? storedOffset : defaultVisualOffsetY;
-  visualRig.setVisualOffsetY(visualOffsetY);
+  if (Number.isFinite(storedOffset)) visualRig.setVisualOffsetY(storedOffset);
 
-  characterLoader = new CharacterLoader().init();
-  hud.setStatus('Loading Friendsies metadata...');
-  const metadataLoaded = await characterLoader.loadMetadata();
+  visualRig.setVisual(createKawaiiAvatar(), {
+    autoAlign: true,
+    capsuleHalfHeight: characterMotor.halfHeight,
+    capsuleRadius: characterMotor.radius,
+    clearance: 0.025,
+  });
 
-  let characterVisual = null;
-  if (metadataLoaded) {
-    hud.setStatus('Loading Friendsies character...');
-    characterVisual = await characterLoader.loadCharacter(1);
-  }
+  // A soft character key keeps fRiENDSiES readable beneath roofs and at night.
+  playerGlow = new PointLight(playerGlowDay, 0.24, 9, 2);
+  playerGlow.name = 'friendsiesKeyLight';
+  playerGlow.castShadow = false;
+  playerGlow.userData.cameraCollision = false;
+  scene.add(playerGlow);
 
-  if (characterVisual) {
-    visualRig.setVisual(characterVisual, {
-      autoAlign: true,
-      capsuleHalfHeight: characterMotor.halfHeight,
-      capsuleRadius: characterMotor.radius,
-      clearance: 0.015,
-    });
-  } else {
-    const capsuleVisual = createCapsuleMesh(0.35, 0.55);
-    visualRig.setVisual(capsuleVisual);
-    hud.setStatus('Using placeholder character.');
-  }
-
-  // --- Camera Rig ---
   cameraRig = new CameraRig(camera);
+  cameraRig.distance = 6.6;
+  cameraRig.minDistance = 1.45;
+  cameraRig.maxDistance = 11;
+  cameraRig.collisionOffset = 0.62;
+  cameraRig.pivotHeight = 1.35;
+  cameraRig.lookAtHeight = 0.95;
+  cameraRig.shoulderOffset = 0.28;
+  cameraRig.positionSharpness = 7.5;
+  cameraRig.rotationSharpness = 10;
+  // Start by looking through the welcome gate toward the village plaza.
+  cameraRig.yaw = Math.PI;
   cameraRig.setTarget(characterMotor.getPosition());
   cameraRig.resetPosition();
 
-  // Cache collision objects once so CameraRig doesn't traverse scene every frame
+  playerController = new PlayerController(inputManager, characterMotor, cameraRig, visualRig);
+  playerAnimator = new PlayerAnimator(visualRig, {
+    maxSpeed: characterMotor.maxSpeed || 6,
+    motionScale: reducedMotion ? 0.35 : 1,
+    reducedMotion,
+  });
+
   cacheCollisionObjects();
+  registerInteractions(interactables);
+  bindPointerLock();
+  window.addEventListener('resize', onResize);
+  window.addEventListener('beforeunload', dispose, { once: true });
 
-  // --- Player Controller ---
-  playerController = new PlayerController(
-    inputManager,
+  appReady = true;
+  setLoading(1, 'The valley is ready ✦');
+  hud.setReady?.();
+  hud.setStatus('Ready — click to wander ✦');
+
+  // fRiENDSiES is the canonical cast. The local chibi remains visible only
+  // while remote character pieces stream in, or as a resilient offline fallback.
+  if (params.get('avatar') !== 'local') void loadFriendsiesAvatar();
+
+  window.thornvale = {
+    scene,
+    camera,
+    renderer,
+    dayNightSystem,
+    vfx,
+    visualRig,
     characterMotor,
-    cameraRig,
-    visualRig
-  );
+    playerController,
+    worldAnimator,
+    hud,
+  };
+}
 
-  // --- Interactables ---
+function registerInteractions(interactables) {
   interactableSystem = new InteractableSystem(hud);
+
   for (const interactable of interactables) {
     if (interactable.id === 'ledger') {
       interactable.onInteract = () => {
         gameState.kindnessCount += 1;
-        if (dayNightSystem.isNight) {
-          hud.showKindness(gameState.kindnessCount);
-        }
-        return 'Kindness recorded.';
+        hud.showKindness(gameState.kindnessCount);
+        celebrateInteraction(interactable.position, 'kindness');
+        return gameState.kindnessCount === 1
+          ? 'The ledger blooms at your touch. Kindness remembered ♡'
+          : `The valley remembers ${gameState.kindnessCount} little kindnesses.`;
       };
-    }
-
-    if (interactable.id === 'bell') {
-      interactable.onInteract = () => 'The town heard you.';
+    } else if (interactable.id === 'bell') {
+      interactable.onInteract = () => {
+        celebrateInteraction(interactable.position, 'bell');
+        worldAnimator?.ringBell?.();
+        return 'The wish-bell sings across the valley ✦';
+      };
+    } else {
+      const original = interactable.onInteract;
+      interactable.onInteract = () => {
+        celebrateInteraction(interactable.position, 'magic');
+        return original?.() || 'A little magic stirs nearby.';
+      };
     }
 
     interactableSystem.register(interactable);
   }
+}
 
-  // --- Pointer Lock Click ---
-  hud.elements.lockOverlay?.addEventListener('click', () => {
-    inputManager.requestLock();
-  });
+function celebrateInteraction(position, kind) {
+  const effectPosition = new Vector3(position.x, position.y + 1.05, position.z);
+  vfx?.interactionBurst(effectPosition, kind);
+  postProcessing?.pulse(kind === 'bell' ? 0.5 : 0.28);
+  playerAnimator?.triggerEmote(kind === 'kindness' ? 'happy' : kind);
+  soundscape?.playInteraction(kind);
+  hud?.celebrate?.(kind);
+}
 
+function bindPointerLock() {
+  const enterWorld = async () => {
+    soundscape?.start();
+    hud?.beginAdventure?.();
+    const locked = await inputManager?.requestLock?.();
+    if (!locked) {
+      // Embedded browsers can deny pointer lock. Keep keyboard play and the
+      // cinematic scene available instead of trapping the player in the card.
+      hud.elements.lockOverlay?.classList.add('hidden');
+      hud.setPlaying?.(true);
+    }
+  };
+
+  hud.elements.lockOverlay?.addEventListener('click', enterWorld);
   renderer.domElement.addEventListener('click', () => {
-    if (!inputManager.isLocked) {
-      inputManager.requestLock();
-    }
+    if (!inputManager.isLocked) enterWorld();
   });
-
-  // --- Resize ---
-  window.addEventListener('resize', onResize);
-
-  hud.setStatus('Ready! Click to play');
-
-  // Start loop
-  animate();
 }
 
-/**
- * Collect all visible meshes and cache them for camera collision.
- * Call again if scene geometry changes significantly.
- */
-function cacheCollisionObjects() {
-  const meshes = [];
-  scene.traverse((obj) => {
-    if (obj.isMesh &&
-        obj.visible &&
-        !obj.name.includes('debug') &&
-        !obj.name.includes('particle') &&
-        obj.geometry) {
-      meshes.push(obj);
-    }
-  });
-  cameraRig.setCollisionObjects(meshes);
-}
-
-function createCapsuleMesh(radius, halfHeight) {
-  const group = new Group();
-
-  const mat = new MeshStandardMaterial({
-    color: 0x4b88ff,
-    roughness: 0.4,
-    metalness: 0.1,
-  });
-
-  const cylGeo = new CylinderGeometry(radius, radius, halfHeight * 2, 16);
-  const cylinder = new Mesh(cylGeo, mat);
-  cylinder.castShadow = true;
-  group.add(cylinder);
-
-  const topGeo = new SphereGeometry(radius, 16, 16);
-  const topSphere = new Mesh(topGeo, mat);
-  topSphere.position.y = halfHeight;
-  topSphere.castShadow = true;
-  group.add(topSphere);
-
-  const botGeo = new SphereGeometry(radius, 16, 16);
-  const botSphere = new Mesh(botGeo, mat);
-  botSphere.position.y = -halfHeight;
-  botSphere.castShadow = true;
-  group.add(botSphere);
-
-  return group;
-}
-
-// ============================================================
-// UPDATE LOOP
-// ============================================================
-function animate() {
-  requestAnimationFrame(animate);
-
-  const dt = Math.min(clock.getDelta(), 0.1);
-
-  handleGlobalInput();
-
-  // --- Physics Step ---
-  physicsWorld.step(dt);
-  physicsWorld.syncKinematicVisuals();
-
-  // --- Player Controller ---
-  if (playerController) {
-    playerController.update(dt);
-    playerController.lateUpdate(dt, scene);
+async function loadFriendsiesAvatar() {
+  characterLoader = new CharacterLoader().init();
+  const requestedToken = Number.parseInt(params.get('friend') || params.get('token') || '1', 10);
+  const tokenId = Number.isFinite(requestedToken) && requestedToken > 0 ? requestedToken : 1;
+  hud.setStatus(`fRiENDSiES #${tokenId} is getting ready…`);
+  const metadataLoaded = await characterLoader.loadMetadata({ timeout: 6000 });
+  if (!metadataLoaded) {
+    hud.setStatus('fRiENDSiES is offline — your local valley buddy stepped in ♡');
+    return;
   }
 
-  // --- Interactables ---
-  if (interactableSystem) {
+  const characterVisual = await characterLoader.loadCharacter(tokenId);
+  if (!characterVisual) {
+    hud.setStatus('That fRiENDSiES look is resting — your local buddy stepped in ♡');
+    return;
+  }
+
+  visualRig.setVisual(characterVisual, {
+    autoAlign: true,
+    capsuleHalfHeight: characterMotor.halfHeight,
+    capsuleRadius: characterMotor.radius,
+    clearance: 0.02,
+  });
+  playerAnimator.captureBasePose();
+  hud.setStatus(`fRiENDSiES #${tokenId} joined the adventure ✦`);
+  postProcessing?.pulse(0.45);
+}
+
+function startAnimationLoop() {
+  if (animationStarted) return;
+  animationStarted = true;
+  requestAnimationFrame(animate);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock?.getDelta?.() || 0.016, 0.075);
+
+  dayNightSystem?.update(dt);
+  sky?.update(dt, dayNightSystem?.mix || 0);
+
+  if (inputManager) handleGlobalInput();
+
+  physicsWorld?.step(dt);
+  physicsWorld?.syncKinematicVisuals();
+
+  if (playerController) {
+    // A very slow showcase orbit keeps the title screen alive.
+    if (!inputManager.isLocked && appReady && !reducedMotion) {
+      cameraRig.yaw += dt * 0.055;
+    }
+
+    playerController.update(dt);
+    playerAnimator?.update(dt, {
+      velocity: characterMotor.getVelocity(),
+      isGrounded: characterMotor.isGrounded,
+    });
+    playerController.lateUpdate(dt, scene);
+    const playerPosition = characterMotor.getPosition();
+    playerGlow?.position.set(playerPosition.x, playerPosition.y + 2.25, playerPosition.z + 1.15);
+    if (playerGlow) {
+      playerGlow.color.copy(playerGlowDay).lerp(playerGlowNight, dayNightSystem?.mix || 0);
+      playerGlow.intensity = 0.24 + (dayNightSystem?.mix || 0) * 0.78;
+    }
+  }
+
+  if (interactableSystem && characterMotor) {
     interactableSystem.update(characterMotor.getPosition(), inputManager);
   }
 
-  // --- Debug Render ---
-  physicsWorld.updateDebugRender(scene);
+  worldAnimator?.update?.(dt, dayNightSystem?.isNight ?? false);
 
-  // --- FPS Counter ---
+  if (vfx) {
+    vfx.update(dt, {
+      playerPosition: characterMotor?.getPosition?.(),
+      isNight: dayNightSystem?.isNight ?? false,
+      weather: gameState.weather,
+    });
+  }
+
+  updateAudio(dt);
+  physicsWorld?.updateDebugRender(scene);
   updateFPS(dt);
 
-  // --- Update Debug UI ---
   if (playerController) {
     hud.updateFPS(currentFps);
     hud.updateDebug(playerController.getDebugInfo());
   }
 
-  // --- Render ---
-  renderer.render(scene, camera);
+  postProcessing?.setDayNight(dayNightSystem?.isNight ?? false);
+  if (postProcessing) postProcessing.render(dt);
+  else renderer?.render(scene, camera);
+}
+
+function updateAudio(dt) {
+  const velocity = characterMotor?.getVelocity?.();
+  const speed = velocity ? Math.hypot(velocity.x, velocity.z) : 0;
+  footstepTimer -= dt;
+
+  soundscape?.update(dt, {
+    isNight: dayNightSystem?.isNight ?? false,
+    weather: gameState.weather,
+    playerSpeed: speed,
+  });
+
+  if (soundscape?.isStarted && characterMotor?.isGrounded && speed > 1.25 && footstepTimer <= 0) {
+    soundscape.playFootstep(Math.min(1, speed / 6));
+    footstepTimer = Math.max(0.19, 0.44 - speed * 0.035);
+  }
 }
 
 function handleGlobalInput() {
   if (inputManager.consumeKeyPress('KeyN')) {
     const mode = dayNightSystem.toggle();
+    const night = mode === 'NIGHT';
     hud.setDayNight(mode);
-    if (dayNightSystem.isNight && gameState.kindnessCount > 0) {
-      hud.showKindness(gameState.kindnessCount);
-    } else {
-      hud.hideKindness();
-    }
-    hud.setStatus(mode === 'NIGHT' ? 'Night settles over Thornvale.' : 'Daylight returns to Thornvale.');
+    postProcessing?.setDayNight(night);
+    soundscape?.setDayNight(night);
+    postProcessing?.pulse(0.32);
+
+    const position = characterMotor?.getPosition?.();
+    if (position) vfx?.interactionBurst(new Vector3(position.x, position.y + 1.5, position.z), 'magic');
+
+    if (night && gameState.kindnessCount > 0) hud.showKindness(gameState.kindnessCount);
+    else if (!night) hud.hideKindness();
+
+    hud.setStatus(night
+      ? 'Moonpetals wake as twilight settles…'
+      : 'Golden morning spills across the clover…');
+    hud.celebrate?.(night ? 'night' : 'day');
   }
 
   if (inputManager.consumeKeyPress('Backquote')) {
     debugEnabled = !debugEnabled;
-    physicsWorld.setDebugEnabled(debugEnabled);
-    characterMotor.setDebugVisible(debugEnabled);
+    physicsWorld?.setDebugEnabled(debugEnabled);
+    characterMotor?.setDebugVisible(debugEnabled);
     hud.setDebugVisible(debugEnabled);
-    hud.setStatus(debugEnabled ? 'Debug view enabled.' : 'Debug view disabled.');
+    hud.setStatus(debugEnabled ? 'Developer petals revealed.' : 'Back to the magic.');
   }
 
   if (debugEnabled && visualRig) {
@@ -325,37 +452,56 @@ function handleGlobalInput() {
 }
 
 function updateFPS(dt) {
-  frameCount++;
+  frameCount += 1;
   lastFpsUpdate += dt;
-
-  if (lastFpsUpdate >= 0.5) {
-    currentFps = Math.round(frameCount / lastFpsUpdate);
-    frameCount = 0;
-    lastFpsUpdate = 0;
-  }
+  if (lastFpsUpdate < 0.5) return;
+  currentFps = Math.round(frameCount / lastFpsUpdate);
+  frameCount = 0;
+  lastFpsUpdate = 0;
 }
 
-// ============================================================
-// RESIZE
-// ============================================================
+function cacheCollisionObjects() {
+  const meshes = [];
+  scene.traverse((object) => {
+    if (!object.isMesh || !object.visible || !object.geometry) return;
+    if (isCameraDecoration(object)) return;
+    meshes.push(object);
+  });
+  cameraRig.setCollisionObjects(meshes);
+}
+
+function isCameraDecoration(object) {
+  let current = object;
+  while (current) {
+    if (current.userData?.cameraCollision === false) return true;
+    if (/sky|particle|cloud|petal|flower|grass|foliage|water|sparkle|celestial|avatar|visualrig/i.test(current.name || '')) {
+      return true;
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
 function onResize() {
   const width = window.innerWidth;
   const height = window.innerHeight;
-
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
-
   renderer.setSize(width, height);
+  postProcessing?.resize(width, height);
+  vfx?.setPixelRatio(renderer.getPixelRatio());
 }
 
-// ============================================================
-// BOOT
-// ============================================================
-init().catch((err) => {
-  console.error('Failed to initialize:', err);
-  const status = document.getElementById('statusLine');
-  if (status) {
-    status.textContent = 'Failed to initialize: ' + err.message;
-    status.style.color = '#f44336';
-  }
+function dispose() {
+  postProcessing?.dispose();
+  vfx?.dispose();
+  playerAnimator?.dispose();
+  sky?.dispose();
+  void soundscape?.dispose();
+}
+
+init().catch((error) => {
+  console.error('Failed to initialize Thornvale Kawaii 2.0:', error);
+  setLoading(1, 'The valley tripped over a mushroom. Please refresh.');
+  hud?.setError?.(error?.message || 'Unknown initialization error');
 });

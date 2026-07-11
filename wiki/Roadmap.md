@@ -1,42 +1,27 @@
 # Roadmap
 
-## Milestone 1 — Third-Person Controller + Town Slice (Game Feel)
+The canonical roadmap is [Thornvale Plan 2.0](Plan-2.0.md).
 
-**Goal:** “I can run around Thornvale and it already feels like a game.”
+## Current sequence
 
-* Controller + camera
-* Town block scene
-* Ground/collision
-* 2 interactables
-* Day/Night toggle
+1. **Milestone 0 — Rebaseline and reliability**
+   - Reconcile documentation and decisions
+   - Make startup independent of remote avatar services
+   - Add CI, tests, and performance baselines
+2. **Milestone 1 — Core Hook Proof**
+   - One complete 8–12 minute day/night routine
+   - One villager, rule, anomaly, intervention, and consequential choice
+   - Five observed playtests before expanding scope
+3. **Milestone 2 — Narrative Vertical Slice**
+   - A polished 20–30 minute experience
+   - Three villagers, three anomalies, one investigation, and two endings
+   - One town loop and one cottage interior
+4. **Milestone 3 — Public Demo**
+   - Performance, accessibility, reliability, documentation, and release hardening
+   - Tagged `v0.2.0-demo` release
+5. **Conditional Milestone 4 — Friends Mode**
+   - Starts only after the single-player hook passes its validation gate
 
-## Milestone 2 — Rooms + Friends Mode (Playable With Friends)
+## Guiding rule
 
-**Goal:** “Click a link, spawn together, walk around, emote, chat.”
-
-* Room links + lobby
-* Multiplayer movement sync
-* Emotes + chat
-* Co-op interactables (simple)
-
-## Milestone 3 — Mini-Games + Routine Pressure
-
-**Goal:** “Small loops that embody the theme.”
-
-* Routine mini-games
-* First anomaly escalation system
-* First ‘Town Rules’ UI
-
-## Milestone 4 — Vertical Slice Narrative
-
-**Goal:** “A complete 20–30 minute experience with an ending.”
-
-* 3 villagers with arcs
-* One nightly investigation chain
-* 2–3 endings
-
-## Definition of Done (global)
-
-* Fast load, stable FPS, shareable link
-* Clear tone and hook
-* Clean, readable architecture
+Prove that kindness, routine, and conformity create compelling play before adding broad cozy systems or multiplayer.

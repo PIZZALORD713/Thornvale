@@ -1,5 +1,38 @@
-# Thornvale
+# Thornvale: Kawaii 2.0
 > A cozy third-person village adventure where friendship is a mechanic — and conformity is the cost.
+
+## The 2.0 visual overhaul
+
+This folder is the presentation-first rebuild of Thornvale. It keeps the existing controller and Rapier physics foundation while replacing the greybox presentation with a complete, animated kawaii village:
+
+- **fRiENDSiES characters by default**, loaded non-blockingly with a local offline fallback
+- Four detailed pastel cottages, a heart plaza, welcome gate, pond, lanterns, gardens, mushrooms, benches, and upgraded landmarks
+- Animated clouds, chimney smoke, butterflies, drifting petals, fireflies, water ripples, foliage, bell motion, and interaction bursts
+- Expressive procedural character bob, run sway, jump stretch, landing squash, and emotes applied to fRiENDSiES
+- Smooth cinematic day/night transitions with glowing windows, moonlight, stars, and a character key light
+- Bloom, candy color grading, vignette, subtle grain, and adaptive quality fallbacks
+- A responsive cinematic welcome screen and animated glass HUD
+- Procedural Web Audio ambience, chimes, interaction sounds, and footsteps with no audio downloads
+- Reduced-motion and responsive UI support
+
+### Choose a fRiENDSiES character
+
+The default character is token `#1`. Select another from the fRiENDSiES collection with:
+
+```text
+http://localhost:3000/?token=713
+```
+
+`?friend=713` is also supported. Use `?avatar=local` only to preview the offline fallback character.
+
+### Visual quality controls
+
+```text
+?quality=high       # default
+?quality=medium
+?quality=low
+?post=off           # direct-render debugging fallback
+```
 
 ## What is Thornvale?
 **Thornvale** is a warm, cottage-core valley town that feels like a hug… until you notice the hug has a grip strength rating.
@@ -55,7 +88,7 @@ And the town keeps score.
 - **Cozy Progression / Uncanny Resistance:** upgrades help with crafting *and* surviving the weird
 
 ## Tone & Vibe
-Think: **Garden Grove comfort** + **The Nudge unease**  
+Think: **Garden Grove comfort** + **The Nudge unease**
 Warm lamplight, handmade charm, soft music… and one detail that’s always slightly off.
 
 Keywords: *cottagecore, folk-horror, uncanny social pressure, “nice” dystopia, pretty paranoia.*
@@ -63,7 +96,8 @@ Keywords: *cottagecore, folk-horror, uncanny social pressure, “nice” dystopi
 ## Current Status
 - **Concept + narrative pillars:** ✅
 - **Core loop definition:** ✅
-- **Prototype target:** third-person exploration + day/night toggle + first anomaly set
+- **Technical prototype:** ✅ third-person controller, collision, greybox town, two interactables, day/night lighting, and debug tools
+- **Current target:** an 8–12 minute Core Hook Proof with one villager, rule, anomaly, intervention, and consequential choice
 
 ## MVP Controls (Playable Slice)
 - **WASD**: Move
@@ -88,21 +122,16 @@ npm run preview
 
 ### Deployment Notes
 - The project is a static Vite build. Deploy the `dist/` output to any static host (Vercel, Netlify, GitHub Pages).
-- If you add `public/assets/town.glb`, collider meshes named `COLLIDER_*` will auto-generate physics colliders.
+- The procedural town, effects, fallback avatar, UI, and soundscape are bundled locally. fRiENDSiES metadata and model parts are streamed after the world is already playable.
 
-## Roadmap (High-Level)
-1. **Prototype**
-   - Third-person controller + camera
-   - Small village block + cottage interior
-   - Day/Night switch + first “anomaly” events
-2. **Vertical Slice**
-   - 3 villagers with relationship arcs
-   - Neighborliness meter + routine quests
-   - One full nightly investigation chain
-3. **Alpha**
-   - Expanded town zones
-   - More anomaly variety + escalation logic
-   - Multiple ending paths implemented
+## Roadmap (Plan 2.0)
+1. **Rebaseline + Reliability** — reconcile decisions, remove remote startup blockers, and add CI/tests
+2. **Core Hook Proof** — one complete authored routine where kindness becomes control
+3. **Narrative Vertical Slice** — a polished 20–30 minute experience with three villagers and two endings
+4. **Public Demo** — performance, accessibility, release, and support hardening
+5. **Friends Mode (conditional)** — only after the single-player hook passes validation
+
+See the canonical [Thornvale Plan 2.0](wiki/Plan-2.0.md) for scope, gates, metrics, risks, and the issue-ready backlog.
 
 ## Want to Collaborate?
 If you’re into cozy games, narrative design, environment art, or systems that are secretly psychological warfare in a cardigan:

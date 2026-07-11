@@ -4,37 +4,39 @@
 
 ### What we’re building (TL;DR)
 
-A playable **town slice** in the browser (Three.js) that already feels like a game:
+A polished **20–30 minute narrative slice** in the browser where a wholesome town routine becomes social pressure:
 
-* Third-person controller + camera
-* Simple town block to explore
-* Day/Night toggle
-* A couple interactables
+* One complete authored day/night loop
+* Three villagers and a real Neighborliness system
+* Rules, anomalies, and polite interventions
+* A consequential obey-or-resist choice with two endings
 
 ### Active Work
 
-**Current milestone:** Milestone 1 — Third-Person Controller + Simple Town Scene
+**Current milestone:** Plan 2.0 Milestone 0 — Rebaseline and make the prototype dependable
 
 **Next 3 tasks**
 
-1. Ship controller + camera rig (feels-good baseline)
-2. Load town block + ground/collision
-3. Add 2 interactables + day/night toggle
+1. Make startup independent of remote avatar services
+2. Add CI, unit tests, and a browser smoke test
+3. Turn the Community Ledger and Town Bell into the first routine/rule pair
 
 **Open questions**
 
-* Physics approach for MVP: raycast grounding + simple colliders vs full physics engine?
-* Asset budget targets for town slice?
+* Confirm the local fallback avatar and production asset policy
+* Set performance and asset budgets from a reference-device baseline
+* Name owners for narrative, environment art, and audio
 
 ### Quick Links
 
 * Vision & Pillars
+* Plan 2.0
 * Roadmap
 * Getting Started
-* Milestone 1 — Third-Person Controller + Town Slice
 * Town Block Art Spec
 
 ### Repo Notes
 
 * Browser-first, easy to share.
-* Multiplayer is a later milestone (Rooms + Friends Mode).
+* The original technical prototype is substantially complete.
+* Multiplayer is conditional on the single-player hook passing its validation gate.
