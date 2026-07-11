@@ -1,9 +1,9 @@
 /**
  * UIManager - Handles UI interactions
- * 
+ *
  * This is a placeholder for PR11 when we integrate the full UI
  * from the original HTML file.
- * 
+ *
  * Responsibilities:
  * - Load/Remove character buttons
  * - Character list display
@@ -37,10 +37,10 @@ export class UIManager {
       randomBtn: document.getElementById('randomBtn'),
       clearBtn: document.getElementById('clearBtn'),
     };
-    
+
     // Setup event listeners
     this._setupListeners();
-    
+
     return this;
   }
 
@@ -60,14 +60,14 @@ export class UIManager {
   updateCharacterList(characters, controlledId = null) {
     const listEl = this.elements.characterList;
     if (!listEl) return;
-    
+
     if (characters.size === 0) {
       listEl.innerHTML = '';
       return;
     }
-    
+
     const ids = Array.from(characters.keys());
-    
+
     listEl.innerHTML = `
       <div style="margin-top: 10px; font-weight: 600;">
         Loaded (${ids.length}):
@@ -78,7 +78,7 @@ export class UIManager {
           <div class="character-item ${isControlled ? 'controlled' : ''}">
             <span>${isControlled ? '🎮 ' : ''}#${id}</span>
             <div class="btn-group">
-              <button class="secondary ${isControlled ? 'active' : ''}" 
+              <button class="secondary ${isControlled ? 'active' : ''}"
                       data-action="control" data-id="${id}">
                 ${isControlled ? 'Controlling' : 'Control'}
               </button>
@@ -90,13 +90,13 @@ export class UIManager {
         `;
       }).join('')}
     `;
-    
+
     // Add click handlers
     listEl.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
         const action = btn.dataset.action;
         const id = parseInt(btn.dataset.id);
-        
+
         if (action === 'control' && this.callbacks.onControl) {
           this.callbacks.onControl(id);
         } else if (action === 'remove' && this.callbacks.onRemove) {
@@ -116,7 +116,7 @@ export class UIManager {
         this.callbacks.onLoadRandom();
       }
     });
-    
+
     // Load by ID
     this.elements.loadBtn?.addEventListener('click', () => {
       const tokenId = parseInt(this.elements.tokenInput?.value);
@@ -124,14 +124,14 @@ export class UIManager {
         this.callbacks.onLoadById(tokenId);
       }
     });
-    
+
     // Clear
     this.elements.clearBtn?.addEventListener('click', () => {
       if (this.callbacks.onClear) {
         this.callbacks.onClear();
       }
     });
-    
+
     // Enter key in input
     this.elements.tokenInput?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {

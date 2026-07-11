@@ -8,7 +8,7 @@
  * - Can swap between different visual meshes (for character possession)
  */
 
-import { Group, Box3 } from 'three';
+import { Group, Box3, Matrix4 } from 'three';
 import { dampAngle } from '../utils/math.js';
 
 export class VisualRig {
@@ -34,6 +34,9 @@ export class VisualRig {
 
     // Calibrated offset from model bounds
     this.calibratedOffsetY = 0;
+
+    // Invalidates deferred skinned-mesh calibration after a visual swap.
+    this.calibrationRevision = 0;
   }
 
   /**
@@ -47,6 +50,7 @@ export class VisualRig {
     }
 
     this.visual = visual;
+    const calibrationRevision = ++this.calibrationRevision;
 
     if (visual) {
       this.group.add(visual);
@@ -59,7 +63,32 @@ export class VisualRig {
       }
 
       if (options.autoAlign && options.capsuleHalfHeight !== undefined && options.capsuleRadius !== undefined) {
-        this.calibrateVisualOffset(options.capsuleHalfHeight, options.capsuleRadius, options.clearance ?? 0.015);
+        const calibration = () => {
+          if (this.visual !== visual || this.calibrationRevision !== calibrationRevision) return;
+          this.calibrateVisualOffset(
+            options.capsuleHalfHeight,
+            options.capsuleRadius,
+            options.clearance ?? 0.015,
+          );
+        };
+
+        let hasSkinnedMesh = false;
+        visual.traverse((object) => {
+          if (object.isSkinnedMesh) hasSkinnedMesh = true;
+        });
+
+        if (hasSkinnedMesh && typeof globalThis.requestAnimationFrame === 'function') {
+          // Bone/world matrices settle during the first rendered frame after an
+          // async fRiENDSiES swap. Measuring before that frame sees the bind-pose
+          // root and can bury the model. Recheck on two frames; the second pass
+          // also covers attachments retargeted to the body skeleton.
+          globalThis.requestAnimationFrame(() => {
+            calibration();
+            globalThis.requestAnimationFrame(calibration);
+          });
+        } else {
+          calibration();
+        }
       }
     }
   }
@@ -72,9 +101,17 @@ export class VisualRig {
 
     this.visual.position.set(0, 0, 0);
     this.visual.rotation.set(0, 0, 0);
-    this.visual.updateMatrixWorld(true);
+    this.group.updateWorldMatrix(true, true);
 
-    const bounds = new Box3().setFromObject(this.visual);
+    // Use precise deformed-vertex bounds so skinned fRiENDSiES parts are
+    // measured exactly as rendered. setFromObject returns world-space bounds;
+    // convert that AABB back into VisualRig-local space before comparing it to
+    // the capsule. This keeps asynchronous model swaps independent of the
+    // settled capsule's current world Y and avoids double-transforming bones.
+    const bounds = new Box3().setFromObject(this.visual, true);
+    const inverseRigMatrix = new Matrix4().copy(this.group.matrixWorld).invert();
+    bounds.applyMatrix4(inverseRigMatrix);
+
     if (!Number.isFinite(bounds.min.y) || !Number.isFinite(bounds.max.y)) {
       return;
     }
@@ -162,6 +199,7 @@ export class VisualRig {
    * Dispose
    */
   dispose() {
+    this.calibrationRevision += 1;
     if (this.visual) {
       this.group.remove(this.visual);
       this.visual = null;

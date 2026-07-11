@@ -1,5 +1,7 @@
 # Milestone 1 — Third-Person Controller + Simple Town Scene
 
+> **Plan 2.0 status:** Technical foundation substantially complete. The missing interior and first authored anomaly moved into the Plan 2.0 vertical-slice milestones.
+
 ## Goal
 
 **Game feel first.** Run around a tiny Thornvale slice and it feels good.

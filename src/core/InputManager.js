@@ -75,8 +75,20 @@ export class InputManager {
    * Request pointer lock
    */
   requestLock() {
-    if (this.canvas) {
-      this.canvas.requestPointerLock();
+    if (!this.canvas?.requestPointerLock) return Promise.resolve(false);
+
+    try {
+      const request = this.canvas.requestPointerLock();
+      if (request?.catch) {
+        return request
+          .then(() => true)
+          .catch(() => false);
+      }
+      return Promise.resolve(true);
+    } catch (_error) {
+      // Keyboard play remains available if an embedded/automated browser
+      // refuses pointer lock. Never let that rejection break the game loop.
+      return Promise.resolve(false);
     }
   }
 

@@ -1,161 +1,128 @@
+import { Group, Vector3 } from 'three';
 import {
-  Vector3, MeshStandardMaterial, Group, Mesh,
-  CylinderGeometry, BoxGeometry, SphereGeometry, Box3,
-} from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+  createAmbientLife,
+  createBellLandmark,
+  createCottage,
+  createGroundDressing,
+  createLedgerLandmark,
+  createNature,
+  createPathsAndPlaza,
+  createPlazaFurniture,
+  createPond,
+  createWelcomeGate,
+  getTownMaterials,
+} from '../visuals/CozyTownKit.js';
+import { WorldAnimator } from '../visuals/WorldAnimator.js';
 
+/**
+ * Builds Thornvale's cozy town slice.
+ *
+ * Existing callers can continue to consume interactables and spawnPoint. The
+ * extended worldAnimator/updateWorld API owns all ambient environmental motion.
+ */
 export async function buildTown(physicsWorld, scene) {
   const interactables = [];
   const spawnPoint = new Vector3(0, 2, 14);
+  const worldAnimator = new WorldAnimator();
+  const townRoot = new Group();
+  townRoot.name = 'thornvale_kawaii_town';
+  scene.add(townRoot);
 
-  const buildingMaterial = new MeshStandardMaterial({
-    color: 0xb8b8b8,
-    roughness: 0.95,
-  });
-
+  const mat = getTownMaterials();
   const buildingData = [
-    { position: new Vector3(8, 1.6, -6), size: new Vector3(6, 3.2, 4.5) },
-    { position: new Vector3(-8, 2, -4), size: new Vector3(5, 4, 6) },
-    { position: new Vector3(7, 1.4, 7), size: new Vector3(4, 2.8, 4) },
-    { position: new Vector3(-6, 1.8, 8), size: new Vector3(6, 3.6, 5) },
+    {
+      id: 'berry-bakery',
+      position: new Vector3(8, 1.6, -6),
+      size: new Vector3(6, 3.2, 4.5),
+      frontSign: 1,
+      wallMaterial: mat.cream,
+      roofMaterial: mat.blush,
+      doorMaterial: mat.mint,
+    },
+    {
+      id: 'lavender-library',
+      position: new Vector3(-8, 2, -4),
+      size: new Vector3(5, 4, 6),
+      frontSign: 1,
+      wallMaterial: mat.vanilla,
+      roofMaterial: mat.lavender,
+      doorMaterial: mat.teal,
+    },
+    {
+      id: 'mint-tea-house',
+      position: new Vector3(7, 1.4, 7),
+      size: new Vector3(4, 2.8, 4),
+      frontSign: -1,
+      wallMaterial: mat.mint,
+      roofMaterial: mat.coral,
+      doorMaterial: mat.lavender,
+    },
+    {
+      id: 'rose-post-office',
+      position: new Vector3(-6, 1.8, 8),
+      size: new Vector3(6, 3.6, 5),
+      frontSign: -1,
+      wallMaterial: mat.blush,
+      roofMaterial: mat.periwinkle,
+      doorMaterial: mat.cocoa,
+    },
   ];
 
-  // Create physics colliders for buildings (no visual meshes — we'll merge below)
+  // Preserve the proven simple building colliders while upgrading their art.
   for (const building of buildingData) {
     physicsWorld.createStaticBox(
-      { x: building.position.x, y: building.position.y, z: building.position.z },
-      { x: building.size.x, y: building.size.y, z: building.size.z },
-      null, // no scene — skip individual meshes
+      {
+        x: building.position.x,
+        y: building.position.y,
+        z: building.position.z,
+      },
+      {
+        x: building.size.x,
+        y: building.size.y,
+        z: building.size.z,
+      },
+      null,
     );
   }
 
-  // Merge building geometries into a single draw call
-  const buildingGeometries = buildingData.map(({ position, size }) => {
-    const geo = new BoxGeometry(size.x, size.y, size.z);
-    geo.translate(position.x, position.y, position.z);
-    return geo;
+  townRoot.add(createGroundDressing(worldAnimator));
+  townRoot.add(createPathsAndPlaza());
+  buildingData.forEach((building, index) => {
+    townRoot.add(createCottage(building, index, worldAnimator));
   });
+  townRoot.add(createWelcomeGate(worldAnimator));
+  townRoot.add(createNature(worldAnimator));
+  townRoot.add(createPond(worldAnimator));
+  townRoot.add(createPlazaFurniture(worldAnimator));
 
-  const mergedBuildingGeo = BufferGeometryUtils.mergeGeometries(buildingGeometries);
-  const mergedBuildingMesh = new Mesh(mergedBuildingGeo, new MeshStandardMaterial({
-    color: 0xb1b1b1,
-    roughness: 0.9,
-  }));
-  mergedBuildingMesh.castShadow = true;
-  mergedBuildingMesh.receiveShadow = true;
-  scene.add(mergedBuildingMesh);
-
-  // Dispose individual geometries (data now lives in merged geometry)
-  for (const geo of buildingGeometries) {
-    geo.dispose();
-  }
+  const ledger = createLedgerLandmark(worldAnimator);
+  const bell = createBellLandmark(worldAnimator);
+  townRoot.add(ledger, bell);
 
   const ledgerPosition = new Vector3(-2, 0.8, 3);
-  const ledger = createLedgerMesh(buildingMaterial);
-  ledger.position.copy(ledgerPosition);
-  scene.add(ledger);
-
-  const bellPosition = new Vector3(3, 0.5, -2);
-  const bell = createBellMesh(buildingMaterial);
-  bell.position.copy(bellPosition);
-  scene.add(bell);
-
   interactables.push({
     id: 'ledger',
     position: ledgerPosition,
     radius: 2,
-    prompt: 'Check the Community Ledger',
+    prompt: 'Read a sweet note in the Community Ledger',
   });
 
+  const bellPosition = new Vector3(3, 0.5, -2);
   interactables.push({
     id: 'bell',
     position: bellPosition,
     radius: 2,
-    prompt: 'Ring the Town Bell',
+    prompt: 'Ring the ribbon bell',
   });
 
-  await loadOptionalTownGLB(physicsWorld, scene);
+  townRoot.add(createAmbientLife(worldAnimator));
+  worldAnimator.update(0, false);
 
-  return { interactables, spawnPoint };
-}
-
-function createLedgerMesh(material) {
-  const group = new Group();
-  const post = new Mesh(new CylinderGeometry(0.12, 0.12, 1.2, 12), material);
-  post.position.y = 0.6;
-  post.castShadow = true;
-  post.receiveShadow = true;
-  group.add(post);
-
-  const box = new Mesh(new BoxGeometry(0.8, 0.4, 0.5), material);
-  box.position.y = 1.0;
-  box.castShadow = true;
-  box.receiveShadow = true;
-  group.add(box);
-
-  return group;
-}
-
-function createBellMesh(material) {
-  const group = new Group();
-  const frame = new Mesh(new BoxGeometry(0.8, 1.8, 0.8), material);
-  frame.position.y = 0.9;
-  frame.castShadow = true;
-  frame.receiveShadow = true;
-  group.add(frame);
-
-  const bell = new Mesh(new SphereGeometry(0.35, 16, 12), material);
-  bell.position.y = 1.2;
-  bell.castShadow = true;
-  bell.receiveShadow = true;
-  group.add(bell);
-
-  return group;
-}
-
-async function loadOptionalTownGLB(physicsWorld, scene) {
-  try {
-    const response = await fetch('/assets/town.glb', { method: 'HEAD' });
-    if (!response.ok) {
-      return;
-    }
-  } catch (error) {
-    return;
-  }
-
-  return new Promise((resolve) => {
-    const loader = new GLTFLoader();
-    loader.load(
-      '/assets/town.glb',
-      (gltf) => {
-        scene.add(gltf.scene);
-        gltf.scene.traverse((child) => {
-          if (!child.isMesh) return;
-
-          child.castShadow = true;
-          child.receiveShadow = true;
-
-          if (child.name.startsWith('COLLIDER_')) {
-            child.visible = false;
-            const bounds = new Box3().setFromObject(child);
-            const size = new Vector3();
-            const center = new Vector3();
-            bounds.getSize(size);
-            bounds.getCenter(center);
-            if (size.lengthSq() > 0.0001) {
-              physicsWorld.createStaticBox(
-                { x: center.x, y: center.y, z: center.z },
-                { x: size.x, y: size.y, z: size.z },
-                null
-              );
-            }
-          }
-        });
-        resolve();
-      },
-      undefined,
-      () => resolve()
-    );
-  });
+  return {
+    interactables,
+    spawnPoint,
+    townRoot,
+    worldAnimator,
+    updateWorld: (dt, nightState) => worldAnimator.update(dt, nightState),
+  };
 }

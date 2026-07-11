@@ -8,9 +8,10 @@ export default defineConfig({
     target: 'esnext',
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ['three'],
-          rapier: ['@dimforge/rapier3d-compat'],
+        manualChunks(id) {
+          if (id.includes('@dimforge/rapier3d-compat')) return 'rapier';
+          if (id.includes('/three/')) return 'three';
+          return undefined;
         },
       },
     },

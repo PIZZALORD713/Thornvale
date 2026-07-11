@@ -11,7 +11,7 @@
 
 import {
   TextureLoader, LinearFilter, SRGBColorSpace, Object3D, Matrix4,
-  SkinnedMesh, Mesh, MeshStandardMaterial, Color, Group,
+  SkinnedMesh, Mesh, MeshStandardMaterial, Group,
 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
@@ -56,19 +56,30 @@ export class CharacterLoader {
   /**
    * Load metadata from Gist
    */
-  async loadMetadata() {
+  async loadMetadata({ timeout = 6000 } = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
     try {
-      const response = await fetch(METADATA_URL, { mode: 'cors' });
+      const response = await fetch(METADATA_URL, {
+        mode: 'cors',
+        signal: controller.signal,
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       this.metadata = await response.json();
       this.metadataLoaded = true;
 
-      console.log(`[CharacterLoader] Loaded ${this.metadata.length} tokens`);
+      const count = Array.isArray(this.metadata)
+        ? this.metadata.length
+        : Object.keys(this.metadata || {}).length;
+      console.log(`[CharacterLoader] Loaded ${count} tokens`);
       return true;
     } catch (err) {
-      console.error('[CharacterLoader] Failed to load metadata:', err);
+      const reason = err?.name === 'AbortError' ? `timed out after ${timeout}ms` : err;
+      console.warn('[CharacterLoader] Remote avatar unavailable:', reason);
       return false;
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -161,7 +172,9 @@ export class CharacterLoader {
       attachPartToBodySkeleton(headScene, bodySkeleton, bodySkinned);
       createSkinnedFaceOverlayFromHead(headScene, faceTexture, bodySkeleton, faceAnchor);
       retargetRigidAttachmentsToBodyBones(headScene, bodySkeleton);
-      boostHeadEmissive(headScene, 2.3);
+      // fRiENDSiES heads should read as softly glowing white. An intensity of
+      // 1.0 clears 2.0's bloom threshold while keeping the face art legible.
+      boostHeadEmissive(headScene, 1.0);
       tuneMaterialsForEnv(headScene);
     }
 
@@ -462,7 +475,7 @@ function createSkinnedFaceOverlayFromHead(headScene, faceTexture, bodySkeleton, 
   }
 }
 
-function boostHeadEmissive(headScene, intensity = 2.3) {
+function boostHeadEmissive(headScene, intensity = 1.0) {
   if (!headScene) return;
   headScene.traverse((child) => {
     if (!child.isMesh) return;
@@ -471,12 +484,13 @@ function boostHeadEmissive(headScene, intensity = 2.3) {
       ? child.material
       : [child.material];
     for (const mat of mats) {
-      if (!mat) continue;
-      if (mat.emissiveMap) {
-        mat.emissive = new Color(0xffffff);
-        mat.emissiveIntensity = intensity;
-        mat.needsUpdate = true;
-      }
+      // Some fRiENDSiES heads (including Bella) have a white base map but no
+      // emissive map. MeshStandardMaterial still supports uniform emission, so
+      // do not require an emissive texture before restoring the head glow.
+      if (!mat?.emissive?.isColor) continue;
+      mat.emissive.set(0xffffff);
+      mat.emissiveIntensity = intensity;
+      mat.needsUpdate = true;
     }
   });
 }
