@@ -5,6 +5,7 @@ import {
   ShaderMaterial,
   SphereGeometry,
 } from 'three';
+import { advanceGrainSeed } from './grainSeed.js';
 
 const vertexShader = /* glsl */`
   varying vec3 vDirection;
@@ -21,6 +22,7 @@ const fragmentShader = /* glsl */`
 
   varying vec3 vDirection;
   uniform float uTime;
+  uniform float uGrainSeed;
   uniform float uNightMix;
   uniform vec3 uDayTop;
   uniform vec3 uDayHorizon;
@@ -56,7 +58,7 @@ const fragmentShader = /* glsl */`
     float horizonGlow = pow(1.0 - abs(dir.y), 10.0);
     color += mix(vec3(1.0, 0.72, 0.54), vec3(0.25, 0.22, 0.48), uNightMix) * horizonGlow * 0.12;
 
-    float grain = hash21(gl_FragCoord.xy + floor(uTime * 5.0)) - 0.5;
+    float grain = hash21(gl_FragCoord.xy + floor(uGrainSeed)) - 0.5;
     color += grain * 0.006;
     gl_FragColor = vec4(color, 1.0);
   }
@@ -67,6 +69,7 @@ export class KawaiiSky {
     this.scene = scene;
     this.mesh = null;
     this.material = null;
+    this._grainSeed = 0;
   }
 
   init() {
@@ -79,6 +82,7 @@ export class KawaiiSky {
       toneMapped: false,
       uniforms: {
         uTime: { value: 0 },
+        uGrainSeed: { value: this._grainSeed },
         uNightMix: { value: 0 },
         uDayTop: { value: new Color(0x7fc8ff) },
         uDayHorizon: { value: new Color(0xffd5dc) },
@@ -101,6 +105,8 @@ export class KawaiiSky {
   update(dt, nightMix = 0) {
     if (!this.material) return;
     this.material.uniforms.uTime.value += dt;
+    this._grainSeed = advanceGrainSeed(this._grainSeed, dt, 5);
+    this.material.uniforms.uGrainSeed.value = this._grainSeed;
     this.material.uniforms.uNightMix.value +=
       (nightMix - this.material.uniforms.uNightMix.value) * Math.min(1, dt * 2.5);
   }
