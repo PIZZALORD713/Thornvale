@@ -4,6 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { advanceGrainSeed } from './grainSeed.js';
 
 /**
  * A compact finishing shader: candy-color grading, a feathered vignette,
@@ -14,7 +15,7 @@ const KAWAII_FINISH_SHADER = {
   name: 'KawaiiFinishShader',
   uniforms: {
     tDiffuse: { value: null },
-    uTime: { value: 0 },
+    uGrainSeed: { value: 0 },
     uSaturation: { value: 1.12 },
     uContrast: { value: 1.04 },
     uBrightness: { value: 0.015 },
@@ -34,7 +35,7 @@ const KAWAII_FINISH_SHADER = {
   `,
   fragmentShader: /* glsl */`
     uniform sampler2D tDiffuse;
-    uniform float uTime;
+    uniform float uGrainSeed;
     uniform float uSaturation;
     uniform float uContrast;
     uniform float uBrightness;
@@ -72,7 +73,7 @@ const KAWAII_FINISH_SHADER = {
       float vignette = smoothstep(0.24, 0.76, radial);
       color *= 1.0 - vignette * uVignette;
 
-      float grain = hash21(vUv * vec2(1733.0, 997.0) + uTime * 31.7) - 0.5;
+      float grain = hash21(vUv * vec2(1733.0, 997.0) + uGrainSeed) - 0.5;
       color += grain * uGrain * (0.55 + 0.45 * (1.0 - luma));
 
       gl_FragColor = vec4(max(color, 0.0), source.a);
@@ -131,7 +132,7 @@ export class PostProcessing {
     this.outputPass = null;
 
     this.available = false;
-    this._time = 0;
+    this._grainSeed = 0;
     this._nightMix = options.isNight ? 1 : 0;
     this._nightTarget = this._nightMix;
     this._bloomImpulse = 0;
@@ -230,13 +231,13 @@ export class PostProcessing {
   /** Advance transitions when rendering is handled elsewhere. */
   update(dt = 0) {
     const safeDt = Math.min(Math.max(Number(dt) || 0, 0), 0.1);
-    this._time += safeDt;
+    this._grainSeed = advanceGrainSeed(this._grainSeed, safeDt, 31.7);
     this._nightMix = MathUtils.damp(this._nightMix, this._nightTarget, 3.2, safeDt);
     this._bloomImpulse = MathUtils.damp(this._bloomImpulse, 0, 5.5, safeDt);
 
     if (!this.finishPass || !this.bloomPass) return;
 
-    this.finishPass.uniforms.uTime.value = this._time;
+    this.finishPass.uniforms.uGrainSeed.value = this._grainSeed;
     this.finishPass.uniforms.uNightMix.value = this._nightMix;
 
     const preset = QUALITY[this.quality];
