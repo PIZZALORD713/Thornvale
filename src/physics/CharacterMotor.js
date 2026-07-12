@@ -29,17 +29,55 @@ export class CharacterMotor {
     this.radius = 0.35;
     this.halfHeight = 0.55; // Total height = 2 * halfHeight + 2 * radius ≈ 1.8m
 
-    // Movement settings
-    this.maxSpeed = 6.0;
-    this.acceleration = 40.0;
-    this.friction = 15.0;
-    this.airControl = 0.3;
+    // Movement settings. Speeds are metres/second; acceleration/friction are
+    // metres/second squared so they remain stable when the render rate changes.
+    this.walkSpeed = 4.2;
+    this.sprintSpeed = 5.6;
+    this.maxSpeed = this.walkSpeed; // Backwards-compatible default speed.
+    this.acceleration = 24.0;
+    this.friction = 30.0;
+    this.airControl = 0.35;
+    this.airFriction = 2.0;
+
+    // Vertical movement settings
+    this.gravity = -20.0;
+    this.fallGravityMultiplier = 1.25;
+    this.jumpReleaseGravityMultiplier = 1.75;
+    this.terminalVelocity = -50.0;
+    this.groundStickSpeed = -2.0;
+    this.groundedPendingThreshold = 0.002;
+    this.groundProbeDistance = 0.08;
+    this.groundProbePenetration = 0.05;
+    this.groundRenderSharpness = 20.0;
+    this.groundRenderMaxSpeed = 1.6;
+    this.maxDeltaTime = 0.075;
 
     // State
     this.velocity = new Vector3();
     this.isGrounded = false;
+    this.rawGrounded = false;
     this.groundedTimer = 0;
-    this.coyoteTime = 0.1; // Grace period after leaving ground
+    this.coyoteTime = 0.12; // Grace period after leaving ground
+    this.groundContactGrace = 0.08;
+    this._groundContactTimer = 0;
+
+    // Animation-facing locomotion state. Transition flags are true for one
+    // motor update and avoid consumers having to infer jumps from noisy Y data.
+    this.phase = 'falling';
+    this.justJumped = false;
+    this.justLanded = false;
+    this.justLeftGround = false;
+    this.landingSpeed = 0;
+    this.lastLandingSpeed = 0;
+    this.airTime = 0;
+    this.lastAirTime = 0;
+    this.horizontalSpeed = 0;
+    this.speedRatio = 0;
+    this.isSprinting = false;
+    this.facingSpeedThreshold = 0.18;
+    this._groundedLastUpdate = false;
+    this._hasUpdated = false;
+    this._jumpEventPending = false;
 
     // Platform tracking
     this.platformVelocity = new Vector3();
@@ -57,7 +95,32 @@ export class CharacterMotor {
     this._tmpDesiredDir = new Vector3();
     this._tmpTargetVel = new Vector3();
     this._tmpMovement = new Vector3();
+    this._tmpPendingMovement = new Vector3();
     this._tmpPosition = new Vector3();
+    this._tmpPhysicsPosition = new Vector3();
+    this._targetPosition = new Vector3();
+    this._renderPosition = new Vector3();
+    this._hasTargetPosition = false;
+    this._hasRenderPosition = false;
+    this._groundYSamples = new Float64Array(5);
+    this._groundYSorted = new Float64Array(5);
+    this._groundYSampleCount = 0;
+    this._groundYSampleIndex = 0;
+    this._groundRay = null;
+    this._motionState = {
+      phase: this.phase,
+      grounded: this.isGrounded,
+      rawGrounded: this.rawGrounded,
+      justJumped: false,
+      justLanded: false,
+      justLeftGround: false,
+      landingSpeed: 0,
+      airTime: 0,
+      horizontalSpeed: 0,
+      verticalVelocity: 0,
+      speedRatio: 0,
+      isSprinting: false,
+    };
   }
 
   /**
@@ -81,6 +144,15 @@ export class CharacterMotor {
         )
       );
     this.collider = world.createCollider(colliderDesc, this.body);
+
+    this._targetPosition.copy(position);
+    this._renderPosition.copy(position);
+    this._hasTargetPosition = true;
+    this._hasRenderPosition = true;
+    this._groundRay = new RAPIER.Ray(
+      { x: position.x, y: position.y, z: position.z },
+      { x: 0, y: -1, z: 0 },
+    );
 
     // Create character controller
     this.controller = world.createCharacterController(this.controllerSkin); // skin width
@@ -109,9 +181,28 @@ export class CharacterMotor {
    * @param {number} dt - Delta time
    * @param {{ x: number, z: number }} inputDir - Input direction (camera-relative)
    * @param {number} cameraYaw - Camera yaw for movement direction
+   * @param {{targetSpeed?: number, jumpHeld?: boolean, sprinting?: boolean}} [intent]
    */
-  update(dt, inputDir, cameraYaw) {
+  update(dt, inputDir, cameraYaw, intent = {}) {
     if (!this.controller || !this.body || !this.collider) return;
+
+    const safeDt = Math.min(
+      this.maxDeltaTime,
+      Math.max(0, Number.isFinite(Number(dt)) ? Number(dt) : 0),
+    );
+    const wasGrounded = this._groundedLastUpdate;
+    this.justJumped = this._jumpEventPending;
+    this._jumpEventPending = false;
+    this.justLanded = false;
+    this.justLeftGround = false;
+    this.landingSpeed = 0;
+
+    const requestedSpeed = Number(intent?.targetSpeed);
+    const targetSpeed = Number.isFinite(requestedSpeed)
+      ? Math.max(0, requestedSpeed)
+      : this.maxSpeed;
+    const jumpHeld = intent?.jumpHeld !== false;
+    this.isSprinting = Boolean(intent?.sprinting) && targetSpeed > this.walkSpeed;
 
     // Calculate world-space movement direction from camera
     const forward = this._tmpForward.set(
@@ -130,45 +221,74 @@ export class CharacterMotor {
     desiredDir.addScaledVector(forward, -inputDir.z);
     desiredDir.addScaledVector(right, inputDir.x);
 
-    const hasInput = desiredDir.lengthSq() > 0.001;
+    const inputMagnitude = Math.min(1, desiredDir.length());
+    const hasInput = inputMagnitude > 0.001;
 
     // Acceleration / friction
     if (hasInput) {
-      desiredDir.normalize();
-      const targetVel = this._tmpTargetVel.copy(desiredDir).multiplyScalar(this.maxSpeed);
+      desiredDir.multiplyScalar(1 / inputMagnitude);
+      const targetVel = this._tmpTargetVel
+        .copy(desiredDir)
+        .multiplyScalar(targetSpeed * inputMagnitude);
 
-      // Interpolate toward target velocity
+      // Move toward the requested velocity by a bounded amount. The old
+      // error * acceleration * dt interpolation overshot whenever dt > 25 ms,
+      // producing alternating velocity and visible turn jitter.
       const accelRate = this.isGrounded ? this.acceleration : this.acceleration * this.airControl;
-      const accelVec = targetVel.sub(this.velocity).multiplyScalar(accelRate * dt);
-
-      this.velocity.x += accelVec.x;
-      this.velocity.z += accelVec.z;
+      this._moveHorizontalVelocityToward(targetVel.x, targetVel.z, accelRate * safeDt);
     } else {
-      // Apply friction
-      const frictionRate = this.isGrounded ? this.friction : this.friction * this.airControl;
-      const friction = Math.exp(-frictionRate * dt);
-      this.velocity.x *= friction;
-      this.velocity.z *= friction;
-
-      // Stop if very slow
-      if (Math.abs(this.velocity.x) < 0.01) this.velocity.x = 0;
-      if (Math.abs(this.velocity.z) < 0.01) this.velocity.z = 0;
+      const frictionRate = this.isGrounded ? this.friction : this.airFriction;
+      this._moveHorizontalVelocityToward(0, 0, frictionRate * safeDt);
     }
 
-    // Gravity
+    // The short stabilized contact window prevents a one-frame Rapier seam
+    // from switching between gravity and ground-stick. Real ledge exits begin
+    // accelerating after groundContactGrace (80 ms), while coyote jump remains
+    // independently available for the full coyoteTime.
     if (!this.isGrounded) {
-      this.velocity.y += -20 * dt; // Gravity
-      this.velocity.y = Math.max(this.velocity.y, -50); // Terminal velocity
+      let gravityScale = this.velocity.y < 0 ? this.fallGravityMultiplier : 1;
+      if (!jumpHeld && this.velocity.y > 0) {
+        gravityScale = Math.max(gravityScale, this.jumpReleaseGravityMultiplier);
+      }
+      this.velocity.y += this.gravity * gravityScale * safeDt;
+      this.velocity.y = Math.max(this.velocity.y, this.terminalVelocity);
     } else {
       // Small downward force to maintain ground contact
-      this.velocity.y = -2;
+      this.velocity.y = this.groundStickSpeed;
     }
 
-    // Add platform velocity
-    const movement = this._tmpMovement.copy(this.velocity).multiplyScalar(dt);
-    movement.x += this.platformVelocity.x * dt;
-    movement.y += this.platformVelocity.y * dt;
-    movement.z += this.platformVelocity.z * dt;
+    const currentPos = this.body.translation();
+    if (!this._hasTargetPosition) {
+      this._targetPosition.set(currentPos.x, currentPos.y, currentPos.z);
+      this._hasTargetPosition = true;
+    }
+
+    // A render update may run without a Rapier fixed step. Keep the previously
+    // requested, collision-corrected displacement and add this frame's delta
+    // instead of overwriting setNextKinematicTranslation. This makes travel
+    // distance and visuals independent of 60/120/144 Hz display cadence.
+    const pendingY = this._targetPosition.y - currentPos.y;
+    const preserveGroundedY = this.rawGrounded
+      && Math.abs(pendingY) > this.groundedPendingThreshold;
+    const pending = this._tmpPendingMovement.set(
+      this._targetPosition.x - currentPos.x,
+      this.rawGrounded && !preserveGroundedY ? 0 : pendingY,
+      this._targetPosition.z - currentPos.z,
+    );
+    const movement = this._tmpMovement.copy(pending);
+    movement.x += (this.velocity.x + this.platformVelocity.x) * safeDt;
+    movement.z += (this.velocity.z + this.platformVelocity.z) * safeDt;
+    movement.y += this.platformVelocity.y * safeDt;
+
+    if (!this.rawGrounded) {
+      // Airborne displacement must accumulate between render and fixed steps.
+      movement.y += this.velocity.y * safeDt;
+    } else if (!preserveGroundedY) {
+      // Ground probes are solved from the collider's physical pose, not added
+      // to tiny unapplied skin corrections. Larger pending Y targets (landing,
+      // step snap, vertical platform) are preserved until Rapier applies them.
+      movement.y += this.groundStickSpeed * safeDt;
+    }
 
     // Compute movement with collision
     this.controller.computeColliderMovement(
@@ -181,39 +301,197 @@ export class CharacterMotor {
     // Get corrected movement
     const corrected = this.controller.computedMovement();
 
-    // Update grounded state
-    this.isGrounded = this.controller.computedGrounded();
+    // Update grounded state. Upward motion always wins over a stale contact
+    // reported on the takeoff frame, preventing ground/air animation flicker.
+    const collisionCount = typeof this.controller.numComputedCollisions === 'function'
+      ? this.controller.numComputedCollisions()
+      : null;
+    const missedGroundProbe = this.isGrounded
+      && !this.justJumped
+      && !preserveGroundedY
+      && this.platformVelocity.y === 0
+      && movement.y < -1e-5
+      && collisionCount === 0;
+    let correctedY = corrected.y;
+    if (missedGroundProbe) correctedY = 0;
+
+    this.rawGrounded = Boolean(this.controller.computedGrounded()) && !missedGroundProbe;
+    const hasValidGroundContact = this.rawGrounded
+      && !this.justJumped
+      && this.velocity.y <= 0;
+    const hasProbedGroundSupport = wasGrounded
+      && !this.justJumped
+      && this.velocity.y <= 0
+      && this._hasGroundBelow(
+        currentPos.x + corrected.x,
+        currentPos.y + correctedY,
+        currentPos.z + corrected.z,
+      );
+    const hasStableGroundContact = hasValidGroundContact || hasProbedGroundSupport;
+
+    if (hasStableGroundContact) {
+      this.groundedTimer = this.coyoteTime;
+      this._groundContactTimer = this.groundContactGrace;
+    } else {
+      this.groundedTimer = Math.max(0, this.groundedTimer - safeDt);
+      this._groundContactTimer = Math.max(0, this._groundContactTimer - safeDt);
+    }
+
+    // Brief raw contact gaps happen at fixed/render-step boundaries and on
+    // small seams. Keep the animation-facing state grounded during coyote time;
+    // explicit jumps clear the timer and transition immediately.
+    this.isGrounded = hasStableGroundContact || (
+      wasGrounded
+      && !this.justJumped
+      && this._groundContactTimer > 0
+      && this.velocity.y <= 0
+    );
 
     if (this.isGrounded) {
-      this.groundedTimer = this.coyoteTime;
+      if (this._hasUpdated && !wasGrounded) {
+        this.justLanded = true;
+        this.landingSpeed = Math.max(0, -this.velocity.y);
+        this.lastLandingSpeed = this.landingSpeed;
+        this.lastAirTime = this.airTime;
+      }
+      this.airTime = 0;
       if (this.velocity.y < 0) {
         this.velocity.y = 0;
       }
     } else {
-      this.groundedTimer -= dt;
+      this.airTime = wasGrounded ? safeDt : this.airTime + safeDt;
     }
 
-    // Apply movement to rigidbody
-    const currentPos = this.body.translation();
-    const newPos = {
-      x: currentPos.x + corrected.x,
-      y: currentPos.y + corrected.y,
-      z: currentPos.z + corrected.z,
-    };
+    this.justLeftGround = wasGrounded && !this.isGrounded;
+    this.horizontalSpeed = Math.hypot(this.velocity.x, this.velocity.z);
+    this.speedRatio = targetSpeed > 0
+      ? Math.min(1, this.horizontalSpeed / targetSpeed)
+      : 0;
+    this.phase = this.justLanded
+      ? 'landing'
+      : (this.isGrounded ? 'grounded' : (this.velocity.y > 0.1 ? 'rising' : 'falling'));
 
-    this.body.setNextKinematicTranslation(newPos);
+    // Apply movement to rigidbody
+    this._targetPosition.set(
+      currentPos.x + corrected.x,
+      currentPos.y + correctedY,
+      currentPos.z + corrected.z,
+    );
+    this.body.setNextKinematicTranslation(this._targetPosition);
+
+    // Horizontal pending motion is already collision-corrected and should be
+    // visible immediately. A five-sample median filters short KCC skin/snap
+    // bursts without averaging real slope, step, or vertical-platform motion.
+    if (!this._hasRenderPosition) {
+      this._renderPosition.copy(this._targetPosition);
+      this._hasRenderPosition = true;
+    } else {
+      this._renderPosition.x = this._targetPosition.x;
+      this._renderPosition.z = this._targetPosition.z;
+
+      if (this.justJumped || !this.isGrounded || this.justLanded) {
+        this._renderPosition.y = this._targetPosition.y;
+        this._groundYSampleCount = 0;
+        this._groundYSampleIndex = 0;
+      } else if (hasValidGroundContact) {
+        this._groundYSamples[this._groundYSampleIndex] = this._targetPosition.y;
+        this._groundYSampleIndex = (this._groundYSampleIndex + 1) % 5;
+        this._groundYSampleCount = Math.min(5, this._groundYSampleCount + 1);
+        if (this._groundYSampleCount === 5) {
+          this._groundYSorted.set(this._groundYSamples);
+          for (let index = 1; index < this._groundYSorted.length; index += 1) {
+            const value = this._groundYSorted[index];
+            let insertAt = index - 1;
+            while (insertAt >= 0 && this._groundYSorted[insertAt] > value) {
+              this._groundYSorted[insertAt + 1] = this._groundYSorted[insertAt];
+              insertAt -= 1;
+            }
+            this._groundYSorted[insertAt + 1] = value;
+          }
+          const filteredY = this._groundYSorted[2];
+          const deltaY = filteredY - this._renderPosition.y;
+          const dampedStep = deltaY * (1 - Math.exp(-this.groundRenderSharpness * safeDt));
+          const maxStep = this.groundRenderMaxSpeed * safeDt;
+          this._renderPosition.y += Math.max(-maxStep, Math.min(maxStep, dampedStep));
+        }
+      }
+    }
+
+    this._groundedLastUpdate = this.isGrounded;
+    this._hasUpdated = true;
 
     // Update debug mesh
     if (this.debugMesh) {
-      this.debugMesh.position.set(newPos.x, newPos.y, newPos.z);
+      this.debugMesh.position.copy(this._targetPosition);
     }
+  }
+
+  /** Move horizontal velocity toward a target without overshoot. */
+  _moveHorizontalVelocityToward(targetX, targetZ, maxDelta) {
+    const deltaX = targetX - this.velocity.x;
+    const deltaZ = targetZ - this.velocity.z;
+    const distance = Math.hypot(deltaX, deltaZ);
+
+    if (distance <= maxDelta || distance <= 1e-6) {
+      this.velocity.x = targetX;
+      this.velocity.z = targetZ;
+      return;
+    }
+
+    const scale = Math.max(0, maxDelta) / distance;
+    this.velocity.x += deltaX * scale;
+    this.velocity.z += deltaZ * scale;
+  }
+
+  /** Supplement transient KCC contact gaps without acquiring early landings. */
+  _hasGroundBelow(x, y, z) {
+    const { RAPIER, world } = this.physics || {};
+    if (!RAPIER || !world || !this.collider) return false;
+
+    const bottomY = y - (this.halfHeight + this.radius);
+    const rayLift = this.groundProbeDistance;
+    if (!this._groundRay) {
+      this._groundRay = new RAPIER.Ray(
+        { x, y: bottomY + rayLift, z },
+        { x: 0, y: -1, z: 0 },
+      );
+    } else {
+      this._groundRay.origin.x = x;
+      this._groundRay.origin.y = bottomY + rayLift;
+      this._groundRay.origin.z = z;
+      this._groundRay.dir.x = 0;
+      this._groundRay.dir.y = -1;
+      this._groundRay.dir.z = 0;
+    }
+
+    const maxToi = rayLift + this.groundProbeDistance;
+    const hit = world.castRay(
+      this._groundRay,
+      maxToi,
+      true,
+      undefined,
+      undefined,
+      this.collider,
+    );
+    if (!hit) return false;
+
+    const timeOfImpact = Number(hit.timeOfImpact ?? hit.toi);
+    if (!Number.isFinite(timeOfImpact)) return false;
+    const hitY = this._groundRay.origin.y - timeOfImpact;
+    const hover = bottomY - hitY;
+    return hover <= this.groundProbeDistance
+      && hover >= -this.groundProbePenetration;
   }
 
   /**
    * Set platform velocity
    */
   setPlatformVelocity(velocity) {
-    this.platformVelocity.copy(velocity);
+    if (velocity) {
+      this.platformVelocity.copy(velocity);
+    } else {
+      this.platformVelocity.set(0, 0, 0);
+    }
   }
 
   /**
@@ -222,8 +500,18 @@ export class CharacterMotor {
    */
   getPosition() {
     if (!this.body) return this._tmpPosition.set(0, 0, 0);
+    if (this._hasRenderPosition) return this._tmpPosition.copy(this._renderPosition);
+    if (this._hasTargetPosition) return this._tmpPosition.copy(this._targetPosition);
     const pos = this.body.translation();
     return this._tmpPosition.set(pos.x, pos.y, pos.z);
+  }
+
+  /** Get Rapier's pending physical pose rather than the filtered render pose. */
+  getPhysicsPosition() {
+    if (!this.body) return this._tmpPhysicsPosition.set(0, 0, 0);
+    if (this._hasTargetPosition) return this._tmpPhysicsPosition.copy(this._targetPosition);
+    const pos = this.body.translation();
+    return this._tmpPhysicsPosition.set(pos.x, pos.y, pos.z);
   }
 
   /**
@@ -240,18 +528,47 @@ export class CharacterMotor {
    */
   getFacingYaw() {
     const vel = this.velocity;
-    if (vel.x * vel.x + vel.z * vel.z < 0.01) {
+    if (vel.x * vel.x + vel.z * vel.z < this.facingSpeedThreshold ** 2) {
       return null; // No movement, keep current facing
     }
     return Math.atan2(vel.x, vel.z);
   }
 
   /**
-   * Get capsule bottom Y position in world space
+   * Get animation-ready locomotion state (returns a reusable object).
+   */
+  getMotionState() {
+    const state = this._motionState;
+    state.phase = this.phase;
+    state.grounded = this.isGrounded;
+    state.rawGrounded = this.rawGrounded;
+    state.justJumped = this.justJumped;
+    state.justLanded = this.justLanded;
+    state.justLeftGround = this.justLeftGround;
+    state.landingSpeed = this.landingSpeed;
+    state.airTime = this.airTime;
+    state.horizontalSpeed = this.horizontalSpeed;
+    state.verticalVelocity = this.velocity.y;
+    state.speedRatio = this.speedRatio;
+    state.isSprinting = this.isSprinting;
+    return state;
+  }
+
+  /**
+   * Get rendered capsule bottom Y in world space (used for visual grounding).
    */
   getCapsuleBottomY() {
     if (!this.body) return 0;
-    const pos = this.body.translation();
+    const pos = this._hasRenderPosition
+      ? this._renderPosition
+      : (this._hasTargetPosition ? this._targetPosition : this.body.translation());
+    return pos.y - (this.halfHeight + this.radius);
+  }
+
+  /** Get pending physical capsule bottom Y for collision diagnostics. */
+  getPhysicsCapsuleBottomY() {
+    if (!this.body) return 0;
+    const pos = this._hasTargetPosition ? this._targetPosition : this.body.translation();
     return pos.y - (this.halfHeight + this.radius);
   }
 
@@ -267,8 +584,8 @@ export class CharacterMotor {
     const { RAPIER, world } = this.physics;
     if (!RAPIER || !world) return null;
 
-    const pos = this.body.translation();
-    const bottomY = this.getCapsuleBottomY();
+    const pos = this._hasTargetPosition ? this._targetPosition : this.body.translation();
+    const bottomY = this.getPhysicsCapsuleBottomY();
     const rayOrigin = { x: pos.x, y: bottomY + 0.2, z: pos.z };
     const rayDir = { x: 0, y: -1, z: 0 };
     const ray = new RAPIER.Ray(rayOrigin, rayDir);
@@ -276,7 +593,9 @@ export class CharacterMotor {
     const hit = world.castRay(ray, maxToi, true, undefined, undefined, this.collider);
     if (!hit) return null;
 
-    const hitY = rayOrigin.y - hit.toi;
+    const timeOfImpact = Number(hit.timeOfImpact ?? hit.toi);
+    if (!Number.isFinite(timeOfImpact)) return null;
+    const hitY = rayOrigin.y - timeOfImpact;
     const hover = bottomY - hitY;
     return Number.isFinite(hover) ? hover : null;
   }
@@ -295,8 +614,17 @@ export class CharacterMotor {
     if (this.canJump() || allowAir) {
       this.velocity.y = strength;
       this.groundedTimer = 0;
+      this._groundContactTimer = 0;
       this.isGrounded = false;
+      this.rawGrounded = false;
+      this.airTime = 0;
+      this.phase = 'rising';
+      this.justJumped = true;
+      this.justLanded = false;
+      this._jumpEventPending = true;
+      return true;
     }
+    return false;
   }
 
   /**
@@ -304,12 +632,40 @@ export class CharacterMotor {
    */
   teleport(position) {
     if (this.body) {
-      this.body.setNextKinematicTranslation({
+      const target = {
         x: position.x,
         y: position.y,
         z: position.z,
-      });
+      };
+      // Update both the current and next kinematic pose. Only setting the next
+      // pose can be overwritten by the controller on the following frame,
+      // which made consecutive teleports intermittently fail.
+      this.body.setTranslation(target, true);
+      this.body.setNextKinematicTranslation(target);
+      this._targetPosition.set(target.x, target.y, target.z);
+      this._renderPosition.set(target.x, target.y, target.z);
+      this._hasTargetPosition = true;
+      this._hasRenderPosition = true;
+      this._groundYSampleCount = 0;
+      this._groundYSampleIndex = 0;
       this.velocity.set(0, 0, 0);
+      this.isGrounded = false;
+      this.rawGrounded = false;
+      this.groundedTimer = 0;
+      this._groundContactTimer = 0;
+      this.airTime = 0;
+      this.phase = 'falling';
+      this.justJumped = false;
+      this.justLanded = false;
+      this.justLeftGround = false;
+      this.landingSpeed = 0;
+      this.horizontalSpeed = 0;
+      this.speedRatio = 0;
+      this.isSprinting = false;
+      this._groundedLastUpdate = false;
+      this._hasUpdated = false;
+      this._jumpEventPending = false;
+      if (this.debugMesh) this.debugMesh.position.set(target.x, target.y, target.z);
     }
   }
 

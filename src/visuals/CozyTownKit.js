@@ -30,6 +30,7 @@ import {
   Vector3,
   BoxGeometry,
 } from 'three';
+import { getBuildingBounds, TOWN_LAYOUT } from '../config/town.js';
 
 export const TOWN_PALETTE = {
   grass: 0x87bd72,
@@ -149,6 +150,16 @@ function seededRandom(seed = 713) {
   };
 }
 
+function pointInsideBounds(x, z, bounds) {
+  return x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ;
+}
+
+function pointNearBuilding(x, z, layout, margin = 0) {
+  return layout.buildings.some((building) => (
+    pointInsideBounds(x, z, getBuildingBounds(building, margin))
+  ));
+}
+
 function makeMesh(geo, material, {
   cast = true,
   receive = true,
@@ -161,26 +172,28 @@ function makeMesh(geo, material, {
   return shadow(mesh, cast, receive);
 }
 
-export function createGroundDressing(animator) {
+export function createGroundDressing(animator, layout = TOWN_LAYOUT) {
   const mat = materials();
-  const root = decorate(new Group());
+  // Keep the actual floor camera-collidable while decorative terrain opts out per child.
+  const root = new Group();
   root.name = 'cozy_terrain_dressing';
 
-  const meadow = makeMesh(new CircleGeometry(31, 64), mat.grass, {
+  const meadow = makeMesh(new CircleGeometry(layout.meadowRadius, 80), mat.grass, {
     cast: false,
-    decorative: true,
+    decorative: false,
     name: 'cozy_terrain_surface',
   });
+  meadow.userData.cameraCollision = true;
   meadow.rotation.x = -Math.PI / 2;
   meadow.position.y = 0.012;
   root.add(meadow);
 
   const patchData = [
-    [-17, -5, 8, 5.5, 0.05],
-    [15, -9, 9, 6, -0.13],
-    [-13, 15, 10, 5, 0.08],
-    [15, 15, 7, 4.5, -0.08],
-    [0, -20, 12, 4.5, 0],
+    [-22, -7, 10, 6.5, 0.05],
+    [21, -11, 11, 7, -0.13],
+    [-19, 19, 12, 6, 0.08],
+    [21, 19, 9, 5.5, -0.08],
+    [0, -27, 15, 5.5, 0],
   ];
   for (let i = 0; i < patchData.length; i += 1) {
     const [x, z, sx, sz, rotation] = patchData[i];
@@ -198,11 +211,11 @@ export function createGroundDressing(animator) {
 
   const hillGeo = new SphereGeometry(1, 20, 12);
   const hillData = [
-    [-27, -12, 8, 3.4, 6],
-    [27, -9, 9, 3.8, 7],
-    [-24, 19, 8, 3.3, 6],
-    [25, 21, 10, 4.1, 7],
-    [3, -29, 12, 4.2, 7],
+    [-35, -15, 10, 4.2, 8],
+    [35, -12, 11, 4.6, 9],
+    [-32, 26, 10, 4.1, 8],
+    [33, 27, 12, 5, 9],
+    [3, -38, 15, 5.2, 9],
   ];
   for (let i = 0; i < hillData.length; i += 1) {
     const [x, z, sx, sy, sz] = hillData[i];
@@ -218,10 +231,13 @@ export function createGroundDressing(animator) {
   const grassTufts = [];
   const tuftGeo = new ConeGeometry(0.08, 0.32, 5);
   const random = seededRandom(1122);
-  for (let i = 0; i < 42; i += 1) {
+  for (let attempt = 0; grassTufts.length < 64 && attempt < 240; attempt += 1) {
     const angle = random() * Math.PI * 2;
-    const radius = 11 + random() * 17;
-    grassTufts.push(new Vector3(Math.cos(angle) * radius, 0.17, Math.sin(angle) * radius));
+    const radius = 12 + random() * (layout.meadowRadius - 4);
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    if (pointNearBuilding(x, z, layout, 1.4)) continue;
+    grassTufts.push(new Vector3(x, 0.17, z));
   }
   const tuftMesh = decorate(new InstancedMesh(tuftGeo, mat.leafDark, grassTufts.length));
   tuftMesh.name = 'particle_grass_tufts';
@@ -267,19 +283,12 @@ function createRibbonGeometry(points, width) {
   return geo;
 }
 
-export function createPathsAndPlaza() {
+export function createPathsAndPlaza(layout = TOWN_LAYOUT) {
   const mat = materials();
   const root = decorate(new Group());
   root.name = 'cozy_paths_and_plaza';
 
-  const routes = [
-    { width: 2.3, points: [[0, 16], [0.4, 12], [-0.7, 7.5], [0, 2.2]] },
-    { width: 1.75, points: [[0, 1], [2.8, -1.2], [5.5, -3.6], [8, -6]] },
-    { width: 1.75, points: [[-0.5, 1], [-3.7, 0], [-6.2, -2], [-8, -4]] },
-    { width: 1.65, points: [[0, 1.5], [2.1, 4], [4.4, 5.8], [7, 7]] },
-    { width: 1.65, points: [[-0.4, 2], [-2.2, 5], [-4.4, 7], [-6, 8]] },
-    { width: 1.25, points: [[7.2, 2.5], [10, 4], [12, 7], [13.5, 9.5]] },
-  ];
+  const routes = layout.paths;
 
   for (const route of routes) {
     const edge = makeMesh(createRibbonGeometry(route.points, route.width + 0.3), mat.pathEdge, {
@@ -303,7 +312,7 @@ export function createPathsAndPlaza() {
   });
   plazaEdge.rotation.x = -Math.PI / 2;
   plazaEdge.scale.z = 0.88;
-  plazaEdge.position.set(0, 0.034, 0.8);
+  plazaEdge.position.set(layout.plaza.x, 0.034, layout.plaza.z);
   root.add(plazaEdge);
 
   const plaza = makeMesh(new CircleGeometry(4.72, 48), mat.path, {
@@ -312,7 +321,7 @@ export function createPathsAndPlaza() {
   });
   plaza.rotation.x = -Math.PI / 2;
   plaza.scale.z = 0.88;
-  plaza.position.set(0, 0.044, 0.8);
+  plaza.position.set(layout.plaza.x, 0.044, layout.plaza.z);
   root.add(plaza);
 
   const heart = new Shape();
@@ -328,7 +337,7 @@ export function createPathsAndPlaza() {
   heartMesh.rotation.x = -Math.PI / 2;
   heartMesh.rotation.z = Math.PI;
   heartMesh.scale.setScalar(0.68);
-  heartMesh.position.set(0, 0.056, 0.8);
+  heartMesh.position.set(layout.plaza.x, 0.056, layout.plaza.z);
   root.add(heartMesh);
 
   const pebbleGeo = new IcosahedronGeometry(0.11, 1);
@@ -338,7 +347,11 @@ export function createPathsAndPlaza() {
   const dummy = new Object3D();
   for (let i = 0; i < pebbleCount; i += 1) {
     const angle = (i / pebbleCount) * Math.PI * 2;
-    dummy.position.set(Math.cos(angle) * 4.45, 0.11, 0.8 + Math.sin(angle) * 3.88);
+    dummy.position.set(
+      layout.plaza.x + Math.cos(angle) * 4.45,
+      0.11,
+      layout.plaza.z + Math.sin(angle) * 3.88,
+    );
     dummy.scale.set(1.25, 0.35, 0.85);
     dummy.rotation.y = angle;
     dummy.updateMatrix();
@@ -432,6 +445,272 @@ function createFlowerBox(width, accentMaterial) {
   return root;
 }
 
+function createRoofDetails(data, roofHeight) {
+  const mat = materials();
+  const root = decorate(new Group());
+  root.name = 'cozy_roof_details';
+  const roofWidth = data.size.x + 0.72;
+  const roofDepth = data.size.z + 0.84;
+  const halfWidth = roofWidth * 0.5;
+  const slope = Math.atan2(roofHeight, halfWidth);
+  const bandGeo = new BoxGeometry(0.11, 0.075, roofDepth + 0.04);
+  const bandCount = Math.max(5, Math.round(roofWidth / 0.82));
+
+  for (let index = 0; index < bandCount; index += 1) {
+    const x = -halfWidth + 0.42 + (index / Math.max(1, bandCount - 1)) * (roofWidth - 0.84);
+    if (Math.abs(x) < 0.18) continue;
+    const band = makeMesh(bandGeo, mat.cream, { name: 'cozy_roof_seam' });
+    band.position.set(
+      x,
+      data.size.y + roofHeight * (1 - Math.abs(x) / halfWidth) + 0.055,
+      0,
+    );
+    band.rotation.z = x < 0 ? slope : -slope;
+    root.add(band);
+  }
+
+  const ridge = makeMesh(
+    new CylinderGeometry(0.13, 0.13, roofDepth + 0.14, 10),
+    mat.cream,
+    { name: 'cozy_roof_ridge' },
+  );
+  ridge.rotation.x = Math.PI / 2;
+  ridge.position.y = data.size.y + roofHeight + 0.065;
+  root.add(ridge);
+  return root;
+}
+
+function createCottageSign(data) {
+  const mat = materials();
+  const root = decorate(new Group());
+  root.name = 'cozy_shop_sign_' + data.id;
+
+  const bracket = makeMesh(new TorusGeometry(0.32, 0.045, 7, 18, Math.PI * 1.15), mat.darkCocoa, {
+    name: 'cozy_shop_sign_bracket',
+  });
+  bracket.rotation.z = Math.PI * 0.42;
+  bracket.scale.y = 0.8;
+  bracket.position.y = 0.38;
+  root.add(bracket);
+
+  const board = makeMesh(new BoxGeometry(0.82, 0.58, 0.13), data.roofMaterial, {
+    name: 'cozy_shop_sign_board',
+  });
+  board.position.set(0.27, -0.02, 0);
+  root.add(board);
+
+  let icon;
+  if (data.id === 'berry-bakery') {
+    icon = makeMesh(new SphereGeometry(0.17, 12, 8), mat.vanilla, {
+      name: 'cozy_sign_bread',
+    });
+    icon.scale.set(1.35, 0.72, 0.25);
+  } else if (data.id === 'lavender-library') {
+    icon = decorate(new Group());
+    icon.name = 'cozy_sign_book';
+    for (const x of [-0.09, 0.09]) {
+      const page = makeMesh(new BoxGeometry(0.17, 0.25, 0.035), mat.vanilla, {
+        name: 'cozy_sign_book_page',
+      });
+      page.position.x = x;
+      page.rotation.z = -x * 0.65;
+      icon.add(page);
+    }
+  } else if (data.id === 'mint-tea-house') {
+    icon = makeMesh(new TorusGeometry(0.15, 0.045, 7, 16, Math.PI * 1.65), mat.vanilla, {
+      name: 'cozy_sign_teacup',
+    });
+    icon.rotation.z = Math.PI * 0.15;
+  } else {
+    icon = decorate(new Group());
+    icon.name = 'cozy_sign_letter';
+    const envelope = makeMesh(new BoxGeometry(0.34, 0.23, 0.035), mat.vanilla, {
+      name: 'cozy_sign_envelope',
+    });
+    const seal = makeMesh(new SphereGeometry(0.055, 9, 7), mat.blush, {
+      name: 'cozy_sign_envelope_seal',
+    });
+    seal.position.z = 0.04;
+    icon.add(envelope, seal);
+  }
+  icon.position.set(0.27, -0.02, data.frontSign * 0.085);
+  root.add(icon);
+  return root;
+}
+
+function createFenceRun(start, end, postCount = 4) {
+  const mat = materials();
+  const root = decorate(new Group());
+  root.name = 'cozy_cottage_fence';
+  const dx = end.x - start.x;
+  const dz = end.z - start.z;
+  const length = Math.hypot(dx, dz);
+  const angle = Math.atan2(dx, dz);
+  const centerX = (start.x + end.x) * 0.5;
+  const centerZ = (start.z + end.z) * 0.5;
+
+  for (let index = 0; index < postCount; index += 1) {
+    const t = index / Math.max(1, postCount - 1);
+    const post = makeMesh(new CylinderGeometry(0.065, 0.085, 0.92, 7), mat.cream, {
+      name: 'cozy_fence_post',
+    });
+    post.position.set(start.x + dx * t, 0.46, start.z + dz * t);
+    root.add(post);
+  }
+  for (const y of [0.34, 0.68]) {
+    const rail = makeMesh(new BoxGeometry(0.09, 0.09, length), mat.cream, {
+      name: 'cozy_fence_rail',
+    });
+    rail.position.set(centerX, y, centerZ);
+    rail.rotation.y = angle;
+    root.add(rail);
+  }
+  return root;
+}
+
+export function createCottagePlot(data, index, animator) {
+  const mat = materials();
+  const root = decorate(new Group());
+  root.name = 'cozy_cottage_plot_' + data.id;
+  root.position.set(data.position.x, 0, data.position.z);
+
+  const plotWidth = data.size.x * 0.5 + 1.65;
+  const plotDepth = data.size.z * 0.5 + 1.5;
+  const plot = makeMesh(new CircleGeometry(1, 44), index % 2 ? mat.grassLight : mat.grassDark, {
+    cast: false,
+    name: 'cozy_cottage_garden_plot',
+  });
+  plot.rotation.x = -Math.PI / 2;
+  plot.scale.set(plotWidth, plotDepth, 1);
+  plot.position.y = 0.024;
+  root.add(plot);
+
+  const edging = makeMesh(new RingGeometry(0.945, 1, 44), mat.pathEdge, {
+    cast: false,
+    name: 'cozy_cottage_plot_edge',
+  });
+  edging.rotation.x = -Math.PI / 2;
+  edging.scale.set(plotWidth, plotDepth, 1);
+  edging.position.y = 0.035;
+  root.add(edging);
+
+  const frontEdge = data.frontSign * (data.size.z * 0.5 + 1.35);
+  for (let stepIndex = 0; stepIndex < 4; stepIndex += 1) {
+    const t = stepIndex / 3;
+    const stone = makeMesh(new IcosahedronGeometry(0.31 - stepIndex * 0.018, 1), mat.stoneLight, {
+      name: 'cozy_cottage_step_stone',
+    });
+    stone.scale.set(1.25, 0.23, 0.82);
+    stone.position.set(
+      Math.sin(index * 0.8 + stepIndex) * 0.09,
+      0.1,
+      data.frontSign * (data.size.z * 0.5 + 0.45 + t * 1.0),
+    );
+    stone.rotation.y = index * 0.21 + stepIndex * 0.16;
+    root.add(stone);
+  }
+
+  const sideX = data.size.x * 0.5 + 1.05;
+  const backZ = -data.frontSign * (data.size.z * 0.5 + 1.0);
+  root.add(createFenceRun(
+    { x: -sideX, z: backZ },
+    { x: sideX, z: backZ },
+    Math.max(4, Math.round(data.size.x / 1.5) + 1),
+  ));
+  root.add(createFenceRun(
+    { x: -sideX, z: backZ },
+    { x: -sideX, z: frontEdge * 0.45 },
+    4,
+  ));
+  root.add(createFenceRun(
+    { x: sideX, z: backZ },
+    { x: sideX, z: frontEdge * 0.45 },
+    4,
+  ));
+
+  const shrubPositions = [
+    [-sideX + 0.2, frontEdge * 0.72],
+    [sideX - 0.2, frontEdge * 0.72],
+    [-sideX + 0.25, backZ + data.frontSign * 0.35],
+    [sideX - 0.25, backZ + data.frontSign * 0.35],
+  ];
+  shrubPositions.forEach(([x, z], shrubIndex) => {
+    const shrub = makeMesh(new IcosahedronGeometry(0.46, 1), shrubIndex % 2 ? mat.leaf : mat.leafLight, {
+      name: 'particle_cottage_shrub',
+    });
+    shrub.scale.set(1.15, 0.8 + (shrubIndex % 2) * 0.15, 0.9);
+    shrub.position.set(x, 0.35, z);
+    shrub.rotation.y = shrubIndex * 0.9 + index;
+    root.add(shrub);
+    animator.registerSway(shrub, {
+      speed: 0.38 + shrubIndex * 0.04,
+      amount: 0.012,
+      phase: index * 1.7 + shrubIndex,
+    });
+  });
+
+  const bloomMaterial = [data.roofMaterial, data.doorMaterial, mat.vanilla][index % 3];
+  for (const xSign of [-1, 1]) {
+    for (let bloomIndex = 0; bloomIndex < 4; bloomIndex += 1) {
+      const bloom = makeMesh(new IcosahedronGeometry(0.105, 1), bloomIndex % 2 ? bloomMaterial : mat.blush, {
+        name: 'particle_cottage_garden_bloom',
+      });
+      bloom.position.set(
+        xSign * (data.size.x * 0.5 + 0.55 + (bloomIndex % 2) * 0.24),
+        0.24 + (bloomIndex % 2) * 0.08,
+        data.frontSign * (0.35 + Math.floor(bloomIndex / 2) * 0.42),
+      );
+      root.add(bloom);
+    }
+  }
+  return root;
+}
+
+export function createCottageAmbientDetails(data, index, animator) {
+  const mat = materials();
+  const root = decorate(new Group());
+  root.name = 'cozy_cottage_ambient_' + data.id;
+  root.position.set(data.position.x, 0, data.position.z);
+
+  const roofHeight = 1.55 + index * 0.08;
+  const smoke = decorate(new Group());
+  smoke.name = 'particle_chimney_smoke';
+  smoke.position.set(
+    -data.size.x * 0.27,
+    data.size.y + roofHeight * 0.58 + 1.65,
+    -data.frontSign * data.size.z * 0.18,
+  );
+  for (let puffIndex = 0; puffIndex < 4; puffIndex += 1) {
+    const puff = makeMesh(
+      new SphereGeometry(0.2 + puffIndex * 0.065, 10, 8),
+      mat.smoke,
+      {
+        cast: false,
+        receive: false,
+        name: 'particle_smoke_puff',
+      },
+    );
+    puff.position.set(
+      puffIndex * 0.13,
+      puffIndex * 0.4,
+      Math.sin(puffIndex * 1.7) * 0.05,
+    );
+    smoke.add(puff);
+  }
+  root.add(smoke);
+  animator.registerBob(smoke, {
+    speed: 0.58 + index * 0.07,
+    amount: 0.11,
+    phase: index,
+  });
+  animator.registerSway(smoke, {
+    speed: 0.46,
+    amount: 0.075,
+    phase: index * 1.7,
+  });
+  return root;
+}
+
 export function createCottage(data, index, animator) {
   const mat = materials();
   const root = new Group();
@@ -462,6 +741,7 @@ export function createCottage(data, index, animator) {
   );
   roof.position.y = data.size.y;
   root.add(roof);
+  root.add(createRoofDetails(data, roofHeight));
 
   const fasciaGeo = new CylinderGeometry(0.09, 0.09, data.size.z + 0.88, 10);
   for (const x of [-data.size.x * 0.5 - 0.34, data.size.x * 0.5 + 0.34]) {
@@ -481,6 +761,15 @@ export function createCottage(data, index, animator) {
         z * (data.size.z * 0.5 - 0.03),
       );
       root.add(trim);
+    }
+  }
+
+  const wallBeamGeo = new BoxGeometry(data.size.x - 0.3, 0.12, 0.13);
+  for (const sideSign of [-1, 1]) {
+    for (const y of [0.58, data.size.y - 0.24]) {
+      const beam = makeMesh(wallBeamGeo, mat.cream, { name: 'cozy_cottage_wall_beam' });
+      beam.position.set(0, y, sideSign * (data.size.z * 0.5 + 0.072));
+      root.add(beam);
     }
   }
 
@@ -505,12 +794,61 @@ export function createCottage(data, index, animator) {
   knob.position.set(0.28, 1.0, frontZ + data.frontSign * 0.09);
   root.add(knob);
 
+  const canopy = makeMesh(new BoxGeometry(1.68, 0.14, 0.92), data.roofMaterial, {
+    name: 'cozy_door_canopy',
+  });
+  canopy.position.set(0, 2.02, frontZ + data.frontSign * 0.36);
+  canopy.rotation.x = data.frontSign * 0.08;
+  root.add(canopy);
+  for (const x of [-0.66, 0.66]) {
+    const bracket = makeMesh(new CylinderGeometry(0.035, 0.05, 0.48, 6), mat.cream, {
+      name: 'cozy_door_canopy_bracket',
+    });
+    bracket.position.set(x, 1.82, frontZ + data.frontSign * 0.18);
+    bracket.rotation.x = data.frontSign * 0.42;
+    root.add(bracket);
+  }
+
   const step = makeMesh(new CylinderGeometry(0.72, 0.82, 0.2, 12, 1, false, 0, Math.PI), mat.stoneLight, {
     name: 'cozy_door_step',
   });
   step.rotation.y = data.frontSign > 0 ? Math.PI / 2 : -Math.PI / 2;
   step.position.set(0, 0.1, data.frontSign * (data.size.z * 0.5 + 0.5));
   root.add(step);
+
+  const sign = createCottageSign(data);
+  sign.position.set(
+    data.size.x * 0.29,
+    Math.min(data.size.y - 0.55, 2.65),
+    frontZ + data.frontSign * 0.22,
+  );
+  if (data.frontSign < 0) sign.rotation.y = Math.PI;
+  root.add(sign);
+
+  const wallLamp = decorate(new Group());
+  wallLamp.name = 'cozy_cottage_wall_lamp';
+  wallLamp.position.set(
+    -data.size.x * 0.29,
+    Math.min(data.size.y - 0.62, 2.3),
+    frontZ + data.frontSign * 0.14,
+  );
+  const lampBack = makeMesh(new CylinderGeometry(0.075, 0.09, 0.42, 7), mat.darkCocoa, {
+    name: 'cozy_cottage_wall_lamp_bracket',
+  });
+  lampBack.rotation.x = Math.PI / 2;
+  const lampGlow = makeMesh(new SphereGeometry(0.16, 12, 9), mat.windowGlow, {
+    name: 'cozy_cottage_wall_lamp_glow',
+  });
+  lampGlow.scale.set(0.8, 1.1, 0.8);
+  lampGlow.position.z = data.frontSign * 0.2;
+  wallLamp.add(lampBack, lampGlow);
+  root.add(wallLamp);
+  animator.registerSway(lampGlow, {
+    speed: 0.62,
+    amount: 0.018,
+    phase: index * 0.7,
+    axis: 'z',
+  });
 
   const windowY = Math.min(2.15, data.size.y * 0.57);
   const windowX = Math.max(1.25, data.size.x * 0.29);
@@ -570,11 +908,11 @@ export function createCottage(data, index, animator) {
   return root;
 }
 
-export function createWelcomeGate(animator) {
+export function createWelcomeGate(animator, layout = TOWN_LAYOUT) {
   const mat = materials();
   const root = decorate(new Group());
   root.name = 'cozy_welcome_gate';
-  root.position.set(0, 0, 11.7);
+  root.position.set(layout.gate.x, layout.gate.y, layout.gate.z);
 
   for (const x of [-2.05, 2.05]) {
     const post = makeMesh(new CylinderGeometry(0.22, 0.3, 2.75, 10), mat.cream, {
@@ -690,30 +1028,31 @@ function createTree(position, scale, index, animator) {
   return root;
 }
 
-function createFlowerInstances(animator) {
+function createFlowerInstances(animator, layout) {
   const mat = materials();
   const geo = geometry();
   const root = decorate(new Group());
   root.name = 'particle_wildflower_meadow';
   const random = seededRandom(713);
   const clusterData = [
-    [-4.8, 12.4, 2.5, 13],
-    [4.4, 11.5, 2.2, 12],
-    [-10.8, 3, 2.4, 13],
-    [10.8, 0.8, 2.6, 13],
-    [-11, 11.8, 2.4, 12],
-    [10, -12.4, 2.4, 13],
+    [-5.2, 13.4, 2.7, 14],
+    [5.1, 13.1, 2.6, 14],
+    [-10.2, 2.2, 2.7, 14],
+    [10.6, 0.2, 2.9, 14],
+    [-20.2, 15.8, 2.6, 14],
+    [20.5, -8.5, 2.7, 14],
+    [-20.5, -5, 2.4, 12],
+    [25, 8.5, 2.5, 12],
   ];
   const positions = [];
   for (const [cx, cz, radius, count] of clusterData) {
     for (let i = 0; i < count; i += 1) {
       const angle = random() * Math.PI * 2;
       const spread = Math.sqrt(random()) * radius;
-      positions.push(new Vector3(
-        cx + Math.cos(angle) * spread,
-        0,
-        cz + Math.sin(angle) * spread,
-      ));
+      const x = cx + Math.cos(angle) * spread;
+      const z = cz + Math.sin(angle) * spread;
+      if (pointNearBuilding(x, z, layout, 0.55)) continue;
+      positions.push(new Vector3(x, 0, z));
     }
   }
 
@@ -759,11 +1098,11 @@ function createMushroomInstances() {
   root.name = 'particle_mushroom_patches';
   const random = seededRandom(404);
   const positions = [
-    [-13.3, -2.5], [-14.1, -1.9], [-12.8, -1.4],
-    [11.2, -6.6], [12.1, -6.9], [11.8, -5.8],
-    [-11.7, 13.7], [-12.5, 14.2], [-11.3, 14.8],
-    [16.6, 10.6], [17.2, 11.3], [16.1, 11.5],
-    [2.9, -13.2], [3.7, -13.6], [4.2, -12.8],
+    [-21.3, -2.5], [-22.1, -1.9], [-20.8, -1.4],
+    [22.2, -11.6], [23.1, -11.9], [22.8, -10.8],
+    [-20.7, 21.7], [-21.5, 22.2], [-20.3, 22.8],
+    [28.6, 14.6], [29.2, 15.3], [28.1, 15.5],
+    [2.9, -22.2], [3.7, -22.6], [4.2, -21.8],
   ];
   const stems = decorate(new InstancedMesh(geo.mushroomStem, mat.cream, positions.length));
   stems.name = 'particle_mushroom_stems';
@@ -795,7 +1134,7 @@ function createMushroomInstances() {
   return root;
 }
 
-function createRockInstances() {
+function createRockInstances(layout) {
   const mat = materials();
   const geo = geometry();
   const random = seededRandom(9001);
@@ -804,7 +1143,7 @@ function createRockInstances() {
   const positions = [];
   for (let i = 0; i < 26; i += 1) {
     const angle = (i / 26) * Math.PI * 2 + (random() - 0.5) * 0.2;
-    const radius = 20 + random() * 6;
+    const radius = layout.meadowRadius - 11 + random() * 7;
     positions.push([Math.cos(angle) * radius, Math.sin(angle) * radius]);
   }
   const rocks = decorate(new InstancedMesh(geo.rock, mat.stone, positions.length));
@@ -823,21 +1162,23 @@ function createRockInstances() {
   return root;
 }
 
-export function createNature(animator) {
+export function createNature(animator, layout = TOWN_LAYOUT) {
   const root = decorate(new Group());
   root.name = 'cozy_nature';
   const treeData = [
-    [-15, -7, 1.25], [-18, 0, 1.5], [-17, 8, 1.18], [-14, 16, 1.42],
-    [-6, 18, 1.18], [5, 19, 1.35], [15, 18, 1.24], [19, 7, 1.5],
-    [18, -2, 1.25], [16, -12, 1.46], [7, -17, 1.2], [-3, -18, 1.4],
-    [-12, -16, 1.3], [-11.5, 4.5, 0.85], [12.2, -3.6, 0.92],
+    [-24, -11, 1.25], [-28, -1, 1.5], [-26, 11, 1.18], [-21, 24, 1.42],
+    [-10, 28, 1.18], [6, 28, 1.35], [19, 25, 1.24], [30, 16, 1.5],
+    [30, 1, 1.25], [25, -14, 1.46], [15, -24, 1.2], [0, -29, 1.4],
+    [-17, -25, 1.3], [-9.5, 9.5, 0.85], [9.5, -0.8, 0.92],
+    [-23, 7, 1.05], [24, 18, 1.12], [22, -3, 0.95], [-6, -21, 1.05],
   ];
   treeData.forEach(([x, z, scale], index) => {
+    if (pointNearBuilding(x, z, layout, 1.8)) return;
     root.add(createTree(new Vector3(x, 0, z), scale, index, animator));
   });
-  root.add(createFlowerInstances(animator));
+  root.add(createFlowerInstances(animator, layout));
   root.add(createMushroomInstances());
-  root.add(createRockInstances());
+  root.add(createRockInstances(layout));
   return root;
 }
 
@@ -854,11 +1195,11 @@ function createLilyPad(size, colorMaterial) {
   return pad;
 }
 
-export function createPond(animator) {
+export function createPond(animator, layout = TOWN_LAYOUT) {
   const mat = materials();
   const root = decorate(new Group());
   root.name = 'cozy_pond';
-  root.position.set(13.3, 0, 10.8);
+  root.position.set(layout.pond.x, layout.pond.y, layout.pond.z);
 
   const bank = makeMesh(new CircleGeometry(4.15, 48), mat.pathEdge, {
     cast: false,
@@ -1051,16 +1392,20 @@ function createBench(position, rotation) {
   return root;
 }
 
-export function createPlazaFurniture(animator) {
+export function createPlazaFurniture(animator, layout = TOWN_LAYOUT) {
   const root = decorate(new Group());
   root.name = 'cozy_plaza_furniture';
+  const px = layout.plaza.x;
+  const pz = layout.plaza.z;
   const lanternPositions = [
-    new Vector3(-4.9, 0, -1.6),
-    new Vector3(4.9, 0, -1.6),
-    new Vector3(-4.6, 0, 4.4),
-    new Vector3(4.6, 0, 4.4),
-    new Vector3(-1.9, 0, 8.6),
-    new Vector3(2.4, 0, 8.3),
+    new Vector3(px - 4.9, 0, pz - 2.4),
+    new Vector3(px + 4.9, 0, pz - 2.4),
+    new Vector3(px - 4.6, 0, pz + 3.6),
+    new Vector3(px + 4.6, 0, pz + 3.6),
+    new Vector3(-8.3, 0, -3.7),
+    new Vector3(8.1, 0, -4.4),
+    new Vector3(-7.5, 0, 7.7),
+    new Vector3(7.6, 0, 7.3),
   ];
   const lights = [];
   lanternPositions.forEach((position, index) => {
@@ -1081,17 +1426,21 @@ export function createPlazaFurniture(animator) {
     pulse: 0.065,
   });
 
-  root.add(createBench(new Vector3(-5.1, 0, 1.2), -Math.PI / 2));
-  root.add(createBench(new Vector3(5.1, 0, 1.2), Math.PI / 2));
-  root.add(createBench(new Vector3(0, 0, -3.65), 0));
+  root.add(createBench(new Vector3(px - 5.1, 0, pz + 0.4), -Math.PI / 2));
+  root.add(createBench(new Vector3(px + 5.1, 0, pz + 0.4), Math.PI / 2));
+  root.add(createBench(new Vector3(px, 0, pz - 4.45), 0));
   return root;
 }
 
-export function createLedgerLandmark(animator) {
+export function createLedgerLandmark(animator, layout = TOWN_LAYOUT) {
   const mat = materials();
   const root = decorate(new Group());
   root.name = 'cozy_community_ledger';
-  root.position.set(-2, 0, 3);
+  root.position.set(
+    layout.landmarks.ledger.x,
+    0,
+    layout.landmarks.ledger.z,
+  );
 
   for (const x of [-0.72, 0.72]) {
     const post = makeMesh(new CylinderGeometry(0.1, 0.14, 1.6, 8), mat.cocoa, {
@@ -1148,11 +1497,15 @@ export function createLedgerLandmark(animator) {
   return root;
 }
 
-export function createBellLandmark(animator) {
+export function createBellLandmark(animator, layout = TOWN_LAYOUT) {
   const mat = materials();
   const root = decorate(new Group());
   root.name = 'cozy_town_bell';
-  root.position.set(3, 0, -2);
+  root.position.set(
+    layout.landmarks.bell.x,
+    0,
+    layout.landmarks.bell.z,
+  );
 
   const base = makeMesh(new CylinderGeometry(0.75, 0.9, 0.28, 12), mat.stoneLight, {
     name: 'cozy_bell_base',
@@ -1249,15 +1602,15 @@ function createCloud(position, scale, index, animator, cloudMaterial) {
   return root;
 }
 
-function createFireflies(animator) {
-  const count = 48;
+function createFireflies(animator, layout) {
+  const count = 58;
   const random = seededRandom(1618);
   const positions = new Float32Array(count * 3);
   const origins = [];
   const phases = [];
   for (let i = 0; i < count; i += 1) {
     const angle = random() * Math.PI * 2;
-    const radius = 3.5 + random() * 12;
+    const radius = 3.5 + random() * Math.min(22, layout.meadowRadius - 8);
     const origin = new Vector3(
       Math.cos(angle) * radius,
       0.55 + random() * 2.35,
@@ -1296,16 +1649,16 @@ function createFireflies(animator) {
   return fireflies;
 }
 
-function createPetalDrift(animator) {
-  const count = 52;
+function createPetalDrift(animator, layout) {
+  const count = 58;
   const random = seededRandom(228);
   const positions = new Float32Array(count * 3);
   const speeds = [];
   const phases = [];
   for (let i = 0; i < count; i += 1) {
-    positions[i * 3] = -18 + random() * 36;
+    positions[i * 3] = -layout.meadowRadius * 0.72 + random() * layout.meadowRadius * 1.44;
     positions[i * 3 + 1] = 1 + random() * 8;
-    positions[i * 3 + 2] = -15 + random() * 34;
+    positions[i * 3 + 2] = -layout.meadowRadius * 0.62 + random() * layout.meadowRadius * 1.32;
     speeds.push(0.16 + random() * 0.24);
     phases.push(random() * Math.PI * 2);
   }
@@ -1397,7 +1750,7 @@ function createButterflies(animator) {
   return root;
 }
 
-export function createAmbientLife(animator) {
+export function createAmbientLife(animator, layout = TOWN_LAYOUT) {
   const root = decorate(new Group());
   root.name = 'cozy_ambient_life';
   const cloudMaterial = new MeshStandardMaterial({
@@ -1408,10 +1761,10 @@ export function createAmbientLife(animator) {
     depthWrite: false,
   });
   const cloudData = [
-    [-22, 13.5, -14, 1.3],
-    [8, 15.2, -22, 1.75],
-    [24, 12.8, 1, 1.15],
-    [-10, 16.5, 8, 1.45],
+    [-30, 13.5, -18, 1.3],
+    [8, 15.2, -28, 1.75],
+    [31, 12.8, 1, 1.15],
+    [-13, 16.5, 13, 1.45],
   ];
   cloudData.forEach(([x, y, z, scale], index) => {
     root.add(createCloud(new Vector3(x, y, z), scale, index, animator, cloudMaterial));
@@ -1420,8 +1773,8 @@ export function createAmbientLife(animator) {
     cloudMaterial.opacity = 0.88 - state.nightMix * 0.47;
   });
 
-  root.add(createFireflies(animator));
-  root.add(createPetalDrift(animator));
+  root.add(createFireflies(animator, layout));
+  root.add(createPetalDrift(animator, layout));
   root.add(createButterflies(animator));
   return root;
 }

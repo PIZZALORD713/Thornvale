@@ -4,12 +4,26 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Canonical execution plan |
+| Status | Core Hook Proof v0.3 implemented; fresh-player validation pending |
 | Prepared | 2026-07-11 |
 | Baseline | `main` at `114a5faf5c0784715315744730b9c7b375b2473e` |
 | Target | A polished 20–30 minute single-player browser demo |
 | Planning assumption | One core developer with part-time narrative, art, and audio support |
 | Supersedes | The sequencing in `Roadmap.md` and the README's original high-level roadmap |
+
+## 0. Build status — Core Hook Proof v0.3
+
+The first Milestone 1 implementation is now playable end to end. This is a proof build, not an exit-gate claim: the five required fresh-player sessions and learning review still remain.
+
+- fRiENDSiES `#8914` is the starting steward, Steward Lumen, with white head emission restored and capsule-relative foot alignment.
+- The letter → welcome → Ledger → dusk bell → supernatural second bell → false record → correction → comply/alter sequence is complete.
+- Story time replaces the player-facing day/night toggle; `N` is available only after enabling debug mode.
+- Neighborliness, relationship, rules, events, choice, phase, and ending persist in a versioned local save with reset and corrupt-save recovery.
+- Both outcomes change the route treatment, steward response, relationship, Neighborliness score, objective, and ending card.
+- fRiENDSiES idle, walk, joy-jump, and rumba clips are bound through the collection's canonical skeleton. Runtime derivatives and provenance are recorded under `public/animations/`.
+- Automated state tests cover strict ordering, both anomaly triggers, anomaly idempotency across reload, both endings, save restoration, reset, and corrupt-save recovery.
+
+The immediate next gate is observational: run five clean first-play sessions, capture completion time and help requests, then tune wayfinding, pacing, and copy before adding another villager or system.
 
 ## 1. Executive decision
 

@@ -34,6 +34,11 @@ export class VisualRig {
 
     // Calibrated offset from model bounds
     this.calibratedOffsetY = 0;
+    this.groundingOffsetY = 0;
+    this.groundingSampleTimer = 0;
+    this.calibrationReady = true;
+    this.visualAuthoredVisibility = true;
+    this.cameraOccluded = false;
 
     // Invalidates deferred skinned-mesh calibration after a visual swap.
     this.calibrationRevision = 0;
@@ -54,22 +59,30 @@ export class VisualRig {
 
     if (visual) {
       this.group.add(visual);
+      this.visualAuthoredVisibility = visual.visible;
       visual.position.set(0, 0, 0);
       visual.rotation.set(0, 0, 0);
       this.calibratedOffsetY = 0;
+      this.groundingOffsetY = 0;
+      this.groundingSampleTimer = 0;
+      this.calibrationReady = true;
 
       if (options.visualOffsetY !== undefined) {
         this.visualOffsetY = options.visualOffsetY;
       }
 
       if (options.autoAlign && options.capsuleHalfHeight !== undefined && options.capsuleRadius !== undefined) {
-        const calibration = () => {
+        const calibration = (finalize = true) => {
           if (this.visual !== visual || this.calibrationRevision !== calibrationRevision) return;
           this.calibrateVisualOffset(
             options.capsuleHalfHeight,
             options.capsuleRadius,
             options.clearance ?? 0.015,
           );
+          if (finalize) {
+            this.calibrationReady = true;
+            this._applyVisualVisibility();
+          }
         };
 
         let hasSkinnedMesh = false;
@@ -78,19 +91,39 @@ export class VisualRig {
         });
 
         if (hasSkinnedMesh && typeof globalThis.requestAnimationFrame === 'function') {
+          this.calibrationReady = false;
+          visual.visible = false;
           // Bone/world matrices settle during the first rendered frame after an
           // async fRiENDSiES swap. Measuring before that frame sees the bind-pose
           // root and can bury the model. Recheck on two frames; the second pass
           // also covers attachments retargeted to the body skeleton.
           globalThis.requestAnimationFrame(() => {
-            calibration();
-            globalThis.requestAnimationFrame(calibration);
+            calibration(false);
+            globalThis.requestAnimationFrame(() => calibration(true));
           });
         } else {
-          calibration();
+          calibration(true);
         }
       }
+      this._applyVisualVisibility();
     }
+  }
+
+  _applyVisualVisibility() {
+    if (!this.visual) return;
+    this.visual.visible = Boolean(
+      this.calibrationReady
+      && this.visualAuthoredVisibility
+      && !this.cameraOccluded
+    );
+  }
+
+  setCameraOccluded(occluded) {
+    const next = Boolean(occluded);
+    if (next === this.cameraOccluded) return this;
+    this.cameraOccluded = next;
+    this._applyVisualVisibility();
+    return this;
   }
 
   /**
@@ -118,6 +151,60 @@ export class VisualRig {
 
     const targetBottom = -(capsuleHalfHeight + capsuleRadius) + clearance;
     this.calibratedOffsetY = targetBottom - bounds.min.y;
+    this.groundingOffsetY = 0;
+  }
+
+  /**
+   * Periodically correct the current deformed shoe bounds against the ground.
+   * This handles clips whose root-height baseline differs from the bind pose
+   * without performing a precise skinned-mesh bounds pass every frame.
+   */
+  stabilizeGrounding(dt, targetBottomY, options = {}) {
+    if (!this.visual || !this.calibrationReady || !Number.isFinite(Number(targetBottomY))) return this;
+
+    const safeDt = Math.min(Math.max(Number(dt) || 0, 0), 0.075);
+
+    const applyCorrection = (measuredBottomY, defaultMaxOffset) => {
+      const clearance = Number.isFinite(Number(options.clearance))
+        ? Number(options.clearance)
+        : 0.018;
+      const deadZone = Math.max(0, Number(options.deadZone) || 0.003);
+      const maxOffset = Math.max(0.005, Number(options.maxOffset) || defaultMaxOffset);
+      const sharpness = Math.max(0, Number(options.sharpness) || 8);
+      const maxSpeed = Math.max(0.005, Number(options.maxSpeed) || 0.14);
+      const rawError = Number(targetBottomY) + clearance - Number(measuredBottomY);
+      const error = Math.abs(rawError) <= deadZone ? 0 : rawError;
+      const targetOffset = Math.max(
+        -maxOffset,
+        Math.min(maxOffset, this.groundingOffsetY + error),
+      );
+      const dampedStep = (targetOffset - this.groundingOffsetY)
+        * (1 - Math.exp(-sharpness * safeDt));
+      const maxStep = maxSpeed * safeDt;
+      const step = Math.max(-maxStep, Math.min(maxStep, dampedStep));
+
+      this.groundingOffsetY += step;
+      this.group.position.y += step;
+    };
+
+    const hasMeasuredBottom = options.measuredBottomY != null
+      && Number.isFinite(Number(options.measuredBottomY));
+    const measuredBottomY = Number(options.measuredBottomY);
+    if (hasMeasuredBottom) {
+      applyCorrection(measuredBottomY, 0.055);
+      return this;
+    }
+
+    this.groundingSampleTimer -= safeDt;
+    if (this.groundingSampleTimer > 0) return this;
+    this.groundingSampleTimer = Math.max(0.05, Number(options.sampleInterval) || 0.1);
+
+    this.group.updateWorldMatrix(true, true);
+    const bounds = new Box3().setFromObject(this.visual, true);
+    if (!Number.isFinite(bounds.min.y)) return this;
+
+    applyCorrection(bounds.min.y, 0.08);
+    return this;
   }
 
   /**
@@ -144,7 +231,7 @@ export class VisualRig {
     // Update position (direct follow, no smoothing needed as physics handles it)
     this.group.position.set(
       position.x,
-      position.y + this.calibratedOffsetY + this.visualOffsetY,
+      position.y + this.calibratedOffsetY + this.groundingOffsetY + this.visualOffsetY,
       position.z
     );
 
@@ -204,5 +291,7 @@ export class VisualRig {
       this.group.remove(this.visual);
       this.visual = null;
     }
+    this.cameraOccluded = false;
+    this.visualAuthoredVisibility = true;
   }
 }

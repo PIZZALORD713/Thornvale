@@ -13,6 +13,7 @@ export class HUD {
       phaseLabel: document.querySelector('#dayNightBadge .phase-label'),
       celestialIcon: document.querySelector('#dayNightBadge .celestial-icon'),
       prompt: document.getElementById('interactionPrompt'),
+      resumeLook: document.getElementById('resumeLookButton'),
       kindness: document.getElementById('kindnessCounter'),
       kindnessValue: document.querySelector('#kindnessCounter .kindness-value'),
       lockOverlay: document.getElementById('lockOverlay'),
@@ -21,6 +22,7 @@ export class HUD {
       pos: document.getElementById('pos'),
       vel: document.getElementById('vel'),
       grounded: document.getElementById('grounded'),
+      movementPhase: document.getElementById('movementPhase'),
       platform: document.getElementById('platform'),
       hover: document.getElementById('hover'),
       visOffsetY: document.getElementById('visOffsetY'),
@@ -66,8 +68,15 @@ export class HUD {
   setDayNight(mode, animate = true) {
     if (!this.elements.dayNightBadge) return;
 
-    const normalizedMode = String(mode || 'day').toLowerCase() === 'night' ? 'night' : 'day';
-    const label = normalizedMode === 'night' ? 'Night' : 'Day';
+    const requestedMode = String(mode || 'day').toLowerCase();
+    const normalizedMode = ['day', 'dusk', 'night'].includes(requestedMode)
+      ? requestedMode
+      : 'day';
+    const label = normalizedMode === 'night'
+      ? 'Night'
+      : normalizedMode === 'dusk'
+        ? 'Dusk'
+        : 'Day';
 
     this.elements.dayNightBadge.dataset.mode = normalizedMode;
     this.elements.dayNightBadge.setAttribute('aria-label', `Current time: ${label}`);
@@ -81,7 +90,11 @@ export class HUD {
     }
 
     if (this.elements.celestialIcon) {
-      this.elements.celestialIcon.textContent = normalizedMode === 'night' ? '☾' : '☀';
+      this.elements.celestialIcon.textContent = normalizedMode === 'night'
+        ? '☾'
+        : normalizedMode === 'dusk'
+          ? '◐'
+          : '☀';
     }
 
     if (animate) {
@@ -174,6 +187,7 @@ export class HUD {
     if (this.elements.pos) this.elements.pos.textContent = info.position ?? '—';
     if (this.elements.vel) this.elements.vel.textContent = info.velocity ?? '—';
     if (this.elements.grounded) this.elements.grounded.textContent = info.grounded ? 'YES' : 'NO';
+    if (this.elements.movementPhase) this.elements.movementPhase.textContent = info.phase ?? '—';
     if (this.elements.platform) this.elements.platform.textContent = info.platform ?? 'none';
     if (this.elements.hover) this.elements.hover.textContent = info.hover ?? '—';
     if (this.elements.visOffsetY) this.elements.visOffsetY.textContent = info.visOffsetY ?? '0.000';

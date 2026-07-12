@@ -25,14 +25,20 @@ export class PlayerAnimator {
     this.settings = {
       idleBob: options.idleBob ?? 0.014,
       idleFrequency: options.idleFrequency ?? 1.85,
-      runBob: options.runBob ?? 0.055,
-      runSway: options.runSway ?? 0.055,
-      strideFrequency: options.strideFrequency ?? 9.5,
-      forwardLean: options.forwardLean ?? 0.075,
-      airStretch: options.airStretch ?? 0.065,
+      runBob: options.runBob ?? 0.038,
+      runSway: options.runSway ?? 0.04,
+      // One authored walk cycle is ~1.33s at normal travel speed. Integrating
+      // this rate by speed keeps the accent layer tied to distance instead of
+      // making it race at a fixed cadence while the character barely moves.
+      strideFrequency: options.strideFrequency ?? ((Math.PI * 2) / (4 / 3)),
+      forwardLean: options.forwardLean ?? 0.06,
+      airStretch: options.airStretch ?? 0.075,
+      airTuck: options.airTuck ?? 0.055,
       landingSquash: options.landingSquash ?? 0.14,
-      landingSpring: options.landingSpring ?? 72,
-      landingDamping: options.landingDamping ?? 12,
+      landingSpring: options.landingSpring ?? 88,
+      landingDamping: options.landingDamping ?? 18,
+      speedSharpness: options.speedSharpness ?? 11,
+      moveBlendSharpness: options.moveBlendSharpness ?? 8,
     };
 
     this.visual = null;
@@ -44,12 +50,18 @@ export class PlayerAnimator {
 
     this._time = 0;
     this._stride = 0;
+    this._smoothedSpeed = 0;
+    this._cadenceRatio = 0;
     this._moveBlend = 0;
     this._airBlend = 0;
+    this.motionState = 'idle';
     this._wasGrounded = true;
+    this._wasRising = false;
     this._lastAirVelocityY = 0;
     this._landing = 0;
     this._landingVelocity = 0;
+    this._landingAge = Number.POSITIVE_INFINITY;
+    this._landingStateDuration = Math.max(0.08, options.landingStateDuration ?? 0.28);
     this._emote = null;
     this._reducedMotion = options.reducedMotion ?? this._prefersReducedMotion();
 
@@ -86,9 +98,12 @@ export class PlayerAnimator {
    * physics body for this frame.
    *
    * @param {number} dt
-   * @param {{velocity?: {x:number,y:number,z:number}, isGrounded?: boolean, grounded?: boolean}} state
+   * @param {{velocity?: {x:number,y:number,z:number}, horizontalSpeed?: number,
+   *   phase?: string, isGrounded?: boolean, grounded?: boolean,
+   *   justLanded?: boolean, landingSpeed?: number}} state
+   * @param {{x:number,y:number,z:number}} [velocityOverride] Reusable motor velocity.
    */
-  update(dt, state = {}) {
+  update(dt, state = {}, velocityOverride) {
     if (!this.enabled) return;
     if (this.visualRig?.visual !== this.visual) this.captureBasePose();
     if (!this.visual) return;
@@ -96,30 +111,66 @@ export class PlayerAnimator {
     const safeDt = clampDt(dt);
     this._time += safeDt;
 
-    const velocity = state.velocity || { x: 0, y: 0, z: 0 };
+    const velocity = velocityOverride || state.velocity || { x: 0, y: 0, z: 0 };
     const vx = Number(velocity.x) || 0;
     const vy = Number(velocity.y) || 0;
     const vz = Number(velocity.z) || 0;
     const grounded = Boolean(state.isGrounded ?? state.grounded ?? true);
-    const speed = Math.sqrt(vx * vx + vz * vz);
-    const speed01 = MathUtils.clamp(speed / this.maxSpeed, 0, 1);
+    const reportedPhase = String(state.phase || '');
+    const vectorSpeed = Math.sqrt(vx * vx + vz * vz);
+    const reportedSpeed = Number(state.horizontalSpeed);
+    const speed = Number.isFinite(reportedSpeed) ? Math.max(0, reportedSpeed) : vectorSpeed;
+    this._smoothedSpeed = damp(
+      this._smoothedSpeed,
+      speed,
+      this.settings.speedSharpness,
+      safeDt,
+    );
+    const cadenceRatio = MathUtils.clamp(this._smoothedSpeed / this.maxSpeed, 0, 1.5);
+    this._cadenceRatio = cadenceRatio;
+    const speed01 = Math.min(1, cadenceRatio);
+    const moving = this._smoothedSpeed > 0.08;
 
-    this._moveBlend = damp(this._moveBlend, speed01, grounded ? 9 : 4, safeDt);
+    this._moveBlend = damp(
+      this._moveBlend,
+      moving && grounded ? speed01 : 0,
+      grounded ? this.settings.moveBlendSharpness : 5,
+      safeDt,
+    );
     this._airBlend = damp(this._airBlend, grounded ? 0 : 1, grounded ? 12 : 7, safeDt);
 
     if (!grounded) this._lastAirVelocityY = Math.min(this._lastAirVelocityY, vy);
-    if (grounded && !this._wasGrounded) {
-      const impact = MathUtils.clamp(Math.abs(this._lastAirVelocityY) / 12, 0.28, 1);
+    const justLanded = Boolean(state.justLanded) || (grounded && !this._wasGrounded);
+    if (justLanded) {
+      const landingSpeed = Math.max(
+        Math.abs(this._lastAirVelocityY),
+        Math.max(0, Number(state.landingSpeed) || 0),
+      );
+      const impact = MathUtils.clamp(landingSpeed / 12, 0.28, 1);
       this.triggerLanding(impact);
       this._lastAirVelocityY = 0;
     } else if (!grounded && this._wasGrounded) {
       this._lastAirVelocityY = Math.min(0, vy);
     }
     this._wasGrounded = grounded;
+    this._wasRising = !grounded && (reportedPhase === 'rising' || vy > 0.25);
 
-    const strideRate = MathUtils.lerp(3.2, this.settings.strideFrequency, this._moveBlend);
-    this._stride += safeDt * strideRate;
+    if (!grounded) this.motionState = this._wasRising ? 'jump' : 'fall';
+    else if (
+      justLanded
+      || reportedPhase === 'landing'
+      || this._landingAge < this._landingStateDuration
+    ) this.motionState = 'land';
+    else this.motionState = moving ? 'walk' : 'idle';
+
+    // Advance phase by actual travel speed. At maxSpeed the procedural accent
+    // completes one cycle in the authored walk clip's ~1.33 second period.
+    this._stride += safeDt
+      * this.settings.strideFrequency
+      * cadenceRatio
+      * (grounded ? 1 : 0.12);
     this._updateLandingSpring(safeDt);
+    this._landingAge += safeDt;
 
     const reducedScale = this._reducedMotion ? 0.22 : 1;
     const motion = this.motionScale * reducedScale;
@@ -145,7 +196,18 @@ export class PlayerAnimator {
     let roll = strideSin * this.settings.runSway * this._moveBlend * motion;
 
     const verticalAir = MathUtils.clamp(vy / 9, -1, 1);
-    const airStretch = this.settings.airStretch * this._airBlend * (0.45 + Math.abs(verticalAir) * 0.55) * motion;
+    const risingWeight = MathUtils.clamp(vy / 8, 0, 1);
+    const fallingWeight = MathUtils.clamp(-vy / 10, 0, 1);
+    const apexWeight = 1 - MathUtils.clamp(Math.abs(vy) / 4, 0, 1);
+    const airStretch = this.settings.airStretch
+      * this._airBlend
+      * (0.35 + risingWeight * 0.65)
+      * motion;
+    const airTuck = this.settings.airTuck
+      * this._airBlend
+      * Math.max(apexWeight * 0.7, fallingWeight)
+      * motion;
+    const airShape = airStretch - airTuck;
     pitch += -verticalAir * 0.045 * this._airBlend * motion;
 
     const emoteOffsets = this._updateEmote(safeDt, motion);
@@ -158,8 +220,8 @@ export class PlayerAnimator {
       * (this.settings.landingSquash / 0.14)
       * motion;
     const breathScale = idleBreath * 0.008 * idleWeight * motion;
-    const scaleY = Math.max(0.72, 1 + landingSquash + airStretch + breathScale + emoteOffsets.scaleY);
-    const scaleXZ = Math.max(0.78, 1 - landingSquash * 0.44 - airStretch * 0.34 - breathScale * 0.3 + emoteOffsets.scaleXZ);
+    const scaleY = Math.max(0.72, 1 + landingSquash + airShape + breathScale + emoteOffsets.scaleY);
+    const scaleXZ = Math.max(0.78, 1 - landingSquash * 0.44 - airShape * 0.34 - breathScale * 0.3 + emoteOffsets.scaleXZ);
 
     this.visual.position.set(
       this._basePosition.x,
@@ -195,6 +257,8 @@ export class PlayerAnimator {
     const impact = MathUtils.clamp(Number(intensity) || 0, 0, 1.5);
     this._landing = Math.min(this._landing, -this.settings.landingSquash * impact);
     this._landingVelocity -= impact * 0.72;
+    this._landingAge = 0;
+    this.motionState = 'land';
     return this;
   }
 

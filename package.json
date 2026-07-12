@@ -1,13 +1,14 @@
 {
   "name": "thornvale-kawaii-2",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A premium kawaii cozy-horror village experience built with Three.js and Rapier.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "npm run build"
+    "test": "node --test",
+    "check": "npm run test && npm run build"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.14.0",
