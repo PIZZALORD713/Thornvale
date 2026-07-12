@@ -6,9 +6,10 @@
 This folder is the presentation-first rebuild of Thornvale. It keeps the existing controller and Rapier physics foundation while replacing the greybox presentation with a complete, animated kawaii village:
 
 - **fRiENDSiES characters by default**, loaded non-blockingly with a local offline fallback
-- Four detailed pastel cottages, a heart plaza, welcome gate, pond, lanterns, gardens, mushrooms, benches, and upgraded landmarks
+- Four distinct Blender-authored cottages with porches, awnings, dormers, signs, trellises, and emissive windows
+- An expanded village ring with doorstep paths, outer garden walks, fenced cottage plots, a pond, and authored wayfinding landmarks
 - Animated clouds, chimney smoke, butterflies, drifting petals, fireflies, water ripples, foliage, bell motion, and interaction bursts
-- Expressive procedural character bob, run sway, jump stretch, landing squash, and emotes applied to fRiENDSiES
+- Authored fRiENDSiES idle, walk, joy-jump, and rumba clips, plus a subtle procedural squash-and-sway layer
 - Smooth cinematic day/night transitions with glowing windows, moonlight, stars, and a character key light
 - Bloom, candy color grading, vignette, subtle grain, and adaptive quality fallbacks
 - A responsive cinematic welcome screen and animated glass HUD
@@ -33,6 +34,21 @@ http://localhost:3000/?token=713
 ?quality=low
 ?post=off           # direct-render debugging fallback
 ```
+
+### Core Hook Proof v0.3
+
+The default build now plays the complete first-run Core Hook test, **A Courtesy Before Dusk**:
+
+1. Read the letter in your own handwriting.
+2. Meet **Steward Lumen**, fRiENDSiES `#8914`.
+3. Sign the Community Ledger and ring the bell once at dusk.
+4. Leave the plaza and hear the impossible second bell.
+5. Read the false correction, confront Lumen, and choose which account remains.
+6. Reach either **Home, as recorded** or **A path the town forgot**.
+
+Progress is saved locally and restores the story phase, time, steward position, route, choice, and ending. Use `?story=reset` (or `?reset=1`) for a clean first run. Use `?story=off` only for the presentation sandbox.
+
+The optimized runtime clips are animation-only derivatives of [`PIZZALORD713/animation_collection2`](https://github.com/PIZZALORD713/animation_collection2). The first collection was audited but is not shipped because several source files require clearer redistribution provenance. See [`public/animations/PROVENANCE.md`](public/animations/PROVENANCE.md). Default player [`#0001`](public/friendsies/0001/PROVENANCE.md), Steward [`#8914`](public/friendsies/8914/PROVENANCE.md), and the Draco decoder are bundled for a dependable first run.
 
 ## What is Thornvale?
 **Thornvale** is a warm, cottage-core valley town that feels like a hug… until you notice the hug has a grip strength rating.
@@ -96,15 +112,18 @@ Keywords: *cottagecore, folk-horror, uncanny social pressure, “nice” dystopi
 ## Current Status
 - **Concept + narrative pillars:** ✅
 - **Core loop definition:** ✅
-- **Technical prototype:** ✅ third-person controller, collision, greybox town, two interactables, day/night lighting, and debug tools
-- **Current target:** an 8–12 minute Core Hook Proof with one villager, rule, anomaly, intervention, and consequential choice
+- **Technical prototype:** ✅ third-person controller, collision, authored town, story-driven day/night, fRiENDSiES animation, and debug tools
+- **Core Hook Proof v0.3:** ✅ one steward, one rule, one anomaly, one intervention, two consequential outcomes, local save/reset, and state-transition tests
+- **Current target:** five fresh-player validation sessions and tuning from observed completion/friction data
 
 ## MVP Controls (Playable Slice)
 - **WASD**: Move
+- **Shift**: Sprint
 - **Mouse**: Look
 - **E**: Interact
-- **N**: Toggle Day/Night
+- **Space**: Jump
 - **`**: Toggle debug overlay
+- **N**: Toggle Day/Night only while debug mode is open
 - **ESC**: Release cursor
 
 ## Run & Deploy
@@ -114,6 +133,15 @@ npm install
 npm run dev
 ```
 
+### Verify the build
+
+```bash
+npm test
+npm run check
+```
+
+`npm run check` runs the story-state tests and the production build.
+
 ### Build for Production
 ```bash
 npm run build
@@ -122,7 +150,7 @@ npm run preview
 
 ### Deployment Notes
 - The project is a static Vite build. Deploy the `dist/` output to any static host (Vercel, Netlify, GitHub Pages).
-- The procedural town, effects, fallback avatar, UI, and soundscape are bundled locally. fRiENDSiES metadata and model parts are streamed after the world is already playable.
+- The hybrid procedural/Blender town, effects, fallback avatar, UI, soundscape, default player `#0001`, Steward `#8914`, and their decoder are bundled locally. Optional player-token metadata and model parts stream after the world is already playable.
 
 ## Roadmap (Plan 2.0)
 1. **Rebaseline + Reliability** — reconcile decisions, remove remote startup blockers, and add CI/tests

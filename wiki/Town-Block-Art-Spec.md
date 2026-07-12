@@ -7,10 +7,11 @@
 
 ## Layout Goals
 
-* One loop path
-* One focal square
-* One interior
-* 2–3 landmarks
+* Keep the story plaza as the focal square with at least 4m of breathing room beyond its edge
+* Place cottages in a readable outer ring with their own garden plots
+* End approach paths at doorsteps rather than beneath building colliders
+* Connect the districts with secondary garden walks and 2–3 landmarks
+* Keep authored coordinates in `src/config/town.js` so visuals, physics, story routes, and tests agree
 
 ## Collider Authoring
 
@@ -22,3 +23,17 @@
 * Export as `.glb`
 * Apply transforms
 * Keep textures reasonable (2K max for MVP)
+* Author at local origin with the runtime facade facing +Z
+* Keep simple Rapier boxes authoritative for collision during the current milestone
+
+Blender 4.5 LTS source files live under `assets-src/`; optimized runtime exports live under `public/`. Rebuild the current kits from the repository root with:
+
+```bash
+/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender \
+  --background --factory-startup \
+  --python scripts/build-town-cottages.py
+
+/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender \
+  --background --factory-startup \
+  --python scripts/build-village-dressing.py
+```

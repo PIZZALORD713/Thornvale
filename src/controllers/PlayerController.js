@@ -12,7 +12,7 @@ export class PlayerController {
   /**
    * @param {import('../core/InputManager.js').InputManager} input
    * @param {import('../physics/CharacterMotor.js').CharacterMotor} motor
-   * @param {import('./CameraRig.js').CameraRig} cameraRig
+   * @param {import('../game/camera/CameraRig.js').CameraRig} cameraRig
    * @param {import('../visuals/VisualRig.js').VisualRig} visualRig
    */
   constructor(input, motor, cameraRig, visualRig) {
@@ -27,8 +27,21 @@ export class PlayerController {
     // Jump settings
     this.jumpStrength = 8.0;
     this.jumpCooldown = 0;
+    this.jumpCooldownDuration = 0.16;
+    this.jumpBufferTime = 0.12;
+    this.jumpBufferTimer = 0;
     this.maxAirJumps = 1;
     this.airJumpsRemaining = this.maxAirJumps;
+
+    // Reused intent objects keep InputManager's shared return object immutable
+    // and avoid allocating on every frame.
+    this._moveIntent = { x: 0, z: 0 };
+    this._motorIntent = {
+      targetSpeed: this.motor.walkSpeed ?? this.motor.maxSpeed ?? 4.2,
+      jumpHeld: false,
+      sprinting: false,
+    };
+    this._jumpHeldLastUpdate = false;
   }
 
   /**
@@ -36,6 +49,8 @@ export class PlayerController {
    * @param {number} dt - Delta time
    */
   update(dt) {
+    const safeDt = Math.max(0, Number(dt) || 0);
+
     // --- Input -> Camera ---
     const mouseDelta = this.input.consumeMouseDelta();
     this.cameraRig.applyInput(mouseDelta.x, mouseDelta.y);
@@ -45,30 +60,49 @@ export class PlayerController {
       const charPos = this.motor.getPosition();
       const platformVel = this.platformCarrier.getPlatformVelocity(null, charPos);
       this.motor.setPlatformVelocity(platformVel);
+    } else {
+      this.motor.setPlatformVelocity(null);
     }
 
     // --- Input -> Motor ---
-    const moveInput = this.input.getMovementInput();
-    moveInput.x *= -1; // Fix inverted left/right controls
+    const rawMoveInput = this.input.getMovementInput();
+    const moveInput = this._moveIntent;
+    moveInput.x = -rawMoveInput.x; // Preserve the established camera-relative handedness.
+    moveInput.z = rawMoveInput.z;
     const cameraYaw = this.cameraRig.getYaw();
-
-    this.motor.update(dt, moveInput, cameraYaw);
 
     // --- Jump ---
     if (this.motor.isGrounded) {
       this.airJumpsRemaining = this.maxAirJumps;
     }
-    if (this.input.keys.jump && this.jumpCooldown <= 0) {
-      if (this.motor.canJump()) {
-        this.motor.jump(this.jumpStrength);
-        this.jumpCooldown = 0.2; // Prevent spam
-      } else if (this.airJumpsRemaining > 0) {
-        this.motor.jump(this.jumpStrength, true);
-        this.airJumpsRemaining -= 1;
-        this.jumpCooldown = 0.2;
-      }
+
+    this.jumpCooldown = Math.max(0, this.jumpCooldown - safeDt);
+    this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - safeDt);
+
+    const jumpHeld = Boolean(this.input.keys?.jump);
+    const jumpPressed = typeof this.input.consumeKeyPress === 'function'
+      ? this.input.consumeKeyPress('Space')
+      : (jumpHeld && !this._jumpHeldLastUpdate);
+    this._jumpHeldLastUpdate = jumpHeld;
+
+    if (jumpPressed) {
+      this.jumpBufferTimer = this.jumpBufferTime;
     }
-    this.jumpCooldown -= dt;
+    this._consumeBufferedJump();
+
+    const sprinting = Boolean(this.input.keys?.sprint)
+      && (moveInput.x * moveInput.x + moveInput.z * moveInput.z > 0.001);
+    this._motorIntent.targetSpeed = sprinting
+      ? (this.motor.sprintSpeed ?? 5.6)
+      : (this.motor.walkSpeed ?? this.motor.maxSpeed ?? 4.2);
+    this._motorIntent.jumpHeld = jumpHeld;
+    this._motorIntent.sprinting = sprinting;
+
+    this.motor.update(safeDt, moveInput, cameraYaw, this._motorIntent);
+
+    if (this.motor.isGrounded) {
+      this.airJumpsRemaining = this.maxAirJumps;
+    }
 
     // --- Motor -> Visual ---
     const position = this.motor.getPosition();
@@ -78,6 +112,24 @@ export class PlayerController {
 
     // --- Motor -> Camera (setTarget copies, safe with reusable vector) ---
     this.cameraRig.setTarget(position);
+  }
+
+  /** Consume a buffered press once a ground/coyote or air jump is available. */
+  _consumeBufferedJump() {
+    if (this.jumpBufferTimer <= 0 || this.jumpCooldown > 0) return false;
+
+    let didJump = false;
+    if (this.motor.canJump()) {
+      didJump = this.motor.jump(this.jumpStrength);
+    } else if (!this.motor.isGrounded && this.airJumpsRemaining > 0) {
+      didJump = this.motor.jump(this.jumpStrength, true);
+      if (didJump) this.airJumpsRemaining -= 1;
+    }
+
+    if (!didJump) return false;
+    this.jumpBufferTimer = 0;
+    this.jumpCooldown = this.jumpCooldownDuration;
+    return true;
   }
 
   /**
@@ -106,6 +158,9 @@ export class PlayerController {
    */
   teleport(position) {
     this.motor.teleport(position);
+    this.jumpBufferTimer = 0;
+    this.jumpCooldown = 0;
+    this.airJumpsRemaining = this.maxAirJumps;
     this.visualRig.update(0, position, null);
     this.cameraRig.setTarget(position);
     this.cameraRig.resetPosition();
@@ -125,9 +180,24 @@ export class PlayerController {
       velocity: `${vel.x.toFixed(2)}, ${vel.y.toFixed(2)}, ${vel.z.toFixed(2)}`,
       speed: vel.length().toFixed(2),
       grounded: this.motor.isGrounded,
+      phase: this.motor.phase || (this.motor.isGrounded ? 'grounded' : 'falling'),
       platform: this.platformCarrier?.getCurrentPlatformName() || 'none',
       hover: hover === null ? '—' : `${hover.toFixed(3)}m`,
       visOffsetY: Number.isFinite(visOffsetY) ? visOffsetY.toFixed(3) : '—',
+    };
+  }
+
+  /** Animation-ready state owned by the motor (reused; do not mutate/store). */
+  getLocomotionState() {
+    return this.motor.getMotionState?.() || {
+      phase: this.motor.isGrounded ? 'grounded' : 'falling',
+      grounded: this.motor.isGrounded,
+      justJumped: false,
+      justLanded: false,
+      landingSpeed: 0,
+      horizontalSpeed: Math.hypot(this.motor.velocity?.x || 0, this.motor.velocity?.z || 0),
+      verticalVelocity: this.motor.velocity?.y || 0,
+      isSprinting: false,
     };
   }
 }

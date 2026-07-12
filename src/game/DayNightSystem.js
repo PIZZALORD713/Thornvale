@@ -126,6 +126,21 @@ export class DayNightSystem {
     this._apply(this.mix);
   }
 
+  /** Story-controlled twilight used before the ritual bell. */
+  applyDusk(immediate = false) {
+    this.isNight = false;
+    this.targetMix = 0.58;
+    if (immediate) this.mix = this.targetMix;
+    this._apply(this.mix);
+  }
+
+  /** Restore an authored story time from saved state. */
+  applyStoryTime(phase = 'day', immediate = false) {
+    if (phase === 'night') this.applyNight(immediate);
+    else if (phase === 'dusk') this.applyDusk(immediate);
+    else this.applyDay(immediate);
+  }
+
   update(dt) {
     if (Math.abs(this.targetMix - this.mix) < 0.0005) {
       this.mix = this.targetMix;

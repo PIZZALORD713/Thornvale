@@ -23,20 +23,29 @@ import {
 import { PhysicsWorld } from './core/PhysicsWorld.js';
 import { InputManager } from './core/InputManager.js';
 import { CharacterMotor } from './physics/CharacterMotor.js';
-import { CameraRig } from './controllers/CameraRig.js';
+import { CameraRig } from './game/camera/CameraRig.js';
+import { configureCameraRig } from './config/camera.js';
 import { PlayerController } from './controllers/PlayerController.js';
 import { VisualRig } from './visuals/VisualRig.js';
 import { CharacterLoader } from './visuals/CharacterLoader.js';
+import { FriendsiesAnimator } from './visuals/FriendsiesAnimator.js';
 import { createKawaiiAvatar } from './visuals/KawaiiAvatar.js';
+import { loadFriendsiesAnimationPack } from './visuals/loadFriendsiesAnimationPack.js';
+import { StewardActor } from './visuals/StewardActor.js';
+import { StoryWorld } from './visuals/StoryWorld.js';
 import { KawaiiSky } from './visuals/KawaiiSky.js';
 import { PostProcessing } from './visuals/PostProcessing.js';
 import { KawaiiVFX } from './visuals/KawaiiVFX.js';
 import { PlayerAnimator } from './visuals/PlayerAnimator.js';
 import { CozySoundscape } from './audio/CozySoundscape.js';
 import { HUD } from './ui/HUD.js';
+import { StoryUI } from './ui/StoryUI.js';
 import { DayNightSystem } from './game/DayNightSystem.js';
+import { GameSession } from './game/GameSession.js';
+import { CoreHookDirector } from './game/CoreHookDirector.js';
 import { InteractableSystem } from './game/InteractableSystem.js';
 import { buildTown } from './game/TownBuilder.js';
+import { CORE_HOOK_V03 } from './content/core-hook-v03.js';
 
 let scene;
 let camera;
@@ -49,7 +58,13 @@ let cameraRig;
 let visualRig;
 let playerController;
 let playerAnimator;
+let playerFriendsiesAnimator;
 let hud;
+let storyUI;
+let gameSession;
+let coreHookDirector;
+let storyWorld;
+let stewardActor;
 let dayNightSystem;
 let interactableSystem;
 let characterLoader;
@@ -63,6 +78,14 @@ let appReady = false;
 let debugEnabled = false;
 let footstepTimer = 0;
 let playerGlow;
+let storyStarted = false;
+let storyBlocking = false;
+let storyBlockDepth = 0;
+let stewardCastReady = false;
+let animationClips = [];
+let townLandmarks = {};
+let playerSpawnPoint;
+let cameraOcclusionTarget = null;
 
 const playerGlowDay = new Color(0xffc9dc);
 const playerGlowNight = new Color(0xa9c4ff);
@@ -72,9 +95,9 @@ const VISUAL_OFFSET_STEP = 0.002;
 const params = new URLSearchParams(window.location.search);
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
 const visualQuality = params.get('quality') || (reducedMotion ? 'medium' : 'high');
+const storyEnabled = params.get('story') !== 'off';
 
 const gameState = {
-  kindnessCount: 0,
   weather: reducedMotion ? 'clear' : 'mixed',
 };
 
@@ -89,9 +112,11 @@ function setLoading(progress, message) {
 
 async function init() {
   hud = new HUD().init();
+  storyUI = new StoryUI({ onBlockingChange: handleStoryBlocking }).init();
   setLoading(0.06, 'Waking the valley…');
 
   scene = new Scene();
+  storyWorld = new StoryWorld(scene, { reducedMotion }).init();
   camera = new PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.08, 180);
   camera.position.set(0, 4.8, 9);
 
@@ -150,7 +175,9 @@ async function init() {
 
   const town = await buildTown(physicsWorld, scene);
   const interactables = town.interactables || [];
+  townLandmarks = town.landmarks || {};
   const spawnPoint = town.spawnPoint || new Vector3(0, 2, 14);
+  playerSpawnPoint = spawnPoint.clone();
   worldAnimator = town.worldAnimator || (town.updateWorld
     ? { update: town.updateWorld }
     : null);
@@ -160,7 +187,13 @@ async function init() {
   inputManager = new InputManager();
   inputManager.init(renderer.domElement);
   inputManager.onLockChange = (locked) => {
-    hud.elements.lockOverlay?.classList.toggle('hidden', locked);
+    if (locked && storyBlocking) {
+      inputManager.exitLock();
+      return;
+    }
+    if (storyBlocking) hud.elements.lockOverlay?.classList.add('hidden');
+    else hud.elements.lockOverlay?.classList.toggle('hidden', locked);
+    if (locked && hud.elements.resumeLook) hud.elements.resumeLook.hidden = true;
     hud.setPlaying?.(locked);
   };
 
@@ -171,7 +204,9 @@ async function init() {
   visualRig = new VisualRig();
   visualRig.addToScene(scene);
   const storedOffset = Number.parseFloat(localStorage.getItem(VISUAL_OFFSET_STORAGE_KEY));
-  if (Number.isFinite(storedOffset)) visualRig.setVisualOffsetY(storedOffset);
+  if (params.get('visualOffset') === 'stored' && Number.isFinite(storedOffset)) {
+    visualRig.setVisualOffsetY(storedOffset);
+  }
 
   visualRig.setVisual(createKawaiiAvatar(), {
     autoAlign: true,
@@ -188,17 +223,8 @@ async function init() {
   scene.add(playerGlow);
 
   cameraRig = new CameraRig(camera);
-  cameraRig.distance = 6.6;
-  cameraRig.minDistance = 1.45;
-  cameraRig.maxDistance = 11;
-  cameraRig.collisionOffset = 0.62;
-  cameraRig.pivotHeight = 1.35;
-  cameraRig.lookAtHeight = 0.95;
-  cameraRig.shoulderOffset = 0.28;
-  cameraRig.positionSharpness = 7.5;
-  cameraRig.rotationSharpness = 10;
+  configureCameraRig(cameraRig);
   // Start by looking through the welcome gate toward the village plaza.
-  cameraRig.yaw = Math.PI;
   cameraRig.setTarget(characterMotor.getPosition());
   cameraRig.resetPosition();
 
@@ -209,8 +235,56 @@ async function init() {
     reducedMotion,
   });
 
+  const stewardAnchor = CORE_HOOK_V03.anchors.steward.welcome;
+  const stewardFallback = createKawaiiAvatar();
+  stewardFallback.name = 'StewardFallback';
+  stewardActor = new StewardActor(scene, stewardFallback, {
+    tokenId: CORE_HOOK_V03.steward.tokenId,
+    position: stewardAnchorToArray(stewardAnchor),
+    facingYaw: stewardAnchor.facing,
+  });
+
+  if (storyEnabled) {
+    gameSession = new GameSession({ storageKey: CORE_HOOK_V03.storageKey });
+    if (params.get('story') === 'reset' || params.get('reset') === '1') gameSession.reset();
+
+    const stewardInteractable = {
+      id: CORE_HOOK_V03.ids.steward,
+      position: stewardActor.position,
+      radius: 2.35,
+    };
+
+    coreHookDirector = new CoreHookDirector({
+      storyUI,
+      session: gameSession,
+      content: CORE_HOOK_V03,
+      dayNightSystem,
+      hud,
+      worldAnimator,
+      soundscape,
+      vfx,
+      postProcessing,
+      stewardActor,
+      moveSteward,
+      ringAnomalyBell,
+      setRoute: applyStoryRoute,
+      getRouteDestination: (choice) => storyWorld?.getDestination(choice),
+      resetPlayer: resetPlayerToArrival,
+      setStoryBlocking: handleStoryBlocking,
+      onError: (error) => {
+        console.error('[CoreHookDirector]', error);
+        hud.setStatus('A page slipped out of the story. Please try that courtesy again.');
+      },
+    });
+    coreHookDirector.init({ interactables, stewardInteractable });
+    registerStoryInteractions([...interactables, stewardInteractable]);
+  } else {
+    stewardCastReady = true;
+    stewardActor.setVisible(false);
+    registerLegacyInteractions(interactables);
+  }
+
   cacheCollisionObjects();
-  registerInteractions(interactables);
   bindPointerLock();
   window.addEventListener('resize', onResize);
   window.addEventListener('beforeunload', dispose, { once: true });
@@ -220,9 +294,9 @@ async function init() {
   hud.setReady?.();
   hud.setStatus('Ready — click to wander ✦');
 
-  // fRiENDSiES is the canonical cast. The local chibi remains visible only
-  // while remote character pieces stream in, or as a resilient offline fallback.
-  if (params.get('avatar') !== 'local') void loadFriendsiesAvatar();
+  // fRiENDSiES is the canonical cast. Local chibis remain visible only while
+  // the player and Steward #8914 stream in, or as resilient offline fallbacks.
+  void loadFriendsiesCast();
 
   window.thornvale = {
     scene,
@@ -233,23 +307,38 @@ async function init() {
     visualRig,
     characterMotor,
     playerController,
+    stewardActor,
+    storyUI,
+    gameSession,
+    coreHookDirector,
+    storyWorld,
     worldAnimator,
     hud,
   };
 }
 
-function registerInteractions(interactables) {
+function registerStoryInteractions(interactables) {
+  interactableSystem = new InteractableSystem(hud);
+
+  for (const interactable of interactables) {
+    interactable.enabled = () => (
+      (interactable.id !== CORE_HOOK_V03.ids.steward || stewardCastReady)
+      && (coreHookDirector?.isInteractableEnabled(interactable.id) ?? false)
+    );
+    interactable.prompt = () => coreHookDirector?.promptFor(interactable.id) || 'Listen closely';
+    interactable.onInteract = () => coreHookDirector?.interact(interactable.id);
+    interactableSystem.register(interactable);
+  }
+}
+
+function registerLegacyInteractions(interactables) {
   interactableSystem = new InteractableSystem(hud);
 
   for (const interactable of interactables) {
     if (interactable.id === 'ledger') {
       interactable.onInteract = () => {
-        gameState.kindnessCount += 1;
-        hud.showKindness(gameState.kindnessCount);
         celebrateInteraction(interactable.position, 'kindness');
-        return gameState.kindnessCount === 1
-          ? 'The ledger blooms at your touch. Kindness remembered ♡'
-          : `The valley remembers ${gameState.kindnessCount} little kindnesses.`;
+        return 'The ledger blooms at your touch. Kindness remembered ♡';
       };
     } else if (interactable.id === 'bell') {
       interactable.onInteract = () => {
@@ -278,8 +367,73 @@ function celebrateInteraction(position, kind) {
   hud?.celebrate?.(kind);
 }
 
+function stewardAnchorToArray(anchor = {}) {
+  return [
+    Number(anchor.x) || 0,
+    (Number(anchor.y) || 0) + 0.9,
+    Number(anchor.z) || 0,
+  ];
+}
+
+function moveSteward(anchor, options = {}) {
+  if (!stewardActor || !anchor) return null;
+  const target = stewardAnchorToArray(anchor);
+  if (options.immediate) stewardActor.teleport(target, anchor.facing ?? stewardActor.facingYaw);
+  else stewardActor.moveTo(target, { duration: options.duration });
+  return stewardActor;
+}
+
+function resetPlayerToArrival() {
+  if (!playerController || !playerSpawnPoint) return;
+  playerController.teleport(playerSpawnPoint);
+  configureCameraRig(cameraRig);
+  cameraRig.resetPosition();
+}
+
+function ringAnomalyBell() {
+  worldAnimator?.ringBell?.();
+  soundscape?.playChime?.('bell', { gain: 0.68, detune: -450 });
+  const bell = CORE_HOOK_V03.anchors.interactables.bell;
+  const position = new Vector3(bell.x, bell.y + 1.25, bell.z);
+  vfx?.interactionBurst(position, 'magic');
+  postProcessing?.pulse(0.72);
+  storyWorld?.setLedgerMood('false');
+}
+
+function applyStoryRoute(choice) {
+  storyWorld?.setRoute(choice);
+  storyWorld?.setLedgerMood(choice || 'normal');
+  if (!choice) return;
+
+  const destination = storyWorld?.getDestination(choice);
+  if (destination) vfx?.interactionBurst(destination.clone().add(new Vector3(0, 0.8, 0)), 'magic');
+}
+
+function handleStoryBlocking(blocking) {
+  const wasBlocking = storyBlocking;
+  if (blocking) storyBlockDepth += 1;
+  else storyBlockDepth = Math.max(0, storyBlockDepth - 1);
+  storyBlocking = storyBlockDepth > 0;
+  inputManager?.setGameplayEnabled?.(!storyBlocking);
+  if (storyBlocking) {
+    hud?.elements?.lockOverlay?.classList.add('hidden');
+    if (hud?.elements?.resumeLook) hud.elements.resumeLook.hidden = true;
+    if (document.pointerLockElement) inputManager?.exitLock?.();
+  } else if (wasBlocking && storyStarted && !inputManager?.isLocked) {
+    // StoryUI closes inside the click/key gesture, so this request can restore
+    // mouse look without making the player discover an extra canvas click.
+    void inputManager?.requestLock?.().then((locked) => {
+      if (locked || storyBlocking || inputManager?.isLocked) return;
+      hud?.setStatus?.('Click the valley to resume looking around.');
+      hud?.elements?.lockOverlay?.classList.add('hidden');
+      if (hud?.elements?.resumeLook) hud.elements.resumeLook.hidden = false;
+    });
+  }
+}
+
 function bindPointerLock() {
   const enterWorld = async () => {
+    if (hud?.elements?.resumeLook) hud.elements.resumeLook.hidden = true;
     soundscape?.start();
     hud?.beginAdventure?.();
     const locked = await inputManager?.requestLock?.();
@@ -289,40 +443,167 @@ function bindPointerLock() {
       hud.elements.lockOverlay?.classList.add('hidden');
       hud.setPlaying?.(true);
     }
+
+    if (storyEnabled && coreHookDirector && !storyStarted) {
+      storyStarted = true;
+      try {
+        await coreHookDirector.start();
+      } catch (error) {
+        storyStarted = false;
+        console.error('[CoreHookDirector] first run failed to start', error);
+        hud?.setStatus?.('The first page would not open. Click the valley to try again.');
+      }
+    }
   };
 
   hud.elements.lockOverlay?.addEventListener('click', enterWorld);
+  hud.elements.resumeLook?.addEventListener('click', enterWorld);
   renderer.domElement.addEventListener('click', () => {
     if (!inputManager.isLocked) enterWorld();
   });
 }
 
-async function loadFriendsiesAvatar() {
+async function loadFriendsiesCast() {
   characterLoader = new CharacterLoader().init();
   const requestedToken = Number.parseInt(params.get('friend') || params.get('token') || '1', 10);
   const tokenId = Number.isFinite(requestedToken) && requestedToken > 0 ? requestedToken : 1;
-  hud.setStatus(`fRiENDSiES #${tokenId} is getting ready…`);
-  const metadataLoaded = await characterLoader.loadMetadata({ timeout: 6000 });
-  if (!metadataLoaded) {
-    hud.setStatus('fRiENDSiES is offline — your local valley buddy stepped in ♡');
-    return;
+  const useLocalPlayer = params.get('avatar') === 'local';
+  if (!storyBlocking) {
+    hud.setStatus(storyEnabled
+      ? `Steward Lumen and fRiENDSiES #${tokenId} are getting ready…`
+      : `fRiENDSiES #${tokenId} is getting ready…`);
   }
 
-  const characterVisual = await characterLoader.loadCharacter(tokenId);
-  if (!characterVisual) {
-    hud.setStatus('That fRiENDSiES look is resting — your local buddy stepped in ♡');
-    return;
+  if (window.thornvale) window.thornvale.characterLoader = characterLoader;
+
+  const animationPackPromise = loadFriendsiesAnimationPack()
+    .catch((error) => {
+      console.warn('[FriendsiesAnimator] Authored animation pack unavailable:', error);
+      return [];
+    })
+    .then((clips) => {
+      animationClips = clips;
+      stewardActor?.addClips(animationClips);
+      playerFriendsiesAnimator?.addClips(animationClips, {
+        walk: 'walk-low-arms',
+        jump: 'friendsies-jump-ascent',
+        fall: 'friendsies-fall',
+        land: 'friendsies-land',
+        joy: 'Joy-Jumper',
+        dance: 'Dance_Rumba',
+      });
+      if (window.thornvale) window.thornvale.animationClips = animationClips;
+      return clips;
+    });
+
+  // Lumen's slim local manifest loads independently of the full collection,
+  // so #8914 and his authored reactions are ready before the first greeting.
+  const stewardVisualPromise = storyEnabled
+    ? characterLoader
+      .loadCharacter(CORE_HOOK_V03.steward.tokenId, { instanceId: 'steward' })
+      .then((visual) => {
+        if (visual) stewardActor?.setVisual(visual);
+        return visual;
+      })
+      .catch((error) => {
+        console.warn('[CharacterLoader] Bundled Steward #8914 failed to load:', error);
+        return null;
+      })
+    : Promise.resolve(null);
+  const stewardPromise = storyEnabled
+    ? Promise.all([stewardVisualPromise, animationPackPromise])
+      .then(([visual]) => visual)
+      .finally(() => {
+        stewardCastReady = true;
+      })
+    : Promise.resolve(null);
+
+  const bundledPlayerPromise = !useLocalPlayer && characterLoader.hasBundledCharacter(tokenId)
+    ? characterLoader
+      .loadCharacter(tokenId, { instanceId: 'player' })
+      .then((visual) => {
+        if (visual) applyPlayerFriendsiesVisual(visual);
+        return visual;
+      })
+      .catch((error) => {
+        console.warn(`[CharacterLoader] Bundled player #${tokenId} failed to load:`, error);
+        return null;
+      })
+    : Promise.resolve(null);
+
+  const needsRemoteMetadata = !useLocalPlayer && !characterLoader.hasBundledCharacter(tokenId);
+
+  const [metadataLoaded, clips] = await Promise.all([
+    needsRemoteMetadata
+      ? characterLoader.loadMetadata({ timeout: 6000 })
+      : Promise.resolve(false),
+    animationPackPromise,
+  ]);
+
+  animationClips = clips;
+
+  let playerVisual = await bundledPlayerPromise;
+  if (!playerVisual && !useLocalPlayer && metadataLoaded) {
+    playerVisual = await characterLoader.loadCharacter(tokenId, { instanceId: 'player' });
+    if (playerVisual) applyPlayerFriendsiesVisual(playerVisual);
+  }
+  const stewardVisual = await stewardPromise;
+
+  if (!stewardVisual && storyEnabled) {
+    console.warn('[CharacterLoader] Steward #8914 fell back to the local steward visual.');
   }
 
-  visualRig.setVisual(characterVisual, {
+  if (window.thornvale) {
+    window.thornvale.characterLoader = characterLoader;
+    window.thornvale.animationClips = animationClips;
+    window.thornvale.playerFriendsiesAnimator = playerFriendsiesAnimator;
+  }
+
+  if (!storyBlocking) {
+    if (playerVisual && stewardVisual) {
+      hud.setStatus(`fRiENDSiES #${tokenId} and Steward Lumen #8914 joined the adventure ✦`);
+    } else if (stewardVisual) {
+      hud.setStatus(metadataLoaded || useLocalPlayer
+        ? 'Steward Lumen #8914 is ready to welcome you ✦'
+        : 'Steward Lumen #8914 is ready; your local valley buddy stepped in ♡');
+    } else if (playerVisual) {
+      hud.setStatus(`fRiENDSiES #${tokenId} joined; the local steward is helping today ♡`);
+    } else {
+      hud.setStatus('The local valley cast stepped in while fRiENDSiES rests ♡');
+    }
+  }
+}
+
+function applyPlayerFriendsiesVisual(playerVisual) {
+  if (!playerVisual || visualRig.visual === playerVisual) return;
+  playerFriendsiesAnimator?.dispose();
+  visualRig.setVisual(playerVisual, {
     autoAlign: true,
     capsuleHalfHeight: characterMotor.halfHeight,
     capsuleRadius: characterMotor.radius,
-    clearance: 0.02,
+    clearance: 0.018,
   });
+  playerFriendsiesAnimator = new FriendsiesAnimator(playerVisual, {
+    clips: animationClips,
+    roles: {
+      idle: 'Idle Float',
+      walk: 'walk-low-arms',
+      jump: 'friendsies-jump-ascent',
+      fall: 'friendsies-fall',
+      land: 'friendsies-land',
+      joy: 'Joy-Jumper',
+      dance: 'Dance_Rumba',
+    },
+  });
+  // Skeletal motion now carries the walk cycle; keep the procedural layer as
+  // a small, tactile squash-and-sway accent instead of doubling the stride.
+  playerAnimator.setMotionScale(reducedMotion ? 0.18 : 0.42);
   playerAnimator.captureBasePose();
-  hud.setStatus(`fRiENDSiES #${tokenId} joined the adventure ✦`);
   postProcessing?.pulse(0.45);
+
+  if (window.thornvale) {
+    window.thornvale.playerFriendsiesAnimator = playerFriendsiesAnimator;
+  }
 }
 
 function startAnimationLoop() {
@@ -350,11 +631,31 @@ function animate() {
     }
 
     playerController.update(dt);
-    playerAnimator?.update(dt, {
-      velocity: characterMotor.getVelocity(),
-      isGrounded: characterMotor.isGrounded,
-    });
+    const velocity = characterMotor.getVelocity();
+    const locomotionState = playerController.getLocomotionState();
+    playerAnimator?.update(dt, locomotionState, velocity);
+    const horizontalSpeed = locomotionState.horizontalSpeed;
+    playerFriendsiesAnimator?.updateLocomotion(locomotionState, dt);
+    playerFriendsiesAnimator?.update(dt);
+    if (
+      playerFriendsiesAnimator
+      && locomotionState.grounded
+      && locomotionState.phase === 'grounded'
+      && playerFriendsiesAnimator.locomotionState === 'idle'
+      && !playerFriendsiesAnimator.isPlayingOneShot
+    ) {
+      const measuredBottomY = playerFriendsiesAnimator.getFootSoleY();
+      visualRig.stabilizeGrounding(dt, characterMotor.getCapsuleBottomY(), {
+        clearance: 0.028,
+        measuredBottomY,
+        deadZone: 0.004,
+        maxOffset: 0.055,
+        maxSpeed: 0.08,
+        sharpness: 6,
+      });
+    }
     playerController.lateUpdate(dt, scene);
+    updateCameraOcclusion();
     const playerPosition = characterMotor.getPosition();
     playerGlow?.position.set(playerPosition.x, playerPosition.y + 2.25, playerPosition.z + 1.15);
     if (playerGlow) {
@@ -363,16 +664,20 @@ function animate() {
     }
   }
 
+  coreHookDirector?.update(dt, characterMotor?.getPosition?.());
+  storyWorld?.update(dt);
+
   if (interactableSystem && characterMotor) {
     interactableSystem.update(characterMotor.getPosition(), inputManager);
   }
 
-  worldAnimator?.update?.(dt, dayNightSystem?.isNight ?? false);
+  const twilightActive = (dayNightSystem?.mix || 0) >= 0.42;
+  worldAnimator?.update?.(dt, twilightActive);
 
   if (vfx) {
     vfx.update(dt, {
       playerPosition: characterMotor?.getPosition?.(),
-      isNight: dayNightSystem?.isNight ?? false,
+      isNight: twilightActive,
       weather: gameState.weather,
     });
   }
@@ -394,7 +699,6 @@ function animate() {
 function updateAudio(dt) {
   const velocity = characterMotor?.getVelocity?.();
   const speed = velocity ? Math.hypot(velocity.x, velocity.z) : 0;
-  footstepTimer -= dt;
 
   soundscape?.update(dt, {
     isNight: dayNightSystem?.isNight ?? false,
@@ -402,14 +706,32 @@ function updateAudio(dt) {
     playerSpeed: speed,
   });
 
+  if (playerFriendsiesAnimator?.consumeFootstep) {
+    let contactCount = 0;
+    while (playerFriendsiesAnimator.consumeFootstep()) contactCount += 1;
+
+    if (soundscape?.isStarted && characterMotor?.isGrounded) {
+      const intensity = Math.min(1, speed / (characterMotor.sprintSpeed || 5.6));
+      for (let contact = 0; contact < contactCount; contact += 1) {
+        soundscape.playFootstep(intensity);
+      }
+    }
+    footstepTimer = 0;
+    return;
+  }
+
+  // Procedural/local fallback avatars have no skeletal contact markers.
+  footstepTimer -= dt;
   if (soundscape?.isStarted && characterMotor?.isGrounded && speed > 1.25 && footstepTimer <= 0) {
     soundscape.playFootstep(Math.min(1, speed / 6));
-    footstepTimer = Math.max(0.19, 0.44 - speed * 0.035);
+    const cadenceRatio = speed / (characterMotor.walkSpeed || 4.2);
+    footstepTimer = Math.max(0.28, (2 / 3) / cadenceRatio);
   }
 }
 
 function handleGlobalInput() {
-  if (inputManager.consumeKeyPress('KeyN')) {
+  const requestedTimeToggle = inputManager.consumeKeyPress('KeyN');
+  if (requestedTimeToggle && (!storyEnabled || debugEnabled)) {
     const mode = dayNightSystem.toggle();
     const night = mode === 'NIGHT';
     hud.setDayNight(mode);
@@ -419,9 +741,6 @@ function handleGlobalInput() {
 
     const position = characterMotor?.getPosition?.();
     if (position) vfx?.interactionBurst(new Vector3(position.x, position.y + 1.5, position.z), 'magic');
-
-    if (night && gameState.kindnessCount > 0) hud.showKindness(gameState.kindnessCount);
-    else if (!night) hud.hideKindness();
 
     hud.setStatus(night
       ? 'Moonpetals wake as twilight settles…'
@@ -470,6 +789,27 @@ function cacheCollisionObjects() {
   cameraRig.setCollisionObjects(meshes);
 }
 
+function updateCameraOcclusion() {
+  const shouldHide = cameraRig?.shouldHideTarget?.() ?? false;
+  visualRig?.setCameraOccluded?.(shouldHide);
+  const nextTarget = shouldHide
+    ? cameraRig?.getCollisionObject?.()?.cameraOcclusionTarget || null
+    : null;
+  if (nextTarget === cameraOcclusionTarget) return;
+
+  if (cameraOcclusionTarget) {
+    cameraOcclusionTarget.visible = cameraOcclusionTarget.userData
+      ?.cameraAuthoredVisibility ?? true;
+  }
+  cameraOcclusionTarget = nextTarget;
+  if (cameraOcclusionTarget) {
+    if (cameraOcclusionTarget.userData.cameraAuthoredVisibility === undefined) {
+      cameraOcclusionTarget.userData.cameraAuthoredVisibility = cameraOcclusionTarget.visible;
+    }
+    cameraOcclusionTarget.visible = false;
+  }
+}
+
 function isCameraDecoration(object) {
   let current = object;
   while (current) {
@@ -493,6 +833,20 @@ function onResize() {
 }
 
 function dispose() {
+  if (cameraOcclusionTarget) {
+    cameraOcclusionTarget.visible = cameraOcclusionTarget.userData
+      ?.cameraAuthoredVisibility ?? true;
+    cameraOcclusionTarget = null;
+  }
+  coreHookDirector?.dispose();
+  storyUI?.dispose();
+  storyWorld?.dispose();
+  playerFriendsiesAnimator?.dispose();
+  stewardActor?.dispose();
+  visualRig?.removeFromScene?.(scene);
+  visualRig?.dispose();
+  characterLoader?.clearAll();
+  inputManager?.dispose();
   postProcessing?.dispose();
   vfx?.dispose();
   playerAnimator?.dispose();
