@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+* Limited fRiENDSiES head emission to explicit presentation opt-ins instead of
+  applying a white `0.22` lift to every head. `Grey Cloud` and Steward Lumen's
+  White Elephant retain their reviewed treatment; ordinary textured heads such
+  as token `#8`'s `Ye` keep their authored colors.
+
 ## 0.3.0 - 2026-07-12
 
 * Added the playable Core Hook story from the arrival letter through the Steward, ledger, second bell, correction choice, route, and ending.
