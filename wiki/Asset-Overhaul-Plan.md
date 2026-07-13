@@ -5,7 +5,7 @@
 | Field | Value |
 | --- | --- |
 | Status | Landmark Pilot v1 and Trait Echo v1 implemented and locally verified; asset authorization cleared; fresh-player and reference-device validation pending |
-| Baseline | `origin/main` at `5e28cd6644921be78cb4c7b53b5735c3594eb965` |
+| Baseline | `origin/main` at `c42d1f9606910efdcac45e940b5a13e821831b6a` |
 | Integration branch | `codex/integrate-aesthetic-v1` |
 | Primary surface | Spawn, welcome gate, Ledger/Bell plaza, and Steward Lumen |
 | Default behavior | Authored pilot + Trait Echo v1; existing v0.3 presentation remains the explicit fallback |

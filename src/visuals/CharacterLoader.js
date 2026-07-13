@@ -164,7 +164,6 @@ export async function fetchFriendsiesTokenMetadata(tokenId, options = {}) {
 
   return null;
 }
-
 export class CharacterLoader {
   constructor() {
     this.metadata = null;

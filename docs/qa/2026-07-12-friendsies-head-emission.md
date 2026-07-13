@@ -2,7 +2,8 @@
 
 ## Scope and decision gate
 
-- Worktree: `codex/asset-overhaul-test`, dirty with unrelated in-progress work.
+- Integration: `codex/integrate-aesthetic-v1` merged with `origin/main` at
+  `c42d1f9606910efdcac45e940b5a13e821831b6a`.
 - Player-facing beat: selected fRiENDSiES retain their authored head colors.
 - Baseline: every loaded head was overwritten to white emission at `0.22`.
 - Candidate: ordinary heads receive no material override; exact `Grey Cloud`
@@ -23,8 +24,9 @@
 
 | Command | Result | Notes |
 | --- | --- | --- |
+| `node --test tests/friendsies-head-emission.test.js` | Pass, 3 tests | Covers the isolated default no-op and exact/declarative exceptions merged from main. |
 | `node --test tests/friendsies-cast.test.js tests/friendsies-metadata-range.test.js` | Pass, 10 tests | Covers default no-op, exact Grey Cloud, explicit disable, White Elephant, and remote metadata. |
-| `npm run check` | Pass, 142 tests | Includes production build and passing asset audit. |
+| `npm run check` | Pass, 153 tests | Includes the merged mainline head-emission coverage, production build, and passing asset audit. |
 | `git diff --check` | Pass | No whitespace errors. |
 
 ## Browser matrix

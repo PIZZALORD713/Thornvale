@@ -125,9 +125,9 @@ outside `public/` and production `dist/`.
 
 Final coordinated check:
 
-- `npm run check`: **150 tests passed** on the `origin/main` integration,
+- `npm run check`: **153 tests passed** on the `origin/main` integration,
   production build passed, and the development `dist` asset audit passed at
-  8,066,575 / 8,388,608 bytes;
+  8,066,610 / 8,388,608 bytes;
 - focused route, Trait Echo, atlas, and breathing-grass suites passed;
 - `git diff --check`: passed;
 - historical strict `npm run assets:release`: was non-zero before the scoped
@@ -137,7 +137,7 @@ Final coordinated check:
 Authorization refresh: the two focused asset/policy suites passed 12/12 and
 `npm run assets:release` passed with 21 runtime files / 4,212,285 bytes, one
 authorized external dependency, and production `dist` at
-8,066,575 / 8,388,608 bytes. This clears the asset-permission gate only; it does
+8,066,610 / 8,388,608 bytes. This clears the asset-permission gate only; it does
 not close the fresh-player or reference-device gates below.
 
 ## Open validation gates
