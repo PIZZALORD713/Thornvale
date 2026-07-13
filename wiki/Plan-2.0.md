@@ -21,6 +21,7 @@ The first Milestone 1 implementation is now playable end to end. This is a proof
 - Neighborliness, relationship, rules, events, choice, phase, and ending persist in a versioned local save with reset and corrupt-save recovery.
 - Both outcomes change the route treatment, steward response, relationship, Neighborliness score, objective, and ending card.
 - fRiENDSiES idle, walk, joy-jump, and rumba clips are bound through the collection's canonical skeleton. Runtime derivatives and provenance are recorded under `public/animations/`.
+- Shareable fRiENDSiES player links may select IDs `1..10000` through the revision-pinned catalog and stream the selected token's components only from `https://storage.googleapis.com`. This project-scoped authorization is limited to integrated in-game player avatars in published Thornvale builds; it does not permit collection bundling, raw copying, mirroring, environmental adaptation, sublicensing, or outside-project reuse.
 - Automated state tests cover strict ordering, both anomaly triggers, anomaly idempotency across reload, both endings, save restoration, reset, and corrupt-save recovery.
 
 The immediate next gate is observational: run five clean first-play sessions, capture completion time and help requests, then tune wayfinding, pacing, and copy before adding another villager or system.

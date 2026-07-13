@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ship ThornVale Asset Family"
+  short_description: "Intake, validate, and release ThornVale assets"
+  default_prompt: "Use $thornvale-ship-asset-family to intake and ship this asset family with provenance, fallbacks, budgets, tests, and release evidence."

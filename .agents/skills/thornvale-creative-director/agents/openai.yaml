@@ -1,0 +1,4 @@
+interface:
+  display_name: "ThornVale Creative Director"
+  short_description: "Shape focused ThornVale story slices"
+  default_prompt: "Use $thornvale-creative-director to shape this idea into a scoped, consequential ThornVale playable slice."
