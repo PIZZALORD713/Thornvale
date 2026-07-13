@@ -18,6 +18,14 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 // Metadata URL (same as original)
 const METADATA_URL = "https://gist.githubusercontent.com/IntergalacticPizzaLord/a7b0eeac98041a483d715c8320ccf660/raw/ce7d37a94c33c63e2b50d5922e0711e72494c8dd/fRiENDSiES";
+const SOFT_WHITE_HEAD_EMISSION = Object.freeze({
+  color: 0xffffff,
+  emissiveIntensity: 0.22,
+  softWhite: true,
+});
+const STREAMED_HEAD_EMISSION_EXCEPTIONS = Object.freeze({
+  'Grey Cloud': SOFT_WHITE_HEAD_EMISSION,
+});
 
 // The first-run steward must not wait behind the full remote collection index.
 // These six owner-supplied traits are bundled with the release and keep the
@@ -29,7 +37,12 @@ const BUNDLED_CHARACTER_ENTRIES = Object.freeze({
       { trait_type: 'body', value: 'Little Cloud Boy', asset_url: '/friendsies/0001/body.glb' },
       { trait_type: 'face', value: 'Open', asset_url: '/friendsies/0001/face-open.png' },
       { trait_type: 'hand', value: 'Flower White', asset_url: '/friendsies/0001/hand-flower-white.glb' },
-      { trait_type: 'head', value: 'Grey Cloud', asset_url: '/friendsies/0001/head-grey-cloud.glb' },
+      {
+        trait_type: 'head',
+        value: 'Grey Cloud',
+        asset_url: '/friendsies/0001/head-grey-cloud.glb',
+        presentation: { headEmission: SOFT_WHITE_HEAD_EMISSION },
+      },
       { trait_type: 'shoe', value: 'Low Tops Yellow', asset_url: '/friendsies/0001/shoes-low-tops-yellow.glb' },
     ],
   },
@@ -39,7 +52,12 @@ const BUNDLED_CHARACTER_ENTRIES = Object.freeze({
       { trait_type: 'backpiece', value: 'Pip', asset_url: '/friendsies/8914/backpiece-pip.glb' },
       { trait_type: 'body', value: 'Frosted Cloud Boy', asset_url: '/friendsies/8914/body.glb' },
       { trait_type: 'hand', value: 'Torch', asset_url: '/friendsies/8914/hand-torch.glb' },
-      { trait_type: 'head', value: 'White Elephant', asset_url: '/friendsies/8914/head-white-elephant.glb' },
+      {
+        trait_type: 'head',
+        value: 'White Elephant',
+        asset_url: '/friendsies/8914/head-white-elephant.glb',
+        presentation: { headEmission: SOFT_WHITE_HEAD_EMISSION },
+      },
       { trait_type: 'shoe', value: 'Wrappers Gold', asset_url: '/friendsies/8914/shoes-wrappers-gold.glb' },
       { trait_type: 'sprout', value: 'Crown Up', asset_url: '/friendsies/8914/sprout-crown-up.glb' },
     ],
@@ -255,11 +273,7 @@ export class CharacterLoader {
         faceAnchor,
       );
       retargetRigidAttachmentsToBodyBones(headScene, bodySkeleton);
-      // Preserve a pearly white read without turning the steward's face into a
-      // bloom source. The held lantern carries the visible glow instead.
-      boostHeadEmissive(headScene, 0.22, {
-        softWhite: /cloud|white elephant/i.test(headAttr?.value || ''),
-      });
+      applyFriendsiesHeadPresentation(headScene, headAttr);
       tuneMaterialsForEnv(headScene);
     }
     if (faceTexture && faceOverlayCount === 0) faceTexture.dispose();
@@ -669,8 +683,40 @@ function createSkinnedFaceOverlayFromHead(headScene, faceTexture, bodySkeleton, 
   return created;
 }
 
-function boostHeadEmissive(headScene, intensity = 0.22, options = {}) {
-  if (!headScene) return;
+const DEFAULT_HEAD_EMISSION = Object.freeze({
+  color: 0xffffff,
+  emissiveIntensity: 0.22,
+  softWhite: false,
+});
+
+/**
+ * Resolve a head-only material override.
+ *
+ * Ordinary heads return null so authored color and PBR values remain intact.
+ * Bundled heads opt in declaratively; streamed metadata can use only the small
+ * exact-name exception list above until each additional asset is reviewed.
+ */
+export function resolveHeadEmissionPresentation(trait) {
+  const traitType = trait?.traitType ?? trait?.trait_type;
+  if (String(traitType || '').toLowerCase() !== 'head') return null;
+
+  const declared = trait?.presentation?.headEmission;
+  if (declared === false) return null;
+  if (declared === true) return { ...DEFAULT_HEAD_EMISSION };
+  if (declared && typeof declared === 'object') {
+    return { ...DEFAULT_HEAD_EMISSION, ...declared };
+  }
+  if (declared !== undefined) return null;
+
+  const knownException = STREAMED_HEAD_EMISSION_EXCEPTIONS[String(trait?.value ?? '')];
+  return knownException ? { ...DEFAULT_HEAD_EMISSION, ...knownException } : null;
+}
+
+export function applyFriendsiesHeadPresentation(headScene, trait) {
+  const presentation = resolveHeadEmissionPresentation(trait);
+  if (!headScene || !presentation) return false;
+
+  let applied = false;
   headScene.traverse((child) => {
     if (!child.isMesh) return;
 
@@ -678,19 +724,19 @@ function boostHeadEmissive(headScene, intensity = 0.22, options = {}) {
       ? child.material
       : [child.material];
     for (const mat of mats) {
-      // A very low uniform lift prevents white heads from turning grey under
-      // roofs while remaining well below the post-process bloom threshold.
       if (!mat?.emissive?.isColor) continue;
-      if (options.softWhite) {
+      if (presentation.softWhite) {
         mat.color?.set?.(0xffffff);
         if ('metalness' in mat) mat.metalness = 0.02;
         if ('roughness' in mat) mat.roughness = 0.92;
       }
-      mat.emissive.set(0xffffff);
-      mat.emissiveIntensity = intensity;
+      mat.emissive.set(presentation.color);
+      mat.emissiveIntensity = presentation.emissiveIntensity;
       mat.needsUpdate = true;
+      applied = true;
     }
   });
+  return applied;
 }
 
 function addSoftHandheldGlow(partScene, bodySkeleton) {
