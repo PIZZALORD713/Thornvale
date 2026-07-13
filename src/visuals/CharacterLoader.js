@@ -2,7 +2,7 @@
  * CharacterLoader - Loads fRiENDSiES characters from metadata
  *
  * Responsibilities:
- * - Fetch metadata from Gist
+ * - Fetch one selected metadata entry from the pinned catalog
  * - Load body/head/parts GLBs
  * - Bind parts to body skeleton
  * - Create face texture overlay
@@ -15,59 +15,160 @@ import {
 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import {
+  getFriendsiesHeadEmissionException,
+  getCuratedFriendsiesEntry,
+  hasCuratedFriendsiesCharacter,
+} from '../content/friendsies-cast.js';
+import {
+  FRIENDSIES_METADATA_CATALOG_BYTE_LENGTH,
+  FRIENDSIES_METADATA_CATALOG_URL,
+  FRIENDSIES_TOKEN_MAX,
+  FRIENDSIES_TOKEN_MIN,
+  parseFriendsiesTokenSelector,
+  resolveFriendsiesComponentAssetUrl,
+} from '../config/player-character.js';
 
-// Metadata URL (same as original)
-const METADATA_URL = "https://gist.githubusercontent.com/IntergalacticPizzaLord/a7b0eeac98041a483d715c8320ccf660/raw/ce7d37a94c33c63e2b50d5922e0711e72494c8dd/fRiENDSiES";
-const SOFT_WHITE_HEAD_EMISSION = Object.freeze({
-  color: 0xffffff,
-  emissiveIntensity: 0.22,
-  softWhite: true,
-});
-const STREAMED_HEAD_EMISSION_EXCEPTIONS = Object.freeze({
-  'Grey Cloud': SOFT_WHITE_HEAD_EMISSION,
-});
+const METADATA_TOKEN_COUNT = FRIENDSIES_TOKEN_MAX - FRIENDSIES_TOKEN_MIN + 1;
+const METADATA_RANGE_CHUNK_SIZE = 192 * 1024;
+const METADATA_RANGE_ATTEMPTS = 10;
+const METADATA_ENTRY_EXPANSION = 256 * 1024;
+const UTF8_ENCODER = new TextEncoder();
 
-// The first-run steward must not wait behind the full remote collection index.
-// These six owner-supplied traits are bundled with the release and keep the
-// same metadata shape as streamed fRiENDSiES entries.
-const BUNDLED_CHARACTER_ENTRIES = Object.freeze({
-  1: {
-    token_id: 1,
-    attributes: [
-      { trait_type: 'body', value: 'Little Cloud Boy', asset_url: '/friendsies/0001/body.glb' },
-      { trait_type: 'face', value: 'Open', asset_url: '/friendsies/0001/face-open.png' },
-      { trait_type: 'hand', value: 'Flower White', asset_url: '/friendsies/0001/hand-flower-white.glb' },
-      {
-        trait_type: 'head',
-        value: 'Grey Cloud',
-        asset_url: '/friendsies/0001/head-grey-cloud.glb',
-        presentation: { headEmission: SOFT_WHITE_HEAD_EMISSION },
-      },
-      { trait_type: 'shoe', value: 'Low Tops Yellow', asset_url: '/friendsies/0001/shoes-low-tops-yellow.glb' },
-    ],
-  },
-  8914: {
-    token_id: 8914,
-    attributes: [
-      { trait_type: 'backpiece', value: 'Pip', asset_url: '/friendsies/8914/backpiece-pip.glb' },
-      { trait_type: 'body', value: 'Frosted Cloud Boy', asset_url: '/friendsies/8914/body.glb' },
-      { trait_type: 'hand', value: 'Torch', asset_url: '/friendsies/8914/hand-torch.glb' },
-      {
-        trait_type: 'head',
-        value: 'White Elephant',
-        asset_url: '/friendsies/8914/head-white-elephant.glb',
-        presentation: { headEmission: SOFT_WHITE_HEAD_EMISSION },
-      },
-      { trait_type: 'shoe', value: 'Wrappers Gold', asset_url: '/friendsies/8914/shoes-wrappers-gold.glb' },
-      { trait_type: 'sprout', value: 'Crown Up', asset_url: '/friendsies/8914/sprout-crown-up.glb' },
-    ],
-  },
-});
+/**
+ * Fetch one exact token entry from the pinned, numerically ordered catalog.
+ * GitHub's raw endpoint supports CORS byte ranges, so arbitrary player links
+ * do not need to transfer or parse the complete 18.5 MB collection document.
+ */
+export async function fetchFriendsiesTokenMetadata(tokenId, options = {}) {
+  const numericTokenId = parseFriendsiesTokenSelector(tokenId);
+  if (numericTokenId === null) return null;
 
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  if (typeof fetchImpl !== 'function') throw new Error('Fetch is unavailable');
+
+  const url = options.url || FRIENDSIES_METADATA_CATALOG_URL;
+  const byteLength = positiveInteger(
+    options.byteLength,
+    FRIENDSIES_METADATA_CATALOG_BYTE_LENGTH,
+  );
+  const tokenCount = positiveInteger(options.tokenCount, METADATA_TOKEN_COUNT);
+  const chunkSize = Math.min(
+    byteLength,
+    positiveInteger(options.chunkSize, METADATA_RANGE_CHUNK_SIZE),
+  );
+  const maxAttempts = positiveInteger(options.maxAttempts, METADATA_RANGE_ATTEMPTS);
+
+  let low = 0;
+  let high = byteLength - 1;
+  const proportionalPosition = tokenCount > 1
+    ? (numericTokenId - 1) / (tokenCount - 1)
+    : 0;
+  let cursor = Math.round(clamp(proportionalPosition, 0, 1) * high);
+  const seenRanges = new Set();
+
+  for (let attempt = 0; attempt < maxAttempts && low <= high; attempt += 1) {
+    cursor = clamp(Math.round(cursor), low, high);
+    let start = clamp(
+      cursor - Math.floor(chunkSize / 2),
+      0,
+      Math.max(0, byteLength - chunkSize),
+    );
+    let end = Math.min(byteLength - 1, start + chunkSize - 1);
+
+    const rangeKey = `${start}-${end}`;
+    if (seenRanges.has(rangeKey)) {
+      cursor = Math.floor((low + high) / 2);
+      start = clamp(
+        cursor - Math.floor(chunkSize / 2),
+        0,
+        Math.max(0, byteLength - chunkSize),
+      );
+      end = Math.min(byteLength - 1, start + chunkSize - 1);
+      if (seenRanges.has(`${start}-${end}`)) break;
+    }
+    seenRanges.add(`${start}-${end}`);
+
+    const range = await fetchMetadataRange(fetchImpl, url, start, end, options.signal);
+    if (range.status === 200) {
+      return entryFromCompleteCatalog(range.text, numericTokenId);
+    }
+
+    const markers = findMetadataEntryMarkers(range.text);
+    const exact = markers.find((marker) => marker.tokenId === numericTokenId);
+    if (exact) {
+      const entry = extractMetadataEntry(range.text, exact);
+      if (entry) return entryMatchesToken(entry, numericTokenId) ? entry : null;
+
+      // The key landed at the end of the first range. Refetch a bounded window
+      // beginning just before it so the complete object can be balanced.
+      const exactByte = start + utf8ByteOffset(range.text, exact.index);
+      const expandedStart = Math.max(0, exactByte - 32);
+      const expandedEnd = Math.min(
+        byteLength - 1,
+        expandedStart + METADATA_ENTRY_EXPANSION - 1,
+      );
+      const expanded = await fetchMetadataRange(
+        fetchImpl,
+        url,
+        expandedStart,
+        expandedEnd,
+        options.signal,
+      );
+      if (expanded.status === 200) {
+        return entryFromCompleteCatalog(expanded.text, numericTokenId);
+      }
+      const expandedMarker = findMetadataEntryMarkers(expanded.text)
+        .find((marker) => marker.tokenId === numericTokenId);
+      const expandedEntry = expandedMarker
+        ? extractMetadataEntry(expanded.text, expandedMarker)
+        : null;
+      return expandedEntry && entryMatchesToken(expandedEntry, numericTokenId)
+        ? expandedEntry
+        : null;
+    }
+
+    if (markers.length === 0) {
+      cursor = Math.floor((low + high) / 2);
+      continue;
+    }
+
+    const first = markers[0];
+    const last = markers[markers.length - 1];
+    const firstByte = start + utf8ByteOffset(range.text, first.index);
+    const lastByte = start + utf8ByteOffset(range.text, last.index);
+
+    if (numericTokenId < first.tokenId) {
+      high = Math.min(high, firstByte - 1);
+    } else if (numericTokenId > last.tokenId) {
+      low = Math.max(low, lastByte + 1);
+    } else {
+      // Numeric catalog order says a missing key in this interval is absent.
+      return null;
+    }
+
+    const bytesPerToken = last.tokenId > first.tokenId
+      ? (lastByte - firstByte) / (last.tokenId - first.tokenId)
+      : 0;
+    if (bytesPerToken > 0) {
+      cursor = numericTokenId < first.tokenId
+        ? firstByte - (first.tokenId - numericTokenId) * bytesPerToken
+        : lastByte + (numericTokenId - last.tokenId) * bytesPerToken;
+    } else {
+      cursor = Math.floor((low + high) / 2);
+    }
+    if (!Number.isFinite(cursor) || cursor < low || cursor > high) {
+      cursor = Math.floor((low + high) / 2);
+    }
+  }
+
+  return null;
+}
 export class CharacterLoader {
   constructor() {
     this.metadata = null;
     this.metadataLoaded = false;
+    this.tokenMetadata = new Map();
 
     // Loaders
     this.gltfLoader = null;
@@ -106,31 +207,30 @@ export class CharacterLoader {
     return this;
   }
 
-  /**
-   * Load metadata from Gist
-   */
-  async loadMetadata({ timeout = 6000 } = {}) {
+  /** Load only one token entry from the pinned catalog using byte ranges. */
+  async loadTokenMetadata(tokenId, { timeout = 10000 } = {}) {
+    const numericTokenId = parseFriendsiesTokenSelector(tokenId);
+    if (numericTokenId === null) return null;
+
+    const existing = this.tokenMetadata.get(numericTokenId);
+    if (existing) return existing;
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
-      const response = await fetch(METADATA_URL, {
-        mode: 'cors',
+      const entry = await fetchFriendsiesTokenMetadata(numericTokenId, {
         signal: controller.signal,
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      this.metadata = await response.json();
+      if (!entry) return null;
+      this.tokenMetadata.set(numericTokenId, entry);
       this.metadataLoaded = true;
-
-      const count = Array.isArray(this.metadata)
-        ? this.metadata.length
-        : Object.keys(this.metadata || {}).length;
-      console.log(`[CharacterLoader] Loaded ${count} tokens`);
-      return true;
-    } catch (err) {
-      const reason = err?.name === 'AbortError' ? `timed out after ${timeout}ms` : err;
-      console.warn('[CharacterLoader] Remote avatar unavailable:', reason);
-      return false;
+      return entry;
+    } catch (error) {
+      const reason = error?.name === 'AbortError'
+        ? `timed out after ${timeout}ms`
+        : error;
+      console.warn(`[CharacterLoader] Token #${numericTokenId} metadata unavailable:`, reason);
+      return null;
     } finally {
       clearTimeout(timer);
     }
@@ -140,26 +240,36 @@ export class CharacterLoader {
    * Get entry by token ID
    */
   getEntryById(tokenId) {
-    const bundled = BUNDLED_CHARACTER_ENTRIES[Number(tokenId)];
-    if (bundled) return bundled;
-    if (!this.metadata) return null;
+    const bundled = getCuratedFriendsiesEntry(tokenId);
+    if (bundled?.bundledCharacter) return bundled;
+    const ranged = this.tokenMetadata.get(Number(tokenId));
+    if (ranged) return ranged;
+    if (!this.metadata) return bundled || null;
 
     if (!Array.isArray(this.metadata)) {
-      return this.metadata[tokenId] ||
-             this.metadata[String(tokenId)] ||
-             this.metadata[Number(tokenId) - 1] ||
-             null;
+      const direct = this.metadata[tokenId] || this.metadata[String(tokenId)];
+      if (direct) return direct;
+      return Object.values(this.metadata).find(
+        (entry) => entryMatchesToken(entry, tokenId),
+      ) || null;
     }
 
-    return this.metadata[tokenId] ||
-           this.metadata[tokenId - 1] ||
-           this.metadata.find(x => Number(x?.token_id) === Number(tokenId)) ||
-           this.metadata.find(x => Number(x?.id) === Number(tokenId)) ||
-           null;
+    const exact = this.metadata.find((entry) => entryMatchesToken(entry, tokenId));
+    if (exact) return exact;
+
+    // Retain compatibility with anonymous zero/one-based legacy arrays, but
+    // never let an indexed neighbor override an entry carrying another ID.
+    for (const candidate of [
+      this.metadata[Number(tokenId) - 1],
+      this.metadata[Number(tokenId)],
+    ]) {
+      if (candidate && entryTokenId(candidate) === null) return candidate;
+    }
+    return null;
   }
 
   hasBundledCharacter(tokenId) {
-    return Boolean(BUNDLED_CHARACTER_ENTRIES[Number(tokenId)]);
+    return hasCuratedFriendsiesCharacter(tokenId);
   }
 
   /**
@@ -191,21 +301,29 @@ export class CharacterLoader {
     group.position.set(0, -2.5, 0);
 
     const traits = entry.attributes || [];
+    const bundled = this.hasBundledCharacter(tokenId);
+    const componentUrl = (trait) => resolveFriendsiesComponentAssetUrl(
+      trait?.asset_url,
+      { bundled },
+    );
 
     const bodyAttr = traits.find((trait) => trait.trait_type === 'body');
-    if (!bodyAttr?.asset_url) {
-      console.error('[CharacterLoader] No body trait found');
+    const bodyUrl = componentUrl(bodyAttr);
+    if (!bodyUrl) {
+      console.error('[CharacterLoader] No loadable body trait found');
       return null;
     }
 
     const faceAttr = traits.find((trait) => trait.trait_type === 'face');
     const headAttr = traits.find((trait) => trait.trait_type === 'head');
+    const faceUrl = componentUrl(faceAttr);
+    const headUrl = componentUrl(headAttr);
 
     // Load body, head, and face texture in parallel
     const [bodyRes, headRes, faceTexture] = await Promise.all([
-      loadGLB(this.gltfLoader, bodyAttr.asset_url),
-      headAttr?.asset_url ? loadGLB(this.gltfLoader, headAttr.asset_url) : Promise.resolve(null),
-      faceAttr?.asset_url ? loadTexture(this.textureLoader, faceAttr.asset_url) : Promise.resolve(null),
+      loadGLB(this.gltfLoader, bodyUrl),
+      headUrl ? loadGLB(this.gltfLoader, headUrl) : Promise.resolve(null),
+      faceUrl ? loadTexture(this.textureLoader, faceUrl) : Promise.resolve(null),
     ]);
 
     if (!this._isCurrentLoad(instanceId, loadRevision)) {
@@ -246,6 +364,12 @@ export class CharacterLoader {
     group.userData.friendsies = {
       tokenId,
       instanceId,
+      role: entry.role || null,
+      storyUse: Array.isArray(entry.storyUse) ? [...entry.storyUse] : [],
+      licenseStatus: entry.licenseStatus || null,
+      redistributionStatus: entry.redistributionStatus || null,
+      source: entry.source || null,
+      traits,
       bodyRoot,
       bodySkeleton,
       animations,
@@ -284,12 +408,13 @@ export class CharacterLoader {
 
     // Load remaining parts in parallel
     const partAssets = partTraits
-      .filter((trait) => trait.asset_url && trait.asset_url.endsWith('.glb'))
       .map((trait) => ({
-        url: trait.asset_url,
+        url: componentUrl(trait),
         traitType: trait.trait_type,
         value: trait.value,
-      }));
+        presentation: trait.presentation,
+      }))
+      .filter((asset) => asset.url?.endsWith('.glb'));
 
     if (partAssets.length > 0) {
       const partResults = await Promise.all(
@@ -315,8 +440,9 @@ export class CharacterLoader {
 
         attachPartToBodySkeleton(partScene, bodySkeleton, bodySkinned);
         retargetRigidAttachmentsToBodyBones(partScene, bodySkeleton);
-        if (asset.traitType === 'hand' && /torch|lantern/i.test(asset.value || '')) {
-          addSoftHandheldGlow(partScene, bodySkeleton);
+        const handheldGlow = resolveHandheldGlowPresentation(asset);
+        if (handheldGlow) {
+          addSoftHandheldGlow(partScene, bodySkeleton, handheldGlow);
         }
         tuneMaterialsForEnv(partScene);
       }
@@ -327,6 +453,12 @@ export class CharacterLoader {
       return null;
     }
 
+    this._storeCharacter(instanceId, tokenId, entry, group);
+
+    return group;
+  }
+
+  _storeCharacter(instanceId, tokenId, entry, group) {
     const previous = this.characters.get(instanceId);
     if (previous?.group && previous.group !== group) {
       previous.group.parent?.remove(previous.group);
@@ -339,8 +471,6 @@ export class CharacterLoader {
       tokenId,
       instanceId,
     });
-
-    return group;
   }
 
   _beginInstanceLoad(instanceId) {
@@ -410,6 +540,95 @@ export class CharacterLoader {
       this.removeCharacter(instanceId);
     }
   }
+}
+
+async function fetchMetadataRange(fetchImpl, url, start, end, signal) {
+  const response = await fetchImpl(url, {
+    mode: 'cors',
+    cache: 'force-cache',
+    signal,
+    headers: {
+      Range: `bytes=${start}-${end}`,
+    },
+  });
+  if (!response.ok || ![200, 206].includes(response.status)) {
+    throw new Error(`Metadata range request failed with HTTP ${response.status}`);
+  }
+  return {
+    status: response.status,
+    text: await response.text(),
+  };
+}
+
+function findMetadataEntryMarkers(text) {
+  const markers = [];
+  const pattern = /"(\d+)":\s*\{"id":\s*"(\d+)"/g;
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    const tokenId = Number(match[1]);
+    if (tokenId !== Number(match[2])) continue;
+    markers.push({ tokenId, index: match.index });
+  }
+  return markers;
+}
+
+function extractMetadataEntry(text, marker) {
+  const objectStart = text.indexOf('{', marker.index);
+  if (objectStart < 0) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = objectStart; index < text.length; index += 1) {
+    const char = text[index];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === '{') depth += 1;
+    if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        try {
+          return JSON.parse(text.slice(objectStart, index + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function entryFromCompleteCatalog(text, tokenId) {
+  try {
+    const catalog = JSON.parse(text);
+    const entry = catalog?.[tokenId] ?? catalog?.[String(tokenId)] ?? null;
+    return entry && entryMatchesToken(entry, tokenId) ? entry : null;
+  } catch {
+    return null;
+  }
+}
+
+function utf8ByteOffset(text, stringIndex) {
+  return UTF8_ENCODER.encode(text.slice(0, stringIndex)).byteLength;
+}
+
+function positiveInteger(value, fallback) {
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 // Helper: Load GLB with timeout
@@ -484,6 +703,18 @@ function findFirstSkinnedMesh(root) {
     if (!result && o.isSkinnedMesh) result = o;
   });
   return result;
+}
+
+function entryTokenId(entry) {
+  const value = entry?.token_id ?? entry?.id;
+  if (value === undefined || value === null || value === '') return null;
+  const tokenId = Number(value);
+  return Number.isFinite(tokenId) ? tokenId : null;
+}
+
+function entryMatchesToken(entry, tokenId) {
+  const entryId = entryTokenId(entry);
+  return entryId !== null && entryId === Number(tokenId);
 }
 
 function baseKey(name) {
@@ -692,9 +923,9 @@ const DEFAULT_HEAD_EMISSION = Object.freeze({
 /**
  * Resolve a head-only material override.
  *
- * Ordinary heads return null so authored color and PBR values remain intact.
- * Bundled heads opt in declaratively; streamed metadata can use only the small
- * exact-name exception list above until each additional asset is reviewed.
+ * Ordinary heads intentionally return null so their authored material stays
+ * untouched. Curated traits opt in declaratively; streamed metadata can use
+ * only the small exact-name exception list in friendsies-cast.js.
  */
 export function resolveHeadEmissionPresentation(trait) {
   const traitType = trait?.traitType ?? trait?.trait_type;
@@ -708,7 +939,7 @@ export function resolveHeadEmissionPresentation(trait) {
   }
   if (declared !== undefined) return null;
 
-  const knownException = STREAMED_HEAD_EMISSION_EXCEPTIONS[String(trait?.value ?? '')];
+  const knownException = getFriendsiesHeadEmissionException(trait?.value);
   return knownException ? { ...DEFAULT_HEAD_EMISSION, ...knownException } : null;
 }
 
@@ -739,17 +970,50 @@ export function applyFriendsiesHeadPresentation(headScene, trait) {
   return applied;
 }
 
-function addSoftHandheldGlow(partScene, bodySkeleton) {
+const DEFAULT_HANDHELD_GLOW = Object.freeze({
+  color: 0xffb35c,
+  emissiveIntensity: 0.48,
+  lightIntensity: 0.34,
+  lightDistance: 2.6,
+  lightDecay: 2,
+  flameOffsetFromTop: 0.12,
+});
+
+/**
+ * Resolve presentation data for a held light source.
+ *
+ * Curated traits opt in explicitly. The name fallback keeps streamed legacy
+ * metadata working until the remote collection index carries presentation
+ * metadata of its own.
+ */
+export function resolveHandheldGlowPresentation(trait) {
+  const traitType = trait?.traitType ?? trait?.trait_type;
+  if (String(traitType || '').toLowerCase() !== 'hand') return null;
+
+  const declared = trait?.presentation?.handheldGlow;
+  if (declared === false) return null;
+  if (declared === true) return { ...DEFAULT_HANDHELD_GLOW };
+  if (declared && typeof declared === 'object') {
+    return { ...DEFAULT_HANDHELD_GLOW, ...declared };
+  }
+
+  if (/torch|lantern/i.test(trait?.value || '')) {
+    return { ...DEFAULT_HANDHELD_GLOW };
+  }
+  return null;
+}
+
+function addSoftHandheldGlow(partScene, bodySkeleton, presentation = DEFAULT_HANDHELD_GLOW) {
   if (!partScene || !bodySkeleton) return null;
 
-  const warmGlow = 0xffb35c;
+  const warmGlow = presentation.color;
   partScene.traverse((child) => {
     if (!child.isMesh) return;
     const materials = Array.isArray(child.material) ? child.material : [child.material];
     for (const material of materials) {
       if (!material?.emissive?.isColor) continue;
-      material.emissive.setHex(warmGlow);
-      material.emissiveIntensity = 0.48;
+      material.emissive.set(warmGlow);
+      material.emissiveIntensity = presentation.emissiveIntensity;
       material.needsUpdate = true;
     }
   });
@@ -764,9 +1028,15 @@ function addSoftHandheldGlow(partScene, bodySkeleton) {
   if (!Number.isFinite(bounds.min.y) || !Number.isFinite(bounds.max.y)) return null;
 
   const flameWorld = bounds.getCenter(new Vector3());
-  flameWorld.y = bounds.max.y - (bounds.max.y - bounds.min.y) * 0.12;
+  flameWorld.y = bounds.max.y
+    - (bounds.max.y - bounds.min.y) * presentation.flameOffsetFromTop;
 
-  const light = new PointLight(warmGlow, 0.34, 2.6, 2);
+  const light = new PointLight(
+    warmGlow,
+    presentation.lightIntensity,
+    presentation.lightDistance,
+    presentation.lightDecay,
+  );
   light.name = 'friendsies_hand_lantern_light';
   light.castShadow = false;
   light.userData.cameraCollision = false;

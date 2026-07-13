@@ -166,6 +166,12 @@ export const TOWN_LAYOUT = deepFreeze({
   },
 });
 
+// Presentation variants must not change these story-facing interaction keys.
+export const TOWN_INTERACTION_CONTRACT = deepFreeze({
+  ledger: { id: 'ledger', radius: 2 },
+  bell: { id: 'bell', radius: 2 },
+});
+
 export function getBuildingLayout(id) {
   return TOWN_LAYOUT.buildings.find((building) => building.id === id) || null;
 }

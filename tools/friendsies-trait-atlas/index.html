@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A local-only atlas for reviewing fRiENDSiES traits and their Thornvale environment fit."
+    />
+    <title>fRiENDSiES Trait Atlas</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#trait-results">Skip to trait results</a>
+
+    <main class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Local curation tool</p>
+          <h1>fRiENDSiES <span>Trait Atlas</span></h1>
+          <p class="hero-copy">
+            Search the collection language, compare variants, and cast traits
+            as deliberate surface and counter-story signals.
+          </p>
+        </div>
+        <div class="hero-summary" id="hero-summary" aria-live="polite">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          Loading local trait index…
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="filter-panel" aria-labelledby="filter-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Find a signal</p>
+              <h2 id="filter-title">Filters</h2>
+            </div>
+            <button class="text-button" id="clear-filters" type="button">
+              Reset
+            </button>
+          </div>
+
+          <form id="filter-form" autocomplete="off">
+            <label class="control-label" for="trait-search">Search traits</label>
+            <div class="search-control">
+              <span aria-hidden="true">⌕</span>
+              <input
+                id="trait-search"
+                name="query"
+                type="search"
+                placeholder="Torch, sconce, anomaly…"
+                spellcheck="false"
+              />
+            </div>
+
+            <label class="control-label" for="trait-type">Trait type</label>
+            <select id="trait-type" name="traitType">
+              <option value="">All types</option>
+            </select>
+
+            <div id="fit-filter-group" hidden>
+              <label class="control-label" for="environment-fit">
+                Environment fit
+              </label>
+              <select id="environment-fit" name="environmentFit">
+                <option value="">All fit ratings</option>
+              </select>
+            </div>
+
+            <div id="status-filter-group" hidden>
+              <label class="control-label" for="curation-status">
+                Curation status
+              </label>
+              <select id="curation-status" name="curationStatus">
+                <option value="">All statuses</option>
+              </select>
+            </div>
+
+            <div id="mount-filter-group" hidden>
+              <label class="control-label" for="mount-type">
+                Mount type
+              </label>
+              <select id="mount-type" name="mountType">
+                <option value="">All mount types</option>
+              </select>
+            </div>
+
+            <div id="phase-filter-group" hidden>
+              <label class="control-label" for="phase-reveal">
+                Phase reveal
+              </label>
+              <select id="phase-reveal" name="phaseReveal">
+                <option value="">All reveal phases</option>
+              </select>
+            </div>
+
+            <div id="risk-filter-group" hidden>
+              <label class="control-label" for="affordance-risk">
+                Affordance risk
+              </label>
+              <select id="affordance-risk" name="affordanceRisk">
+                <option value="">All risk levels</option>
+              </select>
+            </div>
+
+            <label class="control-label" for="trait-sort">Sort by</label>
+            <select id="trait-sort" name="sort">
+              <option value="uses-desc">Most used</option>
+              <option value="variants-desc">Most variants</option>
+              <option value="value-asc">Trait name A–Z</option>
+              <option value="type-asc">Trait type A–Z</option>
+            </select>
+
+            <label class="toggle-control" for="remote-previews">
+              <input id="remote-previews" type="checkbox" checked />
+              <span class="toggle-track" aria-hidden="true"><span></span></span>
+              <span>
+                <strong>Remote previews</strong>
+                <small>Load only when a card nears the viewport.</small>
+              </span>
+            </label>
+          </form>
+
+          <div class="data-health" id="data-health" aria-live="polite"></div>
+        </aside>
+
+        <section class="catalog-panel" id="trait-results" aria-labelledby="results-title">
+          <div class="results-heading">
+            <div>
+              <p class="eyebrow">Collection view</p>
+              <h2 id="results-title">Traits</h2>
+            </div>
+            <p id="result-count" class="result-count"></p>
+          </div>
+
+          <div class="state-card loading-state" id="catalog-state" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            <div>
+              <h3>Reading the local index</h3>
+              <p>Preparing trait families, variants, and token samples.</p>
+            </div>
+          </div>
+
+          <div class="trait-grid" id="trait-grid" hidden></div>
+          <button class="load-more-button" id="load-more" type="button" hidden>
+            Show more traits
+          </button>
+        </section>
+
+        <aside class="detail-panel" id="detail-panel" aria-labelledby="detail-title">
+          <div class="detail-empty" id="detail-empty">
+            <span class="detail-sigil" aria-hidden="true">✦</span>
+            <p class="eyebrow">Trait details</p>
+            <h2 id="detail-title">Choose a trait</h2>
+            <p>
+              Its casting profile, surface and counter meanings, variants,
+              token examples, and source URLs will appear here.
+            </p>
+          </div>
+          <div id="detail-content" hidden></div>
+        </aside>
+      </section>
+    </main>
+
+    <noscript>
+      <p class="noscript-message">
+        The trait atlas needs JavaScript to search the local index.
+      </p>
+    </noscript>
+  </body>
+</html>

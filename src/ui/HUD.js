@@ -90,11 +90,10 @@ export class HUD {
     }
 
     if (this.elements.celestialIcon) {
-      this.elements.celestialIcon.textContent = normalizedMode === 'night'
-        ? '☾'
-        : normalizedMode === 'dusk'
-          ? '◐'
-          : '☀';
+      // The badge's data-mode is the styling contract. Keeping this span empty
+      // lets CSS draw a coherent Thornvale celestial mark without a platform-
+      // dependent Unicode sun or moon changing weight and alignment.
+      this.elements.celestialIcon.textContent = '';
     }
 
     if (animate) {
@@ -113,7 +112,7 @@ export class HUD {
     const spark = document.createElement('span');
     spark.className = 'prompt-spark';
     spark.setAttribute('aria-hidden', 'true');
-    spark.textContent = '✦';
+    spark.textContent = '';
 
     const keyShell = document.createElement('span');
     keyShell.className = 'prompt-key-shell';

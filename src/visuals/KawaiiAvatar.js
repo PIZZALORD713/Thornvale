@@ -88,7 +88,8 @@ function createFlower() {
 }
 
 /**
- * A deterministic, locally bundled chibi avatar used as Thornvale's reliable default.
+ * A deterministic code-native avatar used only after fRiENDSiES loading is
+ * exhausted. It deliberately has no model, decoder, texture, or network path.
  * Named limb groups are intentionally exposed for PlayerAnimator.
  */
 export function createKawaiiAvatar() {

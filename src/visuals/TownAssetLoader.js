@@ -1,8 +1,14 @@
-import { Group } from 'three';
+import { Box3, Group, Vector3 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import {
+  ASSET_VARIANTS,
+  DEFAULT_ASSET_VARIANT,
+  normalizeAssetVariant,
+  TOWN_ASSET_PATHS,
+} from '../config/assets.js';
 
-const COTTAGE_URL = '/town/cottages/thornvale-cottages.glb';
-const DRESSING_URL = '/village/thornvale-village-dressing.glb';
+const COTTAGE_URL = TOWN_ASSET_PATHS.cottages;
+const DRESSING_URL = TOWN_ASSET_PATHS.villageDressing;
 
 const COTTAGE_NODE_BY_ID = Object.freeze({
   'berry-bakery': 'Cottage_berry_bakery',
@@ -37,6 +43,57 @@ async function loadScene(url) {
   const loader = new GLTFLoader();
   const gltf = await loader.loadAsync(url);
   return gltf.scene;
+}
+
+function getPilotPlacements(layout) {
+  const roots = TOWN_ASSET_PATHS.arrivalPlazaPilot.roots;
+  return {
+    welcomeGate: {
+      asset: roots.welcomeGate,
+      position: layout.gate,
+    },
+    ledger: {
+      asset: roots.ledger,
+      position: { ...layout.landmarks.ledger, y: 0 },
+    },
+    bell: {
+      asset: roots.bell,
+      position: { ...layout.landmarks.bell, y: 0 },
+      requiredChild: 'TownBellSwing',
+    },
+  };
+}
+
+function validatePilotGeometry(root, assetName) {
+  let hasGeometry = false;
+  root.traverse((object) => {
+    if (object === root || !object.isMesh) return;
+    const position = object.geometry?.getAttribute?.('position');
+    if (position?.itemSize >= 3 && position.count >= 3) hasGeometry = true;
+  });
+  if (!hasGeometry) {
+    throw new Error(`Pilot root ${assetName} has no descendant mesh geometry`);
+  }
+
+  root.updateWorldMatrix(true, true);
+  const bounds = new Box3().setFromObject(root, true);
+  const boundsValues = [
+    bounds.min.x,
+    bounds.min.y,
+    bounds.min.z,
+    bounds.max.x,
+    bounds.max.y,
+    bounds.max.z,
+  ];
+  const size = bounds.getSize(new Vector3());
+  if (
+    bounds.isEmpty()
+    || !boundsValues.every(Number.isFinite)
+    || !Number.isFinite(size.lengthSq())
+    || size.lengthSq() <= 0
+  ) {
+    throw new Error(`Pilot root ${assetName} has empty or non-finite bounds`);
+  }
 }
 
 export async function loadAuthoredCottages(buildings, townMaterials) {
@@ -88,4 +145,70 @@ export async function loadAuthoredVillageProps(layout, townMaterials) {
     console.warn('[TownAssetLoader] Blender village dressing unavailable.', error);
   }
   return root;
+}
+
+/**
+ * Load the three reversible arrival/plaza pilot roots.
+ *
+ * Each root is validated and admitted independently. A missing or malformed
+ * root is omitted from the returned map so TownBuilder can use that root's
+ * procedural factory without discarding the other authored roots.
+ */
+export async function loadAuthoredPilotLandmarks(layout, townMaterials, {
+  assetVariant = DEFAULT_ASSET_VARIANT,
+  sceneLoader = loadScene,
+  url = TOWN_ASSET_PATHS.arrivalPlazaPilot.url,
+} = {}) {
+  const landmarks = new Map();
+  if (normalizeAssetVariant(assetVariant) !== ASSET_VARIANTS.PILOT) return landmarks;
+
+  try {
+    const source = await sceneLoader(url);
+    for (const [id, placement] of Object.entries(getPilotPlacements(layout))) {
+      try {
+        const template = source.getObjectByName(placement.asset);
+        if (!template) throw new Error(`Missing pilot root ${placement.asset}`);
+        if (placement.requiredChild) {
+          const requiredChild = template.getObjectByName(placement.requiredChild);
+          if (!requiredChild) {
+            throw new Error(
+              `Pilot root ${placement.asset} is missing ${placement.requiredChild}`,
+            );
+          }
+          validatePilotGeometry(
+            requiredChild,
+            `${placement.asset}/${placement.requiredChild}`,
+          );
+        }
+        validatePilotGeometry(template, placement.asset);
+
+        const prop = prepareAsset(template.clone(true), townMaterials, {
+          cameraCollision: false,
+        });
+        prop.name = `authored_pilot_${id}`;
+        prop.position.set(
+          placement.position.x,
+          placement.position.y,
+          placement.position.z,
+        );
+        prop.rotation.set(0, 0, 0);
+        prop.scale.setScalar(1);
+        prop.userData.assetVariant = ASSET_VARIANTS.PILOT;
+        prop.userData.assetVersion = TOWN_ASSET_PATHS.arrivalPlazaPilot.version;
+        prop.updateMatrixWorld(true);
+        landmarks.set(id, prop);
+      } catch (error) {
+        console.warn(
+          `[TownAssetLoader] Pilot ${id} unavailable; using its procedural fallback.`,
+          error,
+        );
+      }
+    }
+  } catch (error) {
+    console.warn(
+      '[TownAssetLoader] Arrival/plaza pilot unavailable; using procedural landmarks.',
+      error,
+    );
+  }
+  return landmarks;
 }

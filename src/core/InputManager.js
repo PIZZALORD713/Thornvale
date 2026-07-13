@@ -78,19 +78,34 @@ export class InputManager {
   requestLock() {
     if (!this.canvas?.requestPointerLock) return Promise.resolve(false);
 
-    try {
-      const request = this.canvas.requestPointerLock();
-      if (request?.catch) {
-        return request
-          .then(() => true)
-          .catch(() => false);
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (locked) => {
+        if (settled) return;
+        settled = true;
+        document.removeEventListener('pointerlockchange', onChange);
+        document.removeEventListener('pointerlockerror', onError);
+        resolve(Boolean(locked));
+      };
+      const onChange = () => finish(document.pointerLockElement === this.canvas);
+      const onError = () => finish(false);
+
+      document.addEventListener('pointerlockchange', onChange);
+      document.addEventListener('pointerlockerror', onError);
+
+      try {
+        const request = this.canvas.requestPointerLock();
+        if (request?.then) {
+          request
+            .then(() => finish(document.pointerLockElement === this.canvas))
+            .catch(onError);
+        }
+      } catch (_error) {
+        // Keyboard play remains available if an embedded/automated browser
+        // refuses pointer lock. Never let that rejection break the game loop.
+        finish(false);
       }
-      return Promise.resolve(true);
-    } catch (_error) {
-      // Keyboard play remains available if an embedded/automated browser
-      // refuses pointer lock. Never let that rejection break the game loop.
-      return Promise.resolve(false);
-    }
+    });
   }
 
   /**

@@ -13,7 +13,7 @@ not a specific person.
 | Story and session state | `core-hook-session.test.js` | `src/game/`, `src/content/` | Update for phase, persistence, choice, or ending contract changes |
 | Movement and physics | `character-movement.test.js` | `src/controllers/`, `src/physics/`, `src/core/` | Add a regression for grounding, collision, movement-state, or controller changes |
 | Camera constraints | `unit/camera-rig.test.js` | `src/game/camera/`, `src/config/`, world collision surfaces | Cover pitch, reset, smoothing, floor-clearance, and collision-policy changes |
-| Character presentation | `visual-rig.test.js`, `friendsies-animation.test.js` | `src/visuals/` | Cover model normalization, animation selection, transition, and fallback changes |
+| Character presentation | `visual-rig.test.js`, `friendsies-animation.test.js`, `friendsies-cast.test.js`, `friendsies-metadata-range.test.js`, `player-character-config.test.js`, `character-cast-fallback.test.js` | `src/visuals/`, `src/config/`, `src/app/` | Cover model normalization, URL/token selection, exact remote metadata lookup, animation selection, transition, and independent fallback changes |
 | Story world presentation | `story-world.test.js` | `src/visuals/`, `src/game/` | Cover route visibility and world-state projection changes |
 | Browser journey | Manual; see `docs/qa/` | Composition across `src/` | Smoke-test rendering, input, camera, audio, and the full Core Hook |
 

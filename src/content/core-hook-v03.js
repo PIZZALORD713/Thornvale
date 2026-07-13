@@ -76,9 +76,9 @@ export const CORE_HOOK_V03 = deepFreeze({
     meetSteward: {
       id: 'meet-steward',
       label: 'A place kept warm',
-      text: 'Meet the white-elephant steward waiting beyond the welcome gate.',
+      text: 'Meet the steward who kept the gate open for you.',
       title: 'A place kept warm',
-      detail: 'Meet the white-elephant steward waiting beyond the welcome gate.',
+      detail: 'Meet the steward who kept the gate open for you.',
     },
     signLedger: {
       id: 'sign-ledger',
@@ -243,7 +243,7 @@ export const CORE_HOOK_V03 = deepFreeze({
   choice: {
     id: 'ledger_record',
     title: 'Which account will you leave in the Ledger?',
-    detail: 'Neither answer can be taken back during this first run.',
+    detail: 'The ink will dry when you leave this page.',
     choices: [
       {
         id: 'comply',
@@ -293,7 +293,7 @@ export const CORE_HOOK_V03 = deepFreeze({
         ending: 'escape',
         tone: 'alter',
         eyebrow: 'A PATH THE TOWN FORGOT',
-        title: 'The warm way closes. Something honest opens.',
+        title: 'The warm way closes. A path no one named opens.',
         body: 'Behind the Ledger, thorns uncurl from a narrow trail. Every cottage window turns away from it.',
         finalLine: 'That’s all right. We can practice again tomorrow.',
         detail: 'That’s all right. We can practice again tomorrow.',

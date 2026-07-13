@@ -2,7 +2,7 @@
  * Thornvale Kawaii 2.0
  *
  * A presentation-first cozy village slice with:
- * - a deterministic local chibi avatar and optional Friendsies model
+ * - a locally bundled fRiENDSiES player and steward with code-native recovery
  * - animated procedural town art
  * - cinematic day/night transitions
  * - petals, fireflies, sparkles, bloom, color finishing, and cozy sound
@@ -25,6 +25,7 @@ import { InputManager } from './core/InputManager.js';
 import { CharacterMotor } from './physics/CharacterMotor.js';
 import { CameraRig } from './game/camera/CameraRig.js';
 import { configureCameraRig } from './config/camera.js';
+import { resolvePlayerFriendsiesSelection } from './config/player-character.js';
 import { PlayerController } from './controllers/PlayerController.js';
 import { VisualRig } from './visuals/VisualRig.js';
 import { CharacterLoader } from './visuals/CharacterLoader.js';
@@ -33,6 +34,10 @@ import { createKawaiiAvatar } from './visuals/KawaiiAvatar.js';
 import { loadFriendsiesAnimationPack } from './visuals/loadFriendsiesAnimationPack.js';
 import { StewardActor } from './visuals/StewardActor.js';
 import { StoryWorld } from './visuals/StoryWorld.js';
+import {
+  applyStoryPresentationDatasets,
+  projectStoryPresentation,
+} from './visuals/AestheticPresentation.js';
 import { KawaiiSky } from './visuals/KawaiiSky.js';
 import { PostProcessing } from './visuals/PostProcessing.js';
 import { KawaiiVFX } from './visuals/KawaiiVFX.js';
@@ -46,6 +51,12 @@ import { CoreHookDirector } from './game/CoreHookDirector.js';
 import { InteractableSystem } from './game/InteractableSystem.js';
 import { buildTown } from './game/TownBuilder.js';
 import { CORE_HOOK_V03 } from './content/core-hook-v03.js';
+import { disposeTownPresentation } from './app/disposeTownPresentation.js';
+import { recoverMissingCharacterVisuals } from './app/recoverMissingCharacterVisuals.js';
+import {
+  DEFAULT_PLAYER_FRIENDSIES_TOKEN_ID,
+  PLAYER_FRIENDSIES_FALLBACK_TOKEN_IDS,
+} from './content/friendsies-cast.js';
 
 let scene;
 let camera;
@@ -69,12 +80,15 @@ let dayNightSystem;
 let interactableSystem;
 let characterLoader;
 let worldAnimator;
+let ambientLife;
+let breathingGrass;
+let traitEchoes;
+let traitEchoUnsubscribe;
 let sky;
 let postProcessing;
 let vfx;
 let soundscape;
 let animationStarted = false;
-let appReady = false;
 let debugEnabled = false;
 let footstepTimer = 0;
 let playerGlow;
@@ -86,6 +100,7 @@ let animationClips = [];
 let townLandmarks = {};
 let playerSpawnPoint;
 let cameraOcclusionTarget = null;
+let playerFriendsiesSelection = null;
 
 const playerGlowDay = new Color(0xffc9dc);
 const playerGlowNight = new Color(0xa9c4ff);
@@ -143,21 +158,21 @@ async function init() {
   postProcessing = new PostProcessing(renderer, scene, camera, {
     quality: ['low', 'medium', 'high'].includes(visualQuality) ? visualQuality : 'high',
     enabled: params.get('post') !== 'off',
-    bloomStrength: reducedMotion ? 0.22 : 0.34,
-    bloomRadius: 0.48,
-    bloomThreshold: 0.82,
-    saturation: 1.15,
-    contrast: 1.08,
-    brightness: -0.01,
-    warmth: 0.045,
-    vignette: 0.18,
+    bloomStrength: reducedMotion ? 0.18 : 0.28,
+    bloomRadius: 0.44,
+    bloomThreshold: 0.86,
+    saturation: 1.02,
+    contrast: 1.035,
+    brightness: 0,
+    warmth: 0.025,
+    vignette: 0.14,
   }).init();
 
   vfx = new KawaiiVFX(scene, {
     weather: gameState.weather,
-    fireflyCount: reducedMotion ? 14 : 44,
-    petalCount: reducedMotion ? 20 : 72,
-    sparkleCount: reducedMotion ? 10 : 32,
+    fireflyCount: reducedMotion ? 10 : 30,
+    petalCount: reducedMotion ? 8 : 28,
+    sparkleCount: reducedMotion ? 4 : 12,
     pixelRatio: renderer.getPixelRatio(),
   }).init();
   soundscape = new CozySoundscape({ volume: 0.3, ambienceVolume: 0.2 });
@@ -173,9 +188,19 @@ async function init() {
   // Collision-only ground. TownBuilder supplies the authored visual terrain.
   physicsWorld.createGround(55, null);
 
-  const town = await buildTown(physicsWorld, scene);
+  const town = await buildTown(physicsWorld, scene, {
+    reducedMotion,
+    quality: visualQuality,
+  });
+  const assetVariant = town.assetVariant || 'pilot';
+  const traitEchoVariant = town.traitEchoVariant || 'v1';
+  document.documentElement.dataset.assetVariant = assetVariant;
+  document.documentElement.dataset.traitEchoVariant = traitEchoVariant;
   const interactables = town.interactables || [];
   townLandmarks = town.landmarks || {};
+  traitEchoes = town.traitEchoes || null;
+  ambientLife = town.ambientLife || null;
+  breathingGrass = town.breathingGrass || null;
   const spawnPoint = town.spawnPoint || new Vector3(0, 2, 14);
   playerSpawnPoint = spawnPoint.clone();
   worldAnimator = town.worldAnimator || (town.updateWorld
@@ -208,13 +233,6 @@ async function init() {
     visualRig.setVisualOffsetY(storedOffset);
   }
 
-  visualRig.setVisual(createKawaiiAvatar(), {
-    autoAlign: true,
-    capsuleHalfHeight: characterMotor.halfHeight,
-    capsuleRadius: characterMotor.radius,
-    clearance: 0.025,
-  });
-
   // A soft character key keeps fRiENDSiES readable beneath roofs and at night.
   playerGlow = new PointLight(playerGlowDay, 0.24, 9, 2);
   playerGlow.name = 'friendsiesKeyLight';
@@ -236,9 +254,7 @@ async function init() {
   });
 
   const stewardAnchor = CORE_HOOK_V03.anchors.steward.welcome;
-  const stewardFallback = createKawaiiAvatar();
-  stewardFallback.name = 'StewardFallback';
-  stewardActor = new StewardActor(scene, stewardFallback, {
+  stewardActor = new StewardActor(scene, null, {
     tokenId: CORE_HOOK_V03.steward.tokenId,
     position: stewardAnchorToArray(stewardAnchor),
     facingYaw: stewardAnchor.facing,
@@ -247,6 +263,10 @@ async function init() {
   if (storyEnabled) {
     gameSession = new GameSession({ storageKey: CORE_HOOK_V03.storageKey });
     if (params.get('story') === 'reset' || params.get('reset') === '1') gameSession.reset();
+    applyAestheticPresentationState(gameSession.snapshot(), { animate: false });
+    traitEchoUnsubscribe = gameSession.subscribe((snapshot) => {
+      applyAestheticPresentationState(snapshot);
+    });
 
     const stewardInteractable = {
       id: CORE_HOOK_V03.ids.steward,
@@ -279,6 +299,7 @@ async function init() {
     coreHookDirector.init({ interactables, stewardInteractable });
     registerStoryInteractions([...interactables, stewardInteractable]);
   } else {
+    applyAestheticPresentationState(null, { animate: false });
     stewardCastReady = true;
     stewardActor.setVisible(false);
     registerLegacyInteractions(interactables);
@@ -289,13 +310,13 @@ async function init() {
   window.addEventListener('resize', onResize);
   window.addEventListener('beforeunload', dispose, { once: true });
 
-  appReady = true;
-  setLoading(1, 'The valley is ready ✦');
+  setLoading(1, 'The gate is open.');
   hud.setReady?.();
-  hud.setStatus('Ready — click to wander ✦');
+  hud.setStatus('The gate is open.');
 
-  // fRiENDSiES is the canonical cast. Local chibis remain visible only while
-  // the player and Steward #8914 stream in, or as resilient offline fallbacks.
+  // Keep fRiENDSiES first: the rigs stay empty while the local cast loads. A
+  // code-native safety visual is constructed only after every GLTF option for
+  // that role has failed, so decoder failure cannot leave the story invisible.
   void loadFriendsiesCast();
 
   window.thornvale = {
@@ -313,8 +334,54 @@ async function init() {
     coreHookDirector,
     storyWorld,
     worldAnimator,
+    assetVariant,
+    traitEchoVariant,
+    traitEchoes,
+    ambientLife,
+    breathingGrass,
+    playerFriendsiesSelection,
     hud,
   };
+}
+
+function applyAestheticPresentationState(snapshot, { animate = true } = {}) {
+  let presentation;
+  try {
+    presentation = projectStoryPresentation(snapshot);
+  } catch (error) {
+    // The saved transaction has already succeeded. A projection regression
+    // must be observable in diagnostics without escaping the subscriber.
+    console.warn('[AestheticPresentation] Snapshot projection failed.', error);
+    return null;
+  }
+
+  try {
+    traitEchoes?.setStoryState?.(snapshot);
+  } catch (error) {
+    // A decorative state projection must never interrupt a saved story
+    // transaction or make an otherwise valid session unplayable.
+    console.warn('[FriendsiesTraitEchoes] Story-state projection failed.', error);
+  }
+
+  try {
+    storyWorld?.setStoryState?.(presentation);
+  } catch (error) {
+    console.warn('[StoryWorld] Story-state projection failed.', error);
+  }
+
+  try {
+    storyUI?.setTownStanding?.(presentation.standing, { animate });
+  } catch (error) {
+    console.warn('[StoryUI] Town-standing projection failed.', error);
+  }
+
+  try {
+    applyStoryPresentationDatasets(document, presentation);
+  } catch (error) {
+    console.warn('[AestheticPresentation] DOM dataset projection failed.', error);
+  }
+
+  return presentation;
 }
 
 function registerStoryInteractions(interactables) {
@@ -338,13 +405,13 @@ function registerLegacyInteractions(interactables) {
     if (interactable.id === 'ledger') {
       interactable.onInteract = () => {
         celebrateInteraction(interactable.position, 'kindness');
-        return 'The ledger blooms at your touch. Kindness remembered ♡';
+        return 'The Ledger warms at your touch. Kindness remembered.';
       };
     } else if (interactable.id === 'bell') {
       interactable.onInteract = () => {
         celebrateInteraction(interactable.position, 'bell');
         worldAnimator?.ringBell?.();
-        return 'The wish-bell sings across the valley ✦';
+        return 'The Town Bell carries across the valley.';
       };
     } else {
       const original = interactable.onInteract;
@@ -397,12 +464,10 @@ function ringAnomalyBell() {
   const position = new Vector3(bell.x, bell.y + 1.25, bell.z);
   vfx?.interactionBurst(position, 'magic');
   postProcessing?.pulse(0.72);
-  storyWorld?.setLedgerMood('false');
 }
 
 function applyStoryRoute(choice) {
   storyWorld?.setRoute(choice);
-  storyWorld?.setLedgerMood(choice || 'normal');
   if (!choice) return;
 
   const destination = storyWorld?.getDestination(choice);
@@ -464,17 +529,32 @@ function bindPointerLock() {
 }
 
 async function loadFriendsiesCast() {
-  characterLoader = new CharacterLoader().init();
-  const requestedToken = Number.parseInt(params.get('friend') || params.get('token') || '1', 10);
-  const tokenId = Number.isFinite(requestedToken) && requestedToken > 0 ? requestedToken : 1;
-  const useLocalPlayer = params.get('avatar') === 'local';
+  playerFriendsiesSelection = resolvePlayerFriendsiesSelection({
+    search: window.location.search,
+    pathname: window.location.pathname,
+  });
+  const tokenId = playerFriendsiesSelection.tokenId;
+  document.documentElement.dataset.requestedPlayerToken = String(tokenId);
+  document.documentElement.dataset.playerTokenSelector = playerFriendsiesSelection.source;
   if (!storyBlocking) {
-    hud.setStatus(storyEnabled
-      ? `Steward Lumen and fRiENDSiES #${tokenId} are getting ready…`
-      : `fRiENDSiES #${tokenId} is getting ready…`);
+    hud.setStatus('Someone is coming to meet you…');
   }
 
-  if (window.thornvale) window.thornvale.characterLoader = characterLoader;
+  try {
+    characterLoader = new CharacterLoader().init();
+  } catch (error) {
+    console.warn('[CharacterLoader] Model-loader initialization failed:', error);
+    stewardCastReady = true;
+    const recoveredCast = recoverCharacterCast(null, null);
+    reportSafeCastRecovery(recoveredCast);
+    if (!storyBlocking) hud.setStatus('A familiar local cast kept the gate open.');
+    return;
+  }
+
+  if (window.thornvale) {
+    window.thornvale.characterLoader = characterLoader;
+    window.thornvale.playerFriendsiesSelection = playerFriendsiesSelection;
+  }
 
   const animationPackPromise = loadFriendsiesAnimationPack()
     .catch((error) => {
@@ -496,19 +576,53 @@ async function loadFriendsiesCast() {
       return clips;
     });
 
-  // Lumen's slim local manifest loads independently of the full collection,
-  // so #8914 and his authored reactions are ready before the first greeting.
+  const attemptedPlayerTokens = new Set();
+  const loadPlayerVisual = async (requestedId) => {
+    attemptedPlayerTokens.add(requestedId);
+    try {
+      let visual = null;
+      if (characterLoader.hasBundledCharacter(requestedId)) {
+        visual = await characterLoader.loadCharacter(requestedId, { instanceId: 'player' });
+      } else {
+        const entry = await characterLoader.loadTokenMetadata(requestedId);
+        if (entry) {
+          visual = await characterLoader.loadCharacter(requestedId, { instanceId: 'player' });
+        }
+      }
+      if (visual) applyPlayerFriendsiesVisual(visual);
+      return visual;
+    } catch (error) {
+      console.warn(`[CharacterLoader] Player #${requestedId} failed to load:`, error);
+      return null;
+    }
+  };
+
+  // Lumen's slim local entry loads independently of the full collection. Try
+  // both local fRiENDSiES bodies before allowing the code-native safety visual.
   const stewardVisualPromise = storyEnabled
-    ? characterLoader
-      .loadCharacter(CORE_HOOK_V03.steward.tokenId, { instanceId: 'steward' })
-      .then((visual) => {
-        if (visual) stewardActor?.setVisual(visual);
-        return visual;
-      })
-      .catch((error) => {
-        console.warn('[CharacterLoader] Bundled Steward #8914 failed to load:', error);
-        return null;
-      })
+    ? (async () => {
+      for (const stewardTokenId of [
+        CORE_HOOK_V03.steward.tokenId,
+        DEFAULT_PLAYER_FRIENDSIES_TOKEN_ID,
+      ]) {
+        if (!characterLoader.hasBundledCharacter(stewardTokenId)) continue;
+        try {
+          const visual = await characterLoader.loadCharacter(stewardTokenId, {
+            instanceId: 'steward',
+          });
+          if (!visual) continue;
+          stewardActor?.setVisual(visual);
+          document.documentElement.dataset.stewardAvatar = 'friendsies';
+          if (stewardTokenId !== CORE_HOOK_V03.steward.tokenId) {
+            console.warn('[CharacterLoader] Steward #8914 fell back to fRiENDSiES #6602.');
+          }
+          return visual;
+        } catch (error) {
+          console.warn(`[CharacterLoader] Steward #${stewardTokenId} failed to load:`, error);
+        }
+      }
+      return null;
+    })()
     : Promise.resolve(null);
   const stewardPromise = storyEnabled
     ? Promise.all([stewardVisualPromise, animationPackPromise])
@@ -518,40 +632,30 @@ async function loadFriendsiesCast() {
       })
     : Promise.resolve(null);
 
-  const bundledPlayerPromise = !useLocalPlayer && characterLoader.hasBundledCharacter(tokenId)
-    ? characterLoader
-      .loadCharacter(tokenId, { instanceId: 'player' })
-      .then((visual) => {
-        if (visual) applyPlayerFriendsiesVisual(visual);
-        return visual;
-      })
-      .catch((error) => {
-        console.warn(`[CharacterLoader] Bundled player #${tokenId} failed to load:`, error);
-        return null;
-      })
-    : Promise.resolve(null);
-
-  const needsRemoteMetadata = !useLocalPlayer && !characterLoader.hasBundledCharacter(tokenId);
-
-  const [metadataLoaded, clips] = await Promise.all([
-    needsRemoteMetadata
-      ? characterLoader.loadMetadata({ timeout: 6000 })
-      : Promise.resolve(false),
+  // Generator-selected players fetch one ranged catalog entry, then assemble
+  // its animation-compatible component assets without downloading all tokens.
+  const [selectedPlayerVisual, clips] = await Promise.all([
+    loadPlayerVisual(tokenId),
     animationPackPromise,
   ]);
 
   animationClips = clips;
 
-  let playerVisual = await bundledPlayerPromise;
-  if (!playerVisual && !useLocalPlayer && metadataLoaded) {
-    playerVisual = await characterLoader.loadCharacter(tokenId, { instanceId: 'player' });
-    if (playerVisual) applyPlayerFriendsiesVisual(playerVisual);
+  let playerVisual = selectedPlayerVisual;
+  if (!playerVisual) {
+    for (const fallbackTokenId of PLAYER_FRIENDSIES_FALLBACK_TOKEN_IDS) {
+      if (attemptedPlayerTokens.has(fallbackTokenId)) continue;
+      if (!characterLoader.hasBundledCharacter(fallbackTokenId)) continue;
+      playerVisual = await loadPlayerVisual(fallbackTokenId);
+      if (playerVisual) break;
+    }
   }
-  const stewardVisual = await stewardPromise;
+  let stewardVisual = await stewardPromise;
 
-  if (!stewardVisual && storyEnabled) {
-    console.warn('[CharacterLoader] Steward #8914 fell back to the local steward visual.');
-  }
+  const recoveredCast = recoverCharacterCast(playerVisual, stewardVisual);
+  playerVisual = recoveredCast.playerVisual;
+  stewardVisual = recoveredCast.stewardVisual;
+  reportSafeCastRecovery(recoveredCast);
 
   if (window.thornvale) {
     window.thornvale.characterLoader = characterLoader;
@@ -561,16 +665,65 @@ async function loadFriendsiesCast() {
 
   if (!storyBlocking) {
     if (playerVisual && stewardVisual) {
-      hud.setStatus(`fRiENDSiES #${tokenId} and Steward Lumen #8914 joined the adventure ✦`);
+      hud.setStatus('Your place is ready.');
     } else if (stewardVisual) {
-      hud.setStatus(metadataLoaded || useLocalPlayer
-        ? 'Steward Lumen #8914 is ready to welcome you ✦'
-        : 'Steward Lumen #8914 is ready; your local valley buddy stepped in ♡');
-    } else if (playerVisual) {
-      hud.setStatus(`fRiENDSiES #${tokenId} joined; the local steward is helping today ♡`);
+      hud.setStatus('Steward Lumen is waiting beyond the gate.');
     } else {
-      hud.setStatus('The local valley cast stepped in while fRiENDSiES rests ♡');
+      hud.setStatus('Someone kept the gate open for you.');
     }
+  }
+}
+
+function recoverCharacterCast(playerVisual, stewardVisual) {
+  return recoverMissingCharacterVisuals({
+    playerVisual,
+    stewardVisual,
+    storyEnabled,
+    createFallback: createThornvaleSafeAvatar,
+    installPlayer: applyPlayerSafeVisual,
+    installSteward: (visual) => {
+      stewardActor?.setVisual(visual);
+      document.documentElement.dataset.stewardAvatar = 'thornvale-safe-fallback';
+    },
+  });
+}
+
+function reportSafeCastRecovery(recoveredCast) {
+  if (recoveredCast.playerUsedSafeFallback) {
+    console.warn('[CharacterLoader] Player fRiENDSiES unavailable; using the code-native safety visual.');
+  }
+  if (recoveredCast.stewardUsedSafeFallback) {
+    console.warn('[CharacterLoader] Steward fRiENDSiES unavailable; using the code-native safety visual.');
+  }
+}
+
+function createThornvaleSafeAvatar(role) {
+  const visual = createKawaiiAvatar();
+  visual.name = role === 'steward'
+    ? 'StewardSafeFallback'
+    : 'PlayerSafeFallback';
+  visual.userData.thornvaleSafeFallback = true;
+  visual.userData.characterRole = role;
+  return visual;
+}
+
+function applyPlayerSafeVisual(playerVisual) {
+  if (!playerVisual || visualRig.visual === playerVisual) return;
+  playerFriendsiesAnimator?.dispose();
+  playerFriendsiesAnimator = null;
+  visualRig.setVisual(playerVisual, {
+    autoAlign: true,
+    capsuleHalfHeight: characterMotor.halfHeight,
+    capsuleRadius: characterMotor.radius,
+    clearance: 0.025,
+  });
+  playerAnimator.setMotionScale(reducedMotion ? 0.35 : 1);
+  playerAnimator.captureBasePose();
+  delete document.documentElement.dataset.playerToken;
+  document.documentElement.dataset.playerAvatar = 'thornvale-safe-fallback';
+
+  if (window.thornvale) {
+    window.thornvale.playerFriendsiesAnimator = null;
   }
 }
 
@@ -601,6 +754,12 @@ function applyPlayerFriendsiesVisual(playerVisual) {
   playerAnimator.captureBasePose();
   postProcessing?.pulse(0.45);
 
+  const actualTokenId = playerVisual.userData?.friendsies?.tokenId;
+  if (Number.isSafeInteger(Number(actualTokenId))) {
+    document.documentElement.dataset.playerToken = String(actualTokenId);
+  }
+  document.documentElement.dataset.playerAvatar = 'friendsies';
+
   if (window.thornvale) {
     window.thornvale.playerFriendsiesAnimator = playerFriendsiesAnimator;
   }
@@ -625,11 +784,6 @@ function animate() {
   physicsWorld?.syncKinematicVisuals();
 
   if (playerController) {
-    // A very slow showcase orbit keeps the title screen alive.
-    if (!inputManager.isLocked && appReady && !reducedMotion) {
-      cameraRig.yaw += dt * 0.055;
-    }
-
     playerController.update(dt);
     const velocity = characterMotor.getVelocity();
     const locomotionState = playerController.getLocomotionState();
@@ -742,9 +896,7 @@ function handleGlobalInput() {
     const position = characterMotor?.getPosition?.();
     if (position) vfx?.interactionBurst(new Vector3(position.x, position.y + 1.5, position.z), 'magic');
 
-    hud.setStatus(night
-      ? 'Moonpetals wake as twilight settles…'
-      : 'Golden morning spills across the clover…');
+    hud.setStatus(night ? 'Time set to night.' : 'Time set to day.');
     hud.celebrate?.(night ? 'night' : 'day');
   }
 
@@ -753,7 +905,7 @@ function handleGlobalInput() {
     physicsWorld?.setDebugEnabled(debugEnabled);
     characterMotor?.setDebugVisible(debugEnabled);
     hud.setDebugVisible(debugEnabled);
-    hud.setStatus(debugEnabled ? 'Developer petals revealed.' : 'Back to the magic.');
+    hud.setStatus(debugEnabled ? 'Debug overlay on.' : 'Debug overlay off.');
   }
 
   if (debugEnabled && visualRig) {
@@ -838,7 +990,27 @@ function dispose() {
       ?.cameraAuthoredVisibility ?? true;
     cameraOcclusionTarget = null;
   }
+  traitEchoUnsubscribe?.();
+  traitEchoUnsubscribe = null;
   coreHookDirector?.dispose();
+  ({
+    ambientLife,
+    traitEchoes,
+    breathingGrass,
+    worldAnimator,
+  } = disposeTownPresentation({
+    ambientLife,
+    traitEchoes,
+    breathingGrass,
+    worldAnimator,
+  }));
+  if (window.thornvale) {
+    window.thornvale.ambientLife = ambientLife;
+    window.thornvale.traitEchoes = traitEchoes;
+    window.thornvale.breathingGrass = breathingGrass;
+    window.thornvale.worldAnimator = worldAnimator;
+  }
+  gameSession?.dispose();
   storyUI?.dispose();
   storyWorld?.dispose();
   playerFriendsiesAnimator?.dispose();

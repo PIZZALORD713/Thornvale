@@ -20,6 +20,13 @@ export class WorldAnimator {
     return animation;
   }
 
+  remove(animation) {
+    const index = this.animations.indexOf(animation);
+    if (index < 0) return false;
+    this.animations.splice(index, 1);
+    return true;
+  }
+
   registerSway(object, {
     speed = 1,
     amount = 0.025,

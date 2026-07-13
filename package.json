@@ -8,7 +8,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",
-    "check": "npm run test && npm run build"
+    "friendsies:index": "node scripts/build-friendsies-trait-index.mjs",
+    "friendsies:atlas": "node scripts/serve-friendsies-trait-atlas.mjs",
+    "friendsies:probe": "node scripts/probe-friendsies-trait.mjs",
+    "assets:audit": "node scripts/check-asset-budgets.mjs",
+    "assets:release": "node scripts/check-asset-budgets.mjs --dist --release",
+    "check": "npm run test && npm run build && npm run assets:audit -- --dist"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.14.0",

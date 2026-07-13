@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './',
+  // Root-relative build assets keep generator-style /fren/:token deep links
+  // from looking for JavaScript under /fren/assets/.
+  base: '/',
   build: {
     outDir: 'dist',
     sourcemap: false,

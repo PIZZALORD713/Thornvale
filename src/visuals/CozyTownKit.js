@@ -30,7 +30,10 @@ import {
   Vector3,
   BoxGeometry,
 } from 'three';
+import { ASSET_VARIANTS, normalizeAssetVariant } from '../config/assets.js';
 import { getBuildingBounds, TOWN_LAYOUT } from '../config/town.js';
+import { createBreathingGrass } from './BreathingGrass.js';
+import { createDragonflyField } from './DragonflyField.js';
 
 export const TOWN_PALETTE = {
   grass: 0x87bd72,
@@ -172,7 +175,16 @@ function makeMesh(geo, material, {
   return shadow(mesh, cast, receive);
 }
 
-export function createGroundDressing(animator, layout = TOWN_LAYOUT) {
+export function createGroundDressing(
+  animator,
+  layout = TOWN_LAYOUT,
+  {
+    quality = 'high',
+    reducedMotion = false,
+    grassSeed = 260712,
+    assetVariant = ASSET_VARIANTS.PILOT,
+  } = {},
+) {
   const mat = materials();
   // Keep the actual floor camera-collidable while decorative terrain opts out per child.
   const root = new Group();
@@ -228,30 +240,46 @@ export function createGroundDressing(animator, layout = TOWN_LAYOUT) {
     root.add(hill);
   }
 
-  const grassTufts = [];
-  const tuftGeo = new ConeGeometry(0.08, 0.32, 5);
-  const random = seededRandom(1122);
-  for (let attempt = 0; grassTufts.length < 64 && attempt < 240; attempt += 1) {
-    const angle = random() * Math.PI * 2;
-    const radius = 12 + random() * (layout.meadowRadius - 4);
-    const x = Math.cos(angle) * radius;
-    const z = Math.sin(angle) * radius;
-    if (pointNearBuilding(x, z, layout, 1.4)) continue;
-    grassTufts.push(new Vector3(x, 0.17, z));
+  const selectedAssetVariant = normalizeAssetVariant(assetVariant);
+  let breathingGrass = null;
+  if (selectedAssetVariant === ASSET_VARIANTS.PILOT) {
+    breathingGrass = createBreathingGrass({
+      animator,
+      layout,
+      quality,
+      reducedMotion,
+      seed: grassSeed,
+    });
+    root.add(breathingGrass.mesh);
+  } else {
+    const grassTufts = [];
+    const tuftGeometry = new ConeGeometry(0.08, 0.32, 5);
+    const random = seededRandom(1122);
+    for (let attempt = 0; grassTufts.length < 64 && attempt < 240; attempt += 1) {
+      const angle = random() * Math.PI * 2;
+      const radius = 12 + random() * (layout.meadowRadius - 4);
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      if (pointNearBuilding(x, z, layout, 1.4)) continue;
+      grassTufts.push(new Vector3(x, 0.17, z));
+    }
+    const tuftMesh = decorate(new InstancedMesh(tuftGeometry, mat.leafDark, grassTufts.length));
+    tuftMesh.name = 'particle_grass_tufts';
+    const dummy = new Object3D();
+    grassTufts.forEach((position, index) => {
+      dummy.position.copy(position);
+      const scale = 0.75 + random() * 0.65;
+      dummy.scale.set(scale, scale, scale);
+      dummy.rotation.y = random() * Math.PI;
+      dummy.updateMatrix();
+      tuftMesh.setMatrixAt(index, dummy.matrix);
+    });
+    tuftMesh.instanceMatrix.needsUpdate = true;
+    root.add(tuftMesh);
   }
-  const tuftMesh = decorate(new InstancedMesh(tuftGeo, mat.leafDark, grassTufts.length));
-  tuftMesh.name = 'particle_grass_tufts';
-  const dummy = new Object3D();
-  grassTufts.forEach((position, index) => {
-    dummy.position.copy(position);
-    const scale = 0.75 + random() * 0.65;
-    dummy.scale.set(scale, scale, scale);
-    dummy.rotation.y = random() * Math.PI;
-    dummy.updateMatrix();
-    tuftMesh.setMatrixAt(index, dummy.matrix);
-  });
-  tuftMesh.instanceMatrix.needsUpdate = true;
-  root.add(tuftMesh);
+  // A lifecycle handle is intentionally separate from userData, which Three.js
+  // expects to remain JSON-serializable for tooling and scene inspection.
+  root.breathingGrass = breathingGrass;
 
   return root;
 }
@@ -1028,22 +1056,27 @@ function createTree(position, scale, index, animator) {
   return root;
 }
 
-function createFlowerInstances(animator, layout) {
+function createFlowerInstances(animator, layout, { includeRouteClusters = true } = {}) {
   const mat = materials();
   const geo = geometry();
   const root = decorate(new Group());
   root.name = 'particle_wildflower_meadow';
   const random = seededRandom(713);
-  const clusterData = [
+  const routeClusters = [
     [-5.2, 13.4, 2.7, 14],
     [5.1, 13.1, 2.6, 14],
     [-10.2, 2.2, 2.7, 14],
     [10.6, 0.2, 2.9, 14],
+  ];
+  const perimeterClusters = [
     [-20.2, 15.8, 2.6, 14],
     [20.5, -8.5, 2.7, 14],
     [-20.5, -5, 2.4, 12],
     [25, 8.5, 2.5, 12],
   ];
+  const clusterData = includeRouteClusters
+    ? [...routeClusters, ...perimeterClusters]
+    : perimeterClusters;
   const positions = [];
   for (const [cx, cz, radius, count] of clusterData) {
     for (let i = 0; i < count; i += 1) {
@@ -1162,7 +1195,11 @@ function createRockInstances(layout) {
   return root;
 }
 
-export function createNature(animator, layout = TOWN_LAYOUT) {
+export function createNature(
+  animator,
+  layout = TOWN_LAYOUT,
+  { includeRouteWildflowers = true } = {},
+) {
   const root = decorate(new Group());
   root.name = 'cozy_nature';
   const treeData = [
@@ -1176,7 +1213,9 @@ export function createNature(animator, layout = TOWN_LAYOUT) {
     if (pointNearBuilding(x, z, layout, 1.8)) return;
     root.add(createTree(new Vector3(x, 0, z), scale, index, animator));
   });
-  root.add(createFlowerInstances(animator, layout));
+  root.add(createFlowerInstances(animator, layout, {
+    includeRouteClusters: includeRouteWildflowers,
+  }));
   root.add(createMushroomInstances());
   root.add(createRockInstances(layout));
   return root;
@@ -1567,6 +1606,46 @@ export function createBellLandmark(animator, layout = TOWN_LAYOUT) {
   return root;
 }
 
+function createAmbientAnimatorScope(animator) {
+  const callbacks = new Set();
+  const scopedAnimator = Object.create(animator || null);
+
+  scopedAnimator.add = (animation) => {
+    const registered = animator?.add?.(animation) ?? animation;
+    const callback = typeof registered === 'function' ? registered : animation;
+    if (typeof callback === 'function') callbacks.add(callback);
+    return registered;
+  };
+  scopedAnimator.remove = (animation) => {
+    callbacks.delete(animation);
+    return animator?.remove?.(animation) ?? false;
+  };
+
+  return {
+    animator: scopedAnimator,
+    dispose() {
+      for (const callback of callbacks) animator?.remove?.(callback);
+      callbacks.clear();
+    },
+  };
+}
+
+function disposeObjectResources(root) {
+  const geometries = new Set();
+  const materials = new Set();
+  root.traverse((object) => {
+    if (object.geometry?.dispose) geometries.add(object.geometry);
+    const objectMaterials = Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+    for (const material of objectMaterials) {
+      if (material?.dispose) materials.add(material);
+    }
+  });
+  for (const geometry of geometries) geometry.dispose();
+  for (const material of materials) material.dispose();
+}
+
 function createCloud(position, scale, index, animator, cloudMaterial) {
   const root = decorate(new Group());
   root.name = 'particle_cloud_' + index;
@@ -1676,6 +1755,11 @@ function createPetalDrift(animator, layout) {
   petals.name = 'particle_floating_petals';
 
   animator.add((time, dt, state) => {
+    const dayPetalMix = 1 - MathUtils.smoothstep(state.nightMix, 0.30, 0.75);
+    petalMaterial.opacity = 0.64 * dayPetalMix;
+    petals.visible = dayPetalMix > 0.003;
+    if (!petals.visible) return;
+
     for (let i = 0; i < count; i += 1) {
       positions[i * 3] += Math.sin(time * 0.45 + phases[i]) * dt * 0.22;
       positions[i * 3 + 1] -= speeds[i] * dt;
@@ -1685,15 +1769,18 @@ function createPetalDrift(animator, layout) {
       }
     }
     petalGeo.attributes.position.needsUpdate = true;
-    petalMaterial.opacity = 0.7 - state.nightMix * 0.28;
   });
   return petals;
 }
 
-function createButterflies(animator) {
-  const mat = materials();
+function createLegacyButterflies(animator) {
   const root = decorate(new Group());
   root.name = 'particle_butterflies';
+  root.userData.system = 'v0.3-butterflies';
+  const bodyMaterial = new MeshStandardMaterial({
+    color: TOWN_PALETTE.darkCocoa,
+    roughness: 0.84,
+  });
   const wingMaterials = [
     new MeshBasicMaterial({ color: TOWN_PALETTE.blush, side: DoubleSide }),
     new MeshBasicMaterial({ color: TOWN_PALETTE.lavender, side: DoubleSide }),
@@ -1707,24 +1794,30 @@ function createButterflies(animator) {
     [4.5, 1.35, -8.8],
     [-5, 1.6, -9.5],
   ];
+
   centers.forEach(([x, y, z], index) => {
     const butterfly = decorate(new Group());
-    butterfly.name = 'particle_butterfly_' + index;
+    butterfly.name = `particle_butterfly_${index}`;
     butterfly.position.set(x, y, z);
-    const body = makeMesh(new CylinderGeometry(0.025, 0.035, 0.32, 6), mat.darkCocoa, {
-      cast: false,
-      receive: false,
-      name: 'particle_butterfly_body',
-    });
+    const body = makeMesh(
+      new CylinderGeometry(0.025, 0.035, 0.32, 6),
+      bodyMaterial,
+      {
+        cast: false,
+        receive: false,
+        name: 'particle_butterfly_body',
+      },
+    );
     body.rotation.x = Math.PI / 2;
     butterfly.add(body);
-    const wingGeo = new PlaneGeometry(0.32, 0.24);
-    const leftWing = makeMesh(wingGeo, wingMaterials[index % wingMaterials.length], {
+    const wingGeometry = new PlaneGeometry(0.32, 0.24);
+    const wingMaterial = wingMaterials[index % wingMaterials.length];
+    const leftWing = makeMesh(wingGeometry, wingMaterial, {
       cast: false,
       receive: false,
       name: 'particle_butterfly_wing',
     });
-    const rightWing = makeMesh(wingGeo, wingMaterials[index % wingMaterials.length], {
+    const rightWing = makeMesh(wingGeometry, wingMaterial, {
       cast: false,
       receive: false,
       name: 'particle_butterfly_wing',
@@ -1747,10 +1840,21 @@ function createButterflies(animator) {
       butterfly.visible = state.nightMix < 0.78;
     });
   });
+
   return root;
 }
 
-export function createAmbientLife(animator, layout = TOWN_LAYOUT) {
+export function createAmbientLife(
+  animator,
+  layout = TOWN_LAYOUT,
+  {
+    quality = 'high',
+    reducedMotion = false,
+    assetVariant = ASSET_VARIANTS.PILOT,
+  } = {},
+) {
+  const animationScope = createAmbientAnimatorScope(animator);
+  const ambientAnimator = animationScope.animator;
   const root = decorate(new Group());
   root.name = 'cozy_ambient_life';
   const cloudMaterial = new MeshStandardMaterial({
@@ -1767,14 +1871,38 @@ export function createAmbientLife(animator, layout = TOWN_LAYOUT) {
     [-13, 16.5, 13, 1.45],
   ];
   cloudData.forEach(([x, y, z, scale], index) => {
-    root.add(createCloud(new Vector3(x, y, z), scale, index, animator, cloudMaterial));
+    root.add(createCloud(new Vector3(x, y, z), scale, index, ambientAnimator, cloudMaterial));
   });
-  animator.add((_time, _dt, state) => {
+  ambientAnimator.add((_time, _dt, state) => {
     cloudMaterial.opacity = 0.88 - state.nightMix * 0.47;
   });
 
-  root.add(createFireflies(animator, layout));
-  root.add(createPetalDrift(animator, layout));
-  root.add(createButterflies(animator));
-  return root;
+  root.add(createFireflies(ambientAnimator, layout));
+  root.add(createPetalDrift(ambientAnimator, layout));
+  const selectedAssetVariant = normalizeAssetVariant(assetVariant);
+  const dragonflies = selectedAssetVariant === ASSET_VARIANTS.PILOT
+    ? createDragonflyField({
+      animator: ambientAnimator,
+      layout,
+      quality,
+      reducedMotion,
+    })
+    : null;
+  root.add(
+    dragonflies?.root || createLegacyButterflies(ambientAnimator),
+  );
+  let disposed = false;
+  return {
+    root,
+    dragonflies,
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      dragonflies?.dispose?.();
+      animationScope.dispose();
+      root.removeFromParent();
+      disposeObjectResources(root);
+      root.clear();
+    },
+  };
 }

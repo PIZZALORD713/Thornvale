@@ -8,7 +8,17 @@ This folder is the presentation-first rebuild of Thornvale. It keeps the existin
 - **fRiENDSiES characters by default**, loaded non-blockingly with a local offline fallback
 - Four distinct Blender-authored cottages with porches, awnings, dormers, signs, trellises, and emissive windows
 - An expanded village ring with doorstep paths, outer garden walks, fenced cottage plots, a pond, and authored wayfinding landmarks
-- Animated clouds, chimney smoke, butterflies, drifting petals, fireflies, water ripples, foliage, bell motion, and interaction bursts
+- Animated clouds, chimney smoke, localized pond-and-garden dragonflies,
+  drifting petals, fireflies, water ripples, foliage, bell motion, and
+  interaction bursts
+- Quality-scaled breathing grass in one instanced draw, with deterministic path,
+  landmark, building, pond, and story-route clearances and a static
+  reduced-motion presentation; camera-space scaling keeps near-lens tufts from
+  becoming cropped foreground shards
+- Two-draw code-native dragonflies replace the old 18-mesh rectangular-wing
+  butterflies: two insects on low quality and three on medium/high use
+  deterministic stop–inspect–dart stations, then fade before night routes;
+  reduced motion keeps their first-station silhouettes static
 - Authored fRiENDSiES idle, walk, joy-jump, and rumba clips, plus a subtle procedural squash-and-sway layer
 - Smooth cinematic day/night transitions with glowing windows, moonlight, stars, and a character key light
 - Bloom, candy color grading, vignette, subtle grain, and adaptive quality fallbacks
@@ -18,13 +28,29 @@ This folder is the presentation-first rebuild of Thornvale. It keeps the existin
 
 ### Choose a fRiENDSiES character
 
-The default character is token `#1`. Select another from the fRiENDSiES collection with:
+The locally bundled default character is token `#6602`. Select another from the fRiENDSiES collection with:
 
 ```text
-http://localhost:3000/?token=713
+http://localhost:3000/?friend=8448
+http://localhost:3000/fren/8448
 ```
 
-`?friend=713` is also supported. Use `?avatar=local` only to preview the offline fallback character.
+The `friend` value can be a token ID or a full generator link such as
+`https://www.frienemies.xyz/fren/8448`; `?token=8448` remains an alias. IDs are
+strictly limited to `1`–`10000`, and selection is applied on initial navigation
+or reload. Thornvale fetches only the selected token's catalog range and model
+parts. A malformed or failed selection falls back to local `#6602`, then local
+Steward `#8914`. A code-native emergency visual appears only if the bundled
+decoder or both local fRiENDSiES families fail, keeping total asset failure
+playable without replacing the normal fRiENDSiES-first path.
+
+Arbitrary-token streaming is project-release-authorized under a bounded
+external dependency contract. Published Thornvale builds may use the pinned
+catalog for IDs `1`–`10000` and stream the selected token's player components
+only from `https://storage.googleapis.com`. This permits integrated in-game
+player rendering, not full-collection bundling, canonical/raw copying,
+mirroring, standalone packs, environmental reuse, sublicensing, unrelated-
+origin delivery, or use outside Thornvale.
 
 ### Visual quality controls
 
@@ -33,7 +59,96 @@ http://localhost:3000/?token=713
 ?quality=medium
 ?quality=low
 ?post=off           # direct-render debugging fallback
+?assets=pilot       # versioned arrival/plaza art (default)
+?assets=baseline    # restore the v0.3 procedural landmarks
+?traits=v1          # fRiENDSiES Trait Echo v1 (default)
+?traits=off         # remove environmental trait echoes
 ```
+
+The pilot replaces only the Welcome Gate, Community Ledger, and Town Bell
+visuals. Gameplay coordinates, colliders, interaction IDs, and story state stay
+on the v0.3 contract, and each missing pilot root falls back independently.
+
+The selectors are independent. For example, `?assets=baseline&traits=v1`
+tests the trait language against the procedural landmarks, while
+`?assets=pilot&traits=off` isolates the authored landmark overhaul. Missing
+selectors use the intended `pilot + v1` composition; explicit `baseline + off`
+is the full-presentation rollback, while `?traits=off` is the exact independent
+Trait Echo rollback. Unknown selector values also fail safely to the matching
+baseline or off mode.
+
+### fRiENDSiES Trait Echo v1
+
+Trait Echo v1 turns three already bundled character traits into a reversible
+environmental story language along the opening route:
+
+- Three `#0001` **Flower White** placements create one private arrival offering
+  and a paired set of Ledger witnesses.
+- Three `#8914` **Torch** placements mount as paired Gate sconces and one Bell
+  sconce, carrying guidance into dusk ritual and authority.
+- One `#8914` **Crown Up** placement marks the Ledger as civic office and tilts
+  as the town's account becomes suspect.
+
+Each trait has one semantic job: Flower White is offered and witnessed
+kindness, Torch is civic guidance and ritual, and Crown Up is office. The
+shared rule is the **Second Witness**: paired objects represent the town's
+collective account, while the single arrival flower remains private.
+
+The Ledger witness pair, Bell light, Torch glow, and Crown posture react to the
+arrival, dusk, first-bell, anomaly, intervention, comply, and alter states.
+Reduced-motion mode preserves the state changes without ambient sway or
+flicker. The treatment is decorative and render-only: it does not move story
+anchors, change collisions, or add save fields.
+
+When the fRiENDSiES flower loads, the 56 generic procedural flowers on the
+arrival/plaza corridor are removed; the 52 distant meadow accents remain as
+perimeter texture. A trait-load failure restores the complete procedural
+meadow automatically.
+
+The seven placements reuse existing local GLBs and therefore add **zero new
+asset bytes**. They render as three trait draw families and display **26,544
+trait triangles** when every family loads. One additional shared, code-native
+civic-mount draw grounds the seven traits as offerings, sconces, and a crest;
+it adds no trait asset. The freestanding arrival Torch and duplicate arrival
+flower from the first proof were removed. `Book Of Ocean`, `Friends Key`, `All
+Seeing`, and `Orb` remain cataloged candidates only; none is loaded or shipped
+by v1.
+
+The exact manifested `#0001` Flower White and `#8914` Torch and Crown Up files,
+plus this documented Trait Echo v1 arrangement, are project-release-authorized
+for bundled Thornvale builds. Raw-source, standalone asset-pack, collection-
+wide bundling, and outside-project redistribution remain prohibited. A
+separate authorization permits bounded remote components only as a selected
+in-game player avatar; it does not approve those components for Trait Echo or
+environmental adaptation. Use `?traits=off` for the exact runtime rollback. See
+the [Trait Echo v1 QA
+record](docs/qa/2026-07-12-trait-echo-v1.md) and the adjacent trait provenance
+files for the exact boundary.
+
+### fRiENDSiES trait library
+
+The environmental trait library is indexed as development source data rather
+than fetched by the Trait Echo runtime. The pinned catalog covers all 10,000
+tokens, 1,077 named traits, and 1,447 distinct asset/preview variants while
+preserving the token IDs that use each visual. Shareable full-player links use
+the separately authorized and bounded ranged-metadata path described above.
+
+```bash
+npm run friendsies:index
+npm run friendsies:atlas
+```
+
+The atlas runs locally and provides searchable preview cards, type and curation
+filters, variant/token context, and game-development notes. Candidate GLBs can
+then be inspected one at a time:
+
+```bash
+npm run friendsies:probe -- --type hand --value "Book Of Ocean"
+```
+
+Probing does not add the candidate to the shipped game. See the
+[trait workflow](docs/friendsies-trait-workflow.md) for the index-to-runtime
+promotion gates.
 
 ### Core Hook Proof v0.3
 
@@ -48,7 +163,7 @@ The default build now plays the complete first-run Core Hook test, **A Courtesy 
 
 Progress is saved locally and restores the story phase, time, steward position, route, choice, and ending. Use `?story=reset` (or `?reset=1`) for a clean first run. Use `?story=off` only for the presentation sandbox.
 
-The optimized runtime clips are animation-only derivatives of [`PIZZALORD713/animation_collection2`](https://github.com/PIZZALORD713/animation_collection2). The first collection was audited but is not shipped because several source files require clearer redistribution provenance. See [`public/animations/PROVENANCE.md`](public/animations/PROVENANCE.md). Default player [`#0001`](public/friendsies/0001/PROVENANCE.md), Steward [`#8914`](public/friendsies/8914/PROVENANCE.md), and the Draco decoder are bundled for a dependable first run.
+The optimized runtime clips are animation-only derivatives of [`PIZZALORD713/animation_collection2`](https://github.com/PIZZALORD713/animation_collection2). These exact derivatives are authorized for publication as part of Thornvale builds; their source files and standalone animation assets are not generally redistributable. The first collection was audited but is not shipped because its files are outside that exact authorization. See [`public/animations/PROVENANCE.md`](public/animations/PROVENANCE.md). Default player [`#6602`](public/friendsies/6602/PROVENANCE.md), Steward [`#8914`](public/friendsies/8914/PROVENANCE.md), the `#0001` Flower White trait, and the Draco decoder are bundled for a dependable first run.
 
 ## What is Thornvale?
 **Thornvale** is a warm, cottage-core valley town that feels like a hug… until you notice the hug has a grip strength rating.
@@ -140,7 +255,12 @@ npm test
 npm run check
 ```
 
-`npm run check` runs the story-state tests and the production build.
+`npm run check` runs the full test suite, production build, and development
+asset audit. `npm run assets:release` applies the stricter release gate. The
+exact animation derivatives, local character files, and documented Trait Echo
+v1 uses are approved for Thornvale releases. The arbitrary-token remote-player
+family is separately approved only under its pinned catalog, token-range,
+origin, integrated-player, and no-redistribution contract.
 
 ### Build for Production
 ```bash
@@ -150,7 +270,11 @@ npm run preview
 
 ### Deployment Notes
 - The project is a static Vite build. Deploy the `dist/` output to any static host (Vercel, Netlify, GitHub Pages).
-- The hybrid procedural/Blender town, effects, fallback avatar, UI, soundscape, default player `#0001`, Steward `#8914`, and their decoder are bundled locally. Optional player-token metadata and model parts stream after the world is already playable.
+- The hybrid procedural/Blender town, effects, UI, soundscape, default player
+  `#6602`, Steward `#8914`, and their decoder are bundled locally. Optional
+  player-token metadata and model parts stream after the world is already
+  playable. Recovery prefers the local fRiENDSiES cast; an independent code-
+  native safety visual appears only after total bundled GLTF or Draco failure.
 
 ## Roadmap (Plan 2.0)
 1. **Rebaseline + Reliability** — reconcile decisions, remove remote startup blockers, and add CI/tests

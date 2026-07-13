@@ -1,0 +1,4 @@
+interface:
+  display_name: "Debug ThornVale 3D Playfeel"
+  short_description: "Diagnose and verify ThornVale 3D playfeel bugs"
+  default_prompt: "Use $thornvale-debug-3d-playfeel to reproduce, fix, and verify this ThornVale 3D playfeel bug."
