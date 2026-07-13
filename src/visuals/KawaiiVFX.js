@@ -356,6 +356,7 @@ export class KawaiiVFX {
       system.material.uniforms.uTime.value = this._time;
       system.opacity = MathUtils.damp(system.opacity, system.targetOpacity, 2.4, safeDt);
       system.material.uniforms.uOpacity.value = system.opacity;
+      system.points.visible = system.opacity > 0.003 || system.targetOpacity > 0.003;
       if (system.opacity > 0.003) this._updateAmbientSystem(system, safeDt);
     }
 

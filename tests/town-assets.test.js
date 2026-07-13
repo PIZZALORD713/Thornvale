@@ -1,6 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { BoxGeometry, Group, Mesh } from 'three';
+
+import {
+  ASSET_VARIANTS,
+  DEFAULT_ASSET_VARIANT,
+  resolveAssetVariant,
+  TOWN_ASSET_PATHS,
+} from '../src/config/assets.js';
+import { TOWN_INTERACTION_CONTRACT, TOWN_LAYOUT } from '../src/config/town.js';
+import { bindAuthoredBellMotion } from '../src/game/TownBuilder.js';
+import { loadAuthoredPilotLandmarks } from '../src/visuals/TownAssetLoader.js';
+import { WorldAnimator } from '../src/visuals/WorldAnimator.js';
 
 async function readGlbDocument(path) {
   const buffer = await readFile(new URL(path, import.meta.url));
@@ -9,6 +21,72 @@ async function readGlbDocument(path) {
   const jsonLength = buffer.readUInt32LE(12);
   assert.equal(buffer.readUInt32LE(16), 0x4e4f534a, `${path} has no JSON chunk`);
   return JSON.parse(buffer.subarray(20, 20 + jsonLength).toString('utf8').trim());
+}
+
+function getAccessorCount(document, accessorIndex, label) {
+  assert.ok(Number.isInteger(accessorIndex), `${label} has no accessor`);
+  const accessor = document.accessors?.[accessorIndex];
+  assert.ok(accessor, `${label} references missing accessor ${accessorIndex}`);
+  assert.ok(Number.isInteger(accessor.count), `${label} accessor has no integer count`);
+  return accessor.count;
+}
+
+function countGlbGeometry(document) {
+  let primitives = 0;
+  let triangles = 0;
+  for (const [meshIndex, mesh] of (document.meshes || []).entries()) {
+    for (const [primitiveIndex, primitive] of (mesh.primitives || []).entries()) {
+      primitives += 1;
+      const label = `mesh ${meshIndex} primitive ${primitiveIndex}`;
+      const elementAccessor = primitive.indices ?? primitive.attributes?.POSITION;
+      const elementCount = getAccessorCount(document, elementAccessor, label);
+      const mode = primitive.mode ?? 4;
+      if (mode === 4) {
+        assert.equal(elementCount % 3, 0, `${label} has incomplete triangles`);
+        triangles += elementCount / 3;
+      } else if (mode === 5 || mode === 6) {
+        triangles += Math.max(0, elementCount - 2);
+      }
+    }
+  }
+  return { primitives, triangles };
+}
+
+function descendantNodeIndices(document, rootIndex) {
+  const descendants = [];
+  const pending = [...(document.nodes?.[rootIndex]?.children || [])];
+  const seen = new Set();
+  while (pending.length > 0) {
+    const nodeIndex = pending.pop();
+    if (seen.has(nodeIndex)) continue;
+    seen.add(nodeIndex);
+    descendants.push(nodeIndex);
+    pending.push(...(document.nodes?.[nodeIndex]?.children || []));
+  }
+  return descendants;
+}
+
+function assertRootHasGeometry(document, rootName) {
+  const matches = (document.nodes || [])
+    .map((node, index) => ({ node, index }))
+    .filter(({ node }) => node.name === rootName);
+  assert.equal(matches.length, 1, `expected one pilot node named ${rootName}`);
+
+  let primitiveCount = 0;
+  for (const nodeIndex of descendantNodeIndices(document, matches[0].index)) {
+    const meshIndex = document.nodes[nodeIndex]?.mesh;
+    if (!Number.isInteger(meshIndex)) continue;
+    for (const [index, primitive] of (document.meshes?.[meshIndex]?.primitives || []).entries()) {
+      primitiveCount += 1;
+      const positionCount = getAccessorCount(
+        document,
+        primitive.attributes?.POSITION,
+        `${rootName} descendant primitive ${index} POSITION`,
+      );
+      assert.ok(positionCount >= 3, `${rootName} has an empty descendant primitive`);
+    }
+  }
+  assert.ok(primitiveCount > 0, `${rootName} has no descendant mesh geometry`);
 }
 
 test('the Blender cottage kit preserves every runtime placement root', async () => {
@@ -32,4 +110,148 @@ test('the Blender village kit preserves each reusable landmark root', async () =
     assert.ok(names.has(name), `missing authored village prop root ${name}`);
   }
   assert.equal(document.images?.length || 0, 0, 'village kit should remain texture-free');
+});
+
+test('the versioned arrival/plaza pilot stays within its runtime contract', async () => {
+  const document = await readGlbDocument(
+    '../public/village/pilot/v1/thornvale-arrival-plaza.glb',
+  );
+  const names = new Set((document.nodes || []).map((node) => node.name));
+  for (const name of ['WelcomeGate', 'CommunityLedger', 'TownBell', 'TownBellSwing']) {
+    assert.ok(names.has(name), `missing pilot node ${name}`);
+  }
+  for (const rootName of ['WelcomeGate', 'CommunityLedger', 'TownBell', 'TownBellSwing']) {
+    assertRootHasGeometry(document, rootName);
+  }
+  assert.equal(document.images?.length || 0, 0, 'pilot kit should remain texture-free');
+  const geometry = countGlbGeometry(document);
+  assert.ok(geometry.primitives <= 50, 'pilot kit exceeds its 50-primitive budget');
+  assert.ok(geometry.triangles <= 22_000, 'pilot kit exceeds its 22k-triangle budget');
+
+  const file = await readFile(new URL(
+    '../public/village/pilot/v1/thornvale-arrival-plaza.glb',
+    import.meta.url,
+  ));
+  assert.ok(file.byteLength <= 800 * 1024, 'pilot kit exceeds its 800 KiB budget');
+});
+
+test('the authored pilot is default while explicit and unknown values retain baseline rollback', () => {
+  assert.equal(DEFAULT_ASSET_VARIANT, ASSET_VARIANTS.PILOT);
+  assert.equal(resolveAssetVariant(''), DEFAULT_ASSET_VARIANT);
+  assert.equal(resolveAssetVariant('?assets=baseline'), ASSET_VARIANTS.BASELINE);
+  assert.equal(resolveAssetVariant('?assets=pilot'), ASSET_VARIANTS.PILOT);
+  assert.equal(resolveAssetVariant('?assets=experimental'), ASSET_VARIANTS.BASELINE);
+  assert.equal(
+    TOWN_ASSET_PATHS.arrivalPlazaPilot.url,
+    '/village/pilot/v1/thornvale-arrival-plaza.glb',
+  );
+});
+
+test('pilot roots fall back independently without moving surviving authored roots', async () => {
+  const source = new Group();
+  const gate = new Group();
+  gate.name = 'WelcomeGate';
+  gate.add(new Mesh(new BoxGeometry(1, 1, 1)));
+  const ledger = new Group();
+  ledger.name = 'CommunityLedger'; // Present but empty: must use fallback.
+  const bell = new Group();
+  bell.name = 'TownBell';
+  const swing = new Group();
+  swing.name = 'TownBellSwing';
+  swing.add(new Mesh(new BoxGeometry(1, 1, 1)));
+  bell.add(swing);
+  source.add(gate, ledger, bell);
+
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  let landmarks;
+  try {
+    landmarks = await loadAuthoredPilotLandmarks(TOWN_LAYOUT, null, {
+      assetVariant: ASSET_VARIANTS.PILOT,
+      sceneLoader: async () => source,
+    });
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.deepEqual([...landmarks.keys()], ['welcomeGate', 'bell']);
+  assert.deepEqual(landmarks.get('welcomeGate').position.toArray(), [
+    TOWN_LAYOUT.gate.x,
+    TOWN_LAYOUT.gate.y,
+    TOWN_LAYOUT.gate.z,
+  ]);
+  assert.deepEqual(landmarks.get('bell').position.toArray(), [
+    TOWN_LAYOUT.landmarks.bell.x,
+    0,
+    TOWN_LAYOUT.landmarks.bell.z,
+  ]);
+});
+
+test('pilot roots with non-finite geometry bounds are rejected', async () => {
+  const source = new Group();
+  const gate = new Group();
+  gate.name = 'WelcomeGate';
+  gate.position.x = Number.POSITIVE_INFINITY;
+  gate.add(new Mesh(new BoxGeometry(1, 1, 1)));
+  source.add(gate);
+
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  let landmarks;
+  try {
+    landmarks = await loadAuthoredPilotLandmarks(TOWN_LAYOUT, null, {
+      assetVariant: ASSET_VARIANTS.PILOT,
+      sceneLoader: async () => source,
+    });
+  } finally {
+    console.warn = originalWarn;
+  }
+  assert.equal(landmarks.size, 0);
+});
+
+test('baseline mode skips the pilot request entirely', async () => {
+  let requested = false;
+  const landmarks = await loadAuthoredPilotLandmarks(TOWN_LAYOUT, null, {
+    assetVariant: ASSET_VARIANTS.BASELINE,
+    sceneLoader: async () => {
+      requested = true;
+      return new Group();
+    },
+  });
+  assert.equal(requested, false);
+  assert.equal(landmarks.size, 0);
+});
+
+test('authored TownBell keeps idle and interaction-driven swing behavior', () => {
+  const bell = new Group();
+  const swing = new Group();
+  swing.name = 'TownBellSwing';
+  bell.add(swing);
+  const animator = new WorldAnimator();
+
+  bindAuthoredBellMotion(animator, bell);
+  assert.equal(typeof animator.ringBell, 'function');
+  animator.update(0.016, false);
+  const idleRotation = swing.rotation.z;
+  animator.ringBell();
+  animator.update(0.016, false);
+
+  assert.notEqual(idleRotation, 0);
+  assert.ok(
+    Math.abs(swing.rotation.z - idleRotation) > 0.1,
+    'ring impulse should visibly exceed the idle sway',
+  );
+});
+
+test('the pilot preserves story coordinates, colliders, and interactable keys', () => {
+  assert.deepEqual(TOWN_LAYOUT.spawn, { x: 0, y: 2, z: 14 });
+  assert.deepEqual(TOWN_LAYOUT.gate, { x: 0, y: 0, z: 11.7 });
+  assert.deepEqual(TOWN_LAYOUT.landmarks, {
+    ledger: { x: -2, y: 0.8, z: 3 },
+    bell: { x: 3, y: 0.5, z: -2 },
+  });
+  assert.deepEqual(TOWN_INTERACTION_CONTRACT, {
+    ledger: { id: 'ledger', radius: 2 },
+    bell: { id: 'bell', radius: 2 },
+  });
 });

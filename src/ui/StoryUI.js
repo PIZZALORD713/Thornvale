@@ -40,6 +40,23 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, Number(value) || 0));
 }
 
+function datasetKey(value, fallback = 'known') {
+  const key = String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return key || fallback;
+}
+
+export function normalizeStoryPortrait(value, speaker = '') {
+  const raw = asText(value).trim();
+  if (/steward\s+lumen/i.test(asText(speaker)) || /^#?8914$/i.test(raw)) return 'L';
+  if (raw) return raw;
+  const initial = asText(speaker).trim().match(/[A-Za-z]/)?.[0];
+  return initial?.toUpperCase() || 'T';
+}
+
 /**
  * Accessible story presentation for the Core Hook Proof.
  *
@@ -68,10 +85,13 @@ export class StoryUI {
     this._choiceButtons = [];
     this._previousFocus = null;
     this._inertStates = new Map();
+    this._townStanding = null;
 
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onActionClick = this._onActionClick.bind(this);
     this._onSignatureInput = this._onSignatureInput.bind(this);
+    this._onPointerLockSettled = this._onPointerLockSettled.bind(this);
+    this._onFocusOut = this._onFocusOut.bind(this);
   }
 
   init() {
@@ -95,6 +115,9 @@ export class StoryUI {
     this.elements.storyAction.addEventListener('click', this._onActionClick);
     this.elements.storySignatureInput.addEventListener('input', this._onSignatureInput);
     this.document.addEventListener('keydown', this._onKeyDown, true);
+    this.document.addEventListener('pointerlockchange', this._onPointerLockSettled, true);
+    this.document.addEventListener('pointerlockerror', this._onPointerLockSettled, true);
+    this.document.addEventListener('focusout', this._onFocusOut, true);
 
     this.initialized = true;
     return this;
@@ -140,7 +163,7 @@ export class StoryUI {
     return this._present({
       kind: 'letter',
       tone: config.tone ?? 'warm',
-      portrait: config.portrait ?? '✉',
+      portrait: config.portrait ?? 'I',
       eyebrow: config.eyebrow ?? 'A letter in your handwriting',
       title: config.title ?? 'Before the lanterns bloom',
       body: config.body ?? config.text ?? config.message ?? '',
@@ -160,11 +183,11 @@ export class StoryUI {
       config = { ...options, speaker: speakerOrOptions, text };
     }
 
-    const speaker = asText(config.speaker ?? config.title ?? 'Steward 8914');
+    const speaker = asText(config.speaker ?? config.title ?? 'Steward Lumen');
     return this._present({
       kind: 'dialogue',
       tone: config.tone ?? 'steward',
-      portrait: config.portrait ?? config.token ?? (speaker.match(/\d+/)?.[0] || '✦'),
+      portrait: normalizeStoryPortrait(config.portrait ?? config.token, speaker),
       eyebrow: config.eyebrow ?? 'A neighbor speaks',
       title: speaker,
       body: config.body ?? config.text ?? config.message ?? '',
@@ -181,7 +204,7 @@ export class StoryUI {
     const promise = this._present({
       kind: 'record',
       tone: config.tone ?? 'ledger',
-      portrait: config.portrait ?? '✎',
+      portrait: config.portrait ?? 'L',
       eyebrow: config.eyebrow ?? 'The Community Ledger',
       title: config.title ?? 'Today’s record',
       body: config.entry ?? config.body ?? config.text ?? config.record ?? '',
@@ -209,7 +232,7 @@ export class StoryUI {
     const promise = this._present({
       kind: 'signature',
       tone: config.tone ?? 'ledger',
-      portrait: config.portrait ?? '✎',
+      portrait: config.portrait ?? 'L',
       eyebrow: config.eyebrow ?? 'The Community Ledger',
       title: config.title ?? 'New arrivals',
       body: config.entry ?? config.body ?? config.text ?? '',
@@ -261,7 +284,7 @@ export class StoryUI {
     const promise = this._present({
       kind: 'choice',
       tone: config.tone ?? 'decision',
-      portrait: config.portrait ?? config.token ?? '8914',
+      portrait: normalizeStoryPortrait(config.portrait ?? config.token ?? 'L', 'Steward Lumen'),
       eyebrow: config.eyebrow ?? 'The town is listening',
       title: config.title ?? config.speaker ?? 'What will you remember?',
       body: config.body ?? config.text ?? config.message ?? '',
@@ -286,7 +309,7 @@ export class StoryUI {
     const promise = this._present({
       kind: 'ending',
       tone,
-      portrait: config.portrait ?? (tone === 'alter' ? '✦' : '❀'),
+      portrait: config.portrait ?? 'T',
       eyebrow: config.eyebrow ?? (tone === 'alter' ? 'For tonight' : 'The town remembers'),
       title: config.title ?? (tone === 'alter' ? 'Your memory is yours' : 'Welcome home'),
       body: config.body ?? config.text ?? config.message ?? '',
@@ -318,27 +341,68 @@ export class StoryUI {
     return promise;
   }
 
-  setNeighborliness(value, { animate = true, label = 'Neighborliness' } = {}) {
+  setTownStanding(value, { animate = true } = {}) {
     this._ensureInit();
     const counter = this.elements.kindness;
     if (!counter) return this;
 
-    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+    const config = typeof value === 'string'
+      ? { key: datasetKey(value), label: value }
+      : value;
+    const standingLabel = asText(config?.label ?? config?.standingLabel).trim();
+    if (!standingLabel) {
+      this._townStanding = null;
       counter.classList.add('hidden');
       counter.setAttribute('aria-hidden', 'true');
       return this;
     }
 
-    const score = Math.round(clamp(value, 0, 100));
-    const tier = score >= 70 ? 'warm' : score <= 35 ? 'watched' : 'known';
-    if (this.elements.kindnessLabel) this.elements.kindnessLabel.textContent = label;
-    if (this.elements.kindnessValue) this.elements.kindnessValue.textContent = String(score);
+    const standingKey = datasetKey(config?.key ?? config?.standingKey ?? standingLabel);
+    const tier = ['home', 'in-good-standing'].includes(standingKey)
+      ? 'warm'
+      : ['being-worried-over', 'differently'].includes(standingKey)
+        ? 'watched'
+        : 'known';
+    this._townStanding = { key: standingKey, label: standingLabel };
+    if (this.elements.kindnessLabel) {
+      this.elements.kindnessLabel.textContent = 'THORNVALE REMEMBERS';
+    }
+    if (this.elements.kindnessValue) this.elements.kindnessValue.textContent = standingLabel;
     counter.dataset.tier = tier;
-    counter.setAttribute('aria-label', `${label}: ${score} out of 100`);
+    counter.dataset.standing = standingKey;
+    counter.setAttribute('aria-label', `Thornvale remembers: ${standingLabel}`);
     counter.setAttribute('aria-hidden', 'false');
     counter.classList.remove('hidden');
     if (animate) this._restartAnimation(counter, 'is-changing');
     return this;
+  }
+
+  /**
+   * Compatibility adapter for the authoritative internal score. The number is
+   * intentionally never rendered or announced; presentation state supplies a
+   * more legible, diegetic remembrance phrase whenever it is available.
+   */
+  setNeighborliness(value, { animate = true } = {}) {
+    this._ensureInit();
+    const counter = this.elements.kindness;
+    if (!counter) return this;
+
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+      return this.setTownStanding(null, { animate: false });
+    }
+
+    if (this._townStanding) {
+      if (animate) this._restartAnimation(counter, 'is-changing');
+      return this;
+    }
+
+    const score = Math.round(clamp(value, 0, 100));
+    const standing = score >= 70
+      ? { key: 'in-good-standing', label: 'In good standing' }
+      : score <= 35
+        ? { key: 'being-worried-over', label: 'Being worried over' }
+        : { key: 'kindly-met', label: 'Kindly met' };
+    return this.setTownStanding(standing, { animate });
   }
 
   isBlocking() {
@@ -349,6 +413,9 @@ export class StoryUI {
     if (!this.initialized) return;
 
     this.document.removeEventListener('keydown', this._onKeyDown, true);
+    this.document.removeEventListener('pointerlockchange', this._onPointerLockSettled, true);
+    this.document.removeEventListener('pointerlockerror', this._onPointerLockSettled, true);
+    this.document.removeEventListener('focusout', this._onFocusOut, true);
     this.elements.storyAction.removeEventListener('click', this._onActionClick);
     this.elements.storySignatureInput.removeEventListener('input', this._onSignatureInput);
     this._resolvePending(null);
@@ -371,7 +438,7 @@ export class StoryUI {
     const card = this.elements.storyCard;
     card.dataset.kind = config.kind;
     card.dataset.tone = config.tone ?? 'neutral';
-    this.elements.storyPortraitText.textContent = asText(config.portrait ?? '✦');
+    this.elements.storyPortraitText.textContent = asText(config.portrait ?? 'T');
     this.elements.storyEyebrow.textContent = asText(config.eyebrow);
     this.elements.storyTitle.textContent = asText(config.title);
     this.elements.storyBody.textContent = asText(config.body);
@@ -390,8 +457,10 @@ export class StoryUI {
     if (!this._blocking) {
       const active = this.document.activeElement;
       this._previousFocus = active && !this.elements.storyLayer.contains(active) ? active : null;
-      this._setBackgroundInert(true);
       this._setBlocking(true);
+      // Mark the modal as authoritative before inerting the currently focused
+      // welcome/game surface. Its resulting focusout must be contained.
+      this._setBackgroundInert(true);
     }
 
     this.elements.storyLayer.inert = false;
@@ -481,6 +550,24 @@ export class StoryUI {
     }
   }
 
+  _onPointerLockSettled() {
+    // A completed or denied pointer-lock request may move focus back to the
+    // canvas or document after the modal's first focus frame. Reassert focus
+    // from the lifecycle event so the visible dialog remains the keyboard owner.
+    if (this._blocking) this._focusInitialControl();
+  }
+
+  _onFocusOut(event) {
+    if (!this._blocking) return;
+    const next = event?.relatedTarget;
+    if (next && this.elements.storyLayer.contains(next)) return;
+
+    // Pointer-lock settlement can move focus to BODY after its own lifecycle
+    // event has fired. Reassert on the following frame so the modal remains the
+    // keyboard owner without relying on an arbitrary timeout.
+    this._focusInitialControl();
+  }
+
   _onKeyDown(event) {
     if (!this._blocking || event.defaultPrevented) return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -552,7 +639,7 @@ export class StoryUI {
   }
 
   _focusInitialControl() {
-    globalThis.requestAnimationFrame?.(() => {
+    const focusTarget = (retriesRemaining) => {
       if (!this._blocking) return;
       const target = !this.elements.storySignaturePanel.hidden
         ? this.elements.storySignatureInput
@@ -560,7 +647,19 @@ export class StoryUI {
             ? this.elements.storyCard
             : (!this.elements.storyAction.hidden ? this.elements.storyAction : this.elements.storyCard));
       target?.focus?.({ preventScroll: true });
-    });
+      if (
+        target
+        && this.document.activeElement !== target
+        && retriesRemaining > 0
+      ) {
+        // Chromium may reject focus throughout the pointer-lock settlement
+        // frame. Retry on at most two subsequent frames until the modal owns
+        // focus; this is bounded and keyed to the invariant, not a time delay.
+        globalThis.requestAnimationFrame?.(() => focusTarget(retriesRemaining - 1));
+      }
+    };
+
+    globalThis.requestAnimationFrame?.(() => focusTarget(2));
   }
 
   _resetSignaturePresentation() {

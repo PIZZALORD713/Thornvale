@@ -1,11 +1,18 @@
 import {
   BoxGeometry,
   Group,
+  MathUtils,
   Mesh,
   MeshBasicMaterial,
   Vector3,
 } from 'three';
-import { TOWN_LAYOUT } from '../config/town.js';
+import {
+  normalizeAssetVariant,
+  normalizeTraitEchoVariant,
+  resolveAssetVariant,
+  resolveTraitEchoVariant,
+} from '../config/assets.js';
+import { TOWN_INTERACTION_CONTRACT, TOWN_LAYOUT } from '../config/town.js';
 import {
   createAmbientLife,
   createBellLandmark,
@@ -23,8 +30,10 @@ import {
 } from '../visuals/CozyTownKit.js';
 import {
   loadAuthoredCottages,
+  loadAuthoredPilotLandmarks,
   loadAuthoredVillageProps,
 } from '../visuals/TownAssetLoader.js';
+import { loadTraitEchoV1 } from '../visuals/FriendsiesTraitEchoes.js';
 import { WorldAnimator } from '../visuals/WorldAnimator.js';
 
 const cameraProxyMaterial = new MeshBasicMaterial({
@@ -110,13 +119,37 @@ function rotatedLocalX(placement, localX) {
   };
 }
 
+export function bindAuthoredBellMotion(worldAnimator, bell) {
+  const bellPivot = bell.getObjectByName('TownBellSwing');
+  if (!bellPivot) return;
+
+  const baseRotation = bellPivot.rotation.z;
+  let ringImpulse = 0;
+  worldAnimator.ringBell = () => {
+    ringImpulse = 1;
+  };
+  worldAnimator.add((time, dt) => {
+    ringImpulse = MathUtils.damp(ringImpulse, 0, 2.7, dt);
+    const idleSwing = Math.sin(time * 0.86 + 0.6) * 0.035;
+    const ringing = Math.sin(time * 18.5) * 0.42 * ringImpulse;
+    bellPivot.rotation.z = baseRotation + idleSwing + ringing;
+  });
+}
+
 /**
  * Builds Thornvale's cozy town slice.
  *
  * Existing callers can continue to consume interactables and spawnPoint. The
  * extended worldAnimator/updateWorld API owns all ambient environmental motion.
  */
-export async function buildTown(physicsWorld, scene) {
+export async function buildTown(physicsWorld, scene, {
+  assetVariant = resolveAssetVariant(),
+  traitEchoVariant = resolveTraitEchoVariant(),
+  reducedMotion = false,
+  quality = 'high',
+} = {}) {
+  const selectedAssetVariant = normalizeAssetVariant(assetVariant);
+  const selectedTraitEchoVariant = normalizeTraitEchoVariant(traitEchoVariant);
   const interactables = [];
   const spawnPoint = new Vector3(
     TOWN_LAYOUT.spawn.x,
@@ -126,6 +159,8 @@ export async function buildTown(physicsWorld, scene) {
   const worldAnimator = new WorldAnimator();
   const townRoot = new Group();
   townRoot.name = 'thornvale_kawaii_town';
+  townRoot.userData.assetVariant = selectedAssetVariant;
+  townRoot.userData.traitEchoVariant = selectedTraitEchoVariant;
   scene.add(townRoot);
 
   const mat = getTownMaterials();
@@ -137,9 +172,25 @@ export async function buildTown(physicsWorld, scene) {
     roofMaterial: mat[building.roofMaterial],
     doorMaterial: mat[building.doorMaterial],
   }));
-  const [authoredCottages, authoredVillageProps] = await Promise.all([
+  const [
+    authoredCottages,
+    authoredVillageProps,
+    authoredPilotLandmarks,
+    traitEchoes,
+  ] = await Promise.all([
     loadAuthoredCottages(buildingData, mat),
     loadAuthoredVillageProps(TOWN_LAYOUT, mat),
+    loadAuthoredPilotLandmarks(TOWN_LAYOUT, mat, {
+      assetVariant: selectedAssetVariant,
+    }),
+    loadTraitEchoV1({
+      variant: selectedTraitEchoVariant,
+      worldAnimator,
+      reducedMotion,
+    }).catch((error) => {
+      console.warn('[TownBuilder] Trait Echo v1 unavailable; continuing without it.', error);
+      return null;
+    }),
   ]);
 
   // Preserve the proven simple building colliders while upgrading their art.
@@ -160,7 +211,13 @@ export async function buildTown(physicsWorld, scene) {
     addCottagePhysics(physicsWorld, building);
   }
 
-  townRoot.add(createGroundDressing(worldAnimator, TOWN_LAYOUT));
+  const terrainDressing = createGroundDressing(worldAnimator, TOWN_LAYOUT, {
+    quality,
+    reducedMotion,
+    assetVariant: selectedAssetVariant,
+  });
+  const breathingGrass = terrainDressing.breathingGrass;
+  townRoot.add(terrainDressing);
   townRoot.add(createPathsAndPlaza(TOWN_LAYOUT));
   buildingData.forEach((building, index) => {
     townRoot.add(createCottagePlot(building, index, worldAnimator));
@@ -237,7 +294,8 @@ export async function buildTown(physicsWorld, scene) {
       ));
     }
   }
-  const welcomeGate = createWelcomeGate(worldAnimator, TOWN_LAYOUT);
+  const welcomeGate = authoredPilotLandmarks.get('welcomeGate')
+    || createWelcomeGate(worldAnimator, TOWN_LAYOUT);
   townRoot.add(welcomeGate);
   for (const xSign of [-1, 1]) {
     const gatePostPosition = {
@@ -263,13 +321,26 @@ export async function buildTown(physicsWorld, scene) {
     { x: 2.5, y: 0.78, z: 0.32 },
     welcomeGate,
   ));
-  townRoot.add(createNature(worldAnimator, TOWN_LAYOUT));
+  const hasFriendsiesRouteFlowers = traitEchoes?.families?.has?.('welcome-flower') === true;
+  townRoot.add(createNature(worldAnimator, TOWN_LAYOUT, {
+    // The fRiENDSiES flower must replace the central placeholder meadow, not
+    // compete with it. If that family fails to load, retain the full procedural
+    // meadow as a resilient visual fallback.
+    includeRouteWildflowers: !hasFriendsiesRouteFlowers,
+  }));
   townRoot.add(createPond(worldAnimator, TOWN_LAYOUT));
   townRoot.add(createPlazaFurniture(worldAnimator, TOWN_LAYOUT));
 
-  const ledger = createLedgerLandmark(worldAnimator, TOWN_LAYOUT);
-  const bell = createBellLandmark(worldAnimator, TOWN_LAYOUT);
+  const ledger = authoredPilotLandmarks.get('ledger')
+    || createLedgerLandmark(worldAnimator, TOWN_LAYOUT);
+  const authoredBell = authoredPilotLandmarks.get('bell');
+  const bell = authoredBell || createBellLandmark(worldAnimator, TOWN_LAYOUT);
+  if (authoredBell) bindAuthoredBellMotion(worldAnimator, authoredBell);
   townRoot.add(ledger, bell);
+  if (traitEchoes?.root) {
+    townRoot.add(traitEchoes.root);
+    traitEchoes.anchorToLandmarks({ ledger, bell, welcomeGate });
+  }
   physicsWorld.createStaticBox(
     {
       x: TOWN_LAYOUT.landmarks.ledger.x,
@@ -315,9 +386,9 @@ export async function buildTown(physicsWorld, scene) {
     TOWN_LAYOUT.landmarks.ledger.z,
   );
   interactables.push({
-    id: 'ledger',
+    id: TOWN_INTERACTION_CONTRACT.ledger.id,
     position: ledgerPosition,
-    radius: 2,
+    radius: TOWN_INTERACTION_CONTRACT.ledger.radius,
     prompt: 'Read a sweet note in the Community Ledger',
   });
 
@@ -327,13 +398,18 @@ export async function buildTown(physicsWorld, scene) {
     TOWN_LAYOUT.landmarks.bell.z,
   );
   interactables.push({
-    id: 'bell',
+    id: TOWN_INTERACTION_CONTRACT.bell.id,
     position: bellPosition,
-    radius: 2,
+    radius: TOWN_INTERACTION_CONTRACT.bell.radius,
     prompt: 'Ring the ribbon bell',
   });
 
-  townRoot.add(createAmbientLife(worldAnimator, TOWN_LAYOUT));
+  const ambientLife = createAmbientLife(worldAnimator, TOWN_LAYOUT, {
+    quality,
+    reducedMotion,
+    assetVariant: selectedAssetVariant,
+  });
+  townRoot.add(ambientLife.root);
   worldAnimator.update(0, false);
 
   return {
@@ -341,6 +417,11 @@ export async function buildTown(physicsWorld, scene) {
     landmarks: { ledger, bell },
     spawnPoint,
     townRoot,
+    assetVariant: selectedAssetVariant,
+    traitEchoVariant: selectedTraitEchoVariant,
+    traitEchoes,
+    breathingGrass,
+    ambientLife,
     worldAnimator,
     updateWorld: (dt, nightState) => worldAnimator.update(dt, nightState),
   };
