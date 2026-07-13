@@ -69,7 +69,8 @@ a composition surface.
 | Night particle hierarchy | PASS | Legacy 58-point square petal drift reaches opacity zero, leaves the render list by night, and no longer competes with consequence routes; shaped pooled particles remain |
 | Objective controls | PASS | With an active objective the controls keep low-opacity key hints but render no paper, border, blur, or shadow; the full paper treatment returns on hover |
 | Failure isolation | PASS | Forced Torch-family failure left Flower, Crown, the town, story shell, and grass live |
-| Selector matrix | PASS | baseline/off, baseline/v1, pilot/off, and pilot/v1 booted independently; off created no Trait Echo root |
+| Selector matrix | PASS | baseline/off, baseline/v1, pilot/off, and pilot/v1 booted independently; pilot/high created 800 grass instances and three dragonflies, while baseline made no pilot request and restored 64 tufts plus six legacy butterflies; off created no Trait Echo root |
+| Pilot request failure | PASS | Forced arrival-plaza GLB 404 restored the procedural Welcome Gate, Ledger, and Bell while story state and three-dragonfly ambient life remained live |
 | Console | PASS | Clean final session: zero application warnings and zero errors |
 
 ## Same-device performance probe
@@ -124,8 +125,9 @@ outside `public/` and production `dist/`.
 
 Final coordinated check:
 
-- `npm run check`: **134 tests passed**, production build passed, development
-  `dist` asset audit passed;
+- `npm run check`: **150 tests passed** on the `origin/main` integration,
+  production build passed, and the development `dist` asset audit passed at
+  8,066,575 / 8,388,608 bytes;
 - focused route, Trait Echo, atlas, and breathing-grass suites passed;
 - `git diff --check`: passed;
 - historical strict `npm run assets:release`: was non-zero before the scoped
@@ -135,7 +137,7 @@ Final coordinated check:
 Authorization refresh: the two focused asset/policy suites passed 12/12 and
 `npm run assets:release` passed with 21 runtime files / 4,212,285 bytes, one
 authorized external dependency, and production `dist` at
-8,061,208 / 8,388,608 bytes. This clears the asset-permission gate only; it does
+8,066,575 / 8,388,608 bytes. This clears the asset-permission gate only; it does
 not close the fresh-player or reference-device gates below.
 
 ## Open validation gates

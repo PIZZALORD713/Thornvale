@@ -74,8 +74,9 @@ authorization and require their own intake record before inclusion.
   offline contract suites.
 - `node --test tests/asset-budgets.test.js`: 7/7 passed after the scoped local-
   family authorization update.
-- `npm run check`: 122/122 tests passed, the production build completed, and
-  the development asset audit passed at 8,040,698 bytes of the 8 MiB deployment
+- `npm run check`: 150/150 tests passed on the `origin/main` integration, the
+  production build completed, and the development asset audit passed at
+  8,066,575 bytes of the 8 MiB deployment
   budget.
 - `npm run assets:release`: `friendsies-animations` and the exact authorized
   local character/Trait Echo families are absent from the strict blocker list.
@@ -83,6 +84,6 @@ authorization and require their own intake record before inclusion.
   pinned catalog, token-range, origin, and integrated-player contract rather
   than inheriting authority from these animation files. The refreshed command
   passed with 21 runtime files, one external dependency, and production `dist`
-  at 8,061,208 / 8,388,608 bytes.
+  at 8,066,575 / 8,388,608 bytes.
 - No animation binary, runtime URL, loader, fallback, or player-facing behavior
   changed in this provenance and contract-test update.
