@@ -1,0 +1,505 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "managedRuntimeExtensions": [
+      ".avif",
+      ".basis",
+      ".exr",
+      ".flac",
+      ".gif",
+      ".glb",
+      ".gltf",
+      ".hdr",
+      ".jpeg",
+      ".jpg",
+      ".ktx",
+      ".ktx2",
+      ".m4a",
+      ".mp3",
+      ".ogg",
+      ".png",
+      ".svg",
+      ".wav",
+      ".webp"
+    ],
+    "forbiddenRuntimePaths": [
+      "public/friendsies_cloud_overcast_studio_v1.exr",
+      "public/garden-cotton-clouds.png"
+    ],
+    "budgets": {
+      "distMaxBytes": 8388608,
+      "activeTownGlbMaxBytes": 1572864,
+      "pilotArrivalGlbMaxBytes": 819200,
+      "friendsiesCharacterMaxBytes": 1835008,
+      "cc0RuntimeMaxBytes": 2097152,
+      "environmentTextureMaxBytes": 524288,
+      "environmentTextureMaxDimension": 1024,
+      "compressedAudioMaxBytes": 512000,
+      "sourceBinaryMaxBytes": 10485760,
+      "sourceBatchMaxBytes": 26214400
+    }
+  },
+  "families": {
+    "thornvale-ui": {
+      "creator": "Thornvale project",
+      "status": "project-authored",
+      "licenseOrPermission": "No root license selected; default copyright applies; see NOTICE.md",
+      "sourcePage": null,
+      "sourceRetrievedOn": null,
+      "provenance": "CREDITS.md",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    },
+    "thornvale-cottages": {
+      "creator": "Thornvale project",
+      "status": "project-authored",
+      "licenseOrPermission": "No root license selected; default copyright applies; see NOTICE.md",
+      "sourcePage": null,
+      "sourceRetrievedOn": null,
+      "provenance": "public/town/cottages/PROVENANCE.md",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    },
+    "thornvale-village": {
+      "creator": "Thornvale project",
+      "status": "project-authored",
+      "licenseOrPermission": "No root license selected; default copyright applies; see NOTICE.md",
+      "sourcePage": null,
+      "sourceRetrievedOn": null,
+      "provenance": "public/village/PROVENANCE.md",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    },
+    "thornvale-arrival-pilot": {
+      "creator": "Thornvale project",
+      "status": "project-authored",
+      "licenseOrPermission": "No root license selected; default copyright applies; see NOTICE.md",
+      "sourcePage": null,
+      "sourceRetrievedOn": null,
+      "provenance": "public/village/pilot/v1/PROVENANCE.md",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    },
+    "friendsies-animations": {
+      "creator": "PIZZALORD713 / fRiENDSiES",
+      "status": "project-release-authorized",
+      "licenseOrPermission": "The source repository and Thornvale project owner authorized these exact animation-only runtime derivatives for publication in Thornvale builds; Adobe permits royalty-free video-game use of Mixamo-sourced motion",
+      "sourcePage": "https://github.com/PIZZALORD713/animation_collection2/tree/f8286ef2c5421d54115afdafdac33f206533ac25",
+      "sourceRetrievedOn": "2026-07-12",
+      "provenance": "public/animations/PROVENANCE.md",
+      "runtimeDistributionScope": "Bundled distribution as part of Thornvale game builds; no standalone asset-pack or raw-source redistribution",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    },
+    "friendsies-0001": {
+      "creator": "fRiENDSiES",
+      "status": "project-release-authorized",
+      "licenseOrPermission": "The Thornvale project owner authorized the exact manifested Flower White runtime file and its documented Trait Echo v1 environmental use for publication in bundled Thornvale builds on 2026-07-12",
+      "sourcePage": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/",
+      "sourceRetrievedOn": "2026-07-12",
+      "provenance": "public/friendsies/0001/PROVENANCE.md",
+      "runtimeDistributionScope": "Integrated bundled distribution in Thornvale game builds, including the documented Trait Echo v1 arrangement; no raw-source, standalone asset-pack, collection-wide bundling, or general outside-project redistribution; the separate remote-player authorization does not broaden this exact local/environmental grant",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    },
+    "friendsies-6602": {
+      "creator": "fRiENDSiES",
+      "status": "project-release-authorized",
+      "licenseOrPermission": "The Thornvale project owner authorized the seven exact manifested runtime files for token #6602 as Thornvale's bundled default player for publication in Thornvale builds on 2026-07-12",
+      "sourcePage": "https://www.frienemies.xyz/fren/6602",
+      "sourceRetrievedOn": "2026-07-12",
+      "provenance": "public/friendsies/6602/PROVENANCE.md",
+      "runtimeDistributionScope": "Integrated bundled distribution of the exact manifested #6602 runtime files as part of Thornvale game builds; no raw-source, standalone character-pack, collection-wide bundling, or general outside-project redistribution; the separate remote-player authorization does not broaden this exact local-file grant",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    },
+    "friendsies-8914": {
+      "creator": "fRiENDSiES",
+      "status": "project-release-authorized",
+      "licenseOrPermission": "The Thornvale project owner authorized the six exact manifested runtime files for token #8914 as Steward Lumen and the documented Torch and Crown Up Trait Echo v1 uses for publication in Thornvale builds on 2026-07-12",
+      "sourcePage": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/",
+      "sourceRetrievedOn": "2026-07-12",
+      "provenance": "public/friendsies/8914/PROVENANCE.md",
+      "runtimeDistributionScope": "Integrated bundled distribution in Thornvale game builds as Steward Lumen and in the documented Trait Echo v1 arrangement; no raw-source, standalone character or trait pack, collection-wide bundling, or general outside-project redistribution; the separate remote-player authorization does not broaden this exact local/environmental grant",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    },
+    "friendsies-remote-player-streaming": {
+      "creator": "fRiENDSiES",
+      "status": "project-release-authorized",
+      "licenseOrPermission": "On 2026-07-12, the Thornvale project owner authorized published Thornvale builds to fetch the revision-pinned catalog for token IDs 1..10000 and stream, render, and assemble the selected token's components from https://storage.googleapis.com as an integrated in-game player avatar only",
+      "sourcePage": "https://gist.githubusercontent.com/IntergalacticPizzaLord/a7b0eeac98041a483d715c8320ccf660/raw/ce7d37a94c33c63e2b50d5922e0711e72494c8dd/fRiENDSiES",
+      "sourceRetrievedOn": "2026-07-12",
+      "provenance": "docs/decisions/0003-external-runtime-asset-dependencies.md",
+      "runtimeDistributionScope": "Published Thornvale builds may fetch only the revision-pinned catalog for token IDs 1..10000 and stream, render, and assemble the selected token's components only from https://storage.googleapis.com as an integrated in-game player avatar; no full-collection bundling, canonical or raw copying, mirroring, standalone asset or character packs, environmental reuse or adaptation, sublicensing, unrelated-origin delivery, or reuse outside Thornvale",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    }
+  },
+  "externalRuntimeDependencies": [
+    {
+      "id": "friendsies-remote-player-streaming",
+      "family": "friendsies-remote-player-streaming",
+      "metadataCatalog": {
+        "url": "https://gist.githubusercontent.com/IntergalacticPizzaLord/a7b0eeac98041a483d715c8320ccf660/raw/ce7d37a94c33c63e2b50d5922e0711e72494c8dd/fRiENDSiES",
+        "sha256": "9f1c4e1cf8d848bd2ceaff7cde48c4ecf60a4b1d0afe273e7a5c5b68c2aee3ef",
+        "bytes": 18489230
+      },
+      "allowedAssetOrigins": [
+        "https://storage.googleapis.com"
+      ],
+      "tokenScope": {
+        "type": "inclusive-range",
+        "minimum": 1,
+        "maximum": 10000
+      },
+      "runtimeUse": "Shareable player links fetch one ranged entry from the pinned catalog, then stream the selected token's component assets; bundled #6602 and #8914 remain failure fallbacks.",
+      "reason": "On 2026-07-12, the Thornvale project owner authorized published Thornvale builds to fetch the revision-pinned catalog for token IDs 1..10000 and stream, render, and assemble the selected token's components from https://storage.googleapis.com as an integrated in-game player avatar only"
+    }
+  ],
+  "assets": [
+    {
+      "id": "thornvale-favicon",
+      "path": "public/favicon.svg",
+      "runtime": true,
+      "kind": "ui",
+      "family": "thornvale-ui",
+      "bytes": 910,
+      "sha256": "6a87c260e943c82047888650f562b6370e46d6e35e85465bfd81858a3db2ac3d",
+      "source": {
+        "originalFilename": "favicon.svg",
+        "path": "public/favicon.svg",
+        "sha256": "6a87c260e943c82047888650f562b6370e46d6e35e85465bfd81858a3db2ac3d",
+        "transform": "Authored directly as the runtime SVG."
+      }
+    },
+    {
+      "id": "friendsies-dance-rumba",
+      "path": "public/animations/friendsies-dance-rumba.glb",
+      "runtime": true,
+      "kind": "animation",
+      "family": "friendsies-animations",
+      "bytes": 38600,
+      "sha256": "001f71011ae8746c45a498b3b49464a10caf5cb21c9d4b3a5b0287edd3cb1117",
+      "source": {
+        "originalFilename": "dance-rumba.glb",
+        "url": "https://raw.githubusercontent.com/PIZZALORD713/animation_collection2/f8286ef2c5421d54115afdafdac33f206533ac25/dance-rumba.glb",
+        "sha256": "f50fa5c49d7d85dd813d2e64f819289729733413fd4807b919e230ae2c220b34",
+        "transform": "Removed token meshes, materials, and textures; retained animation data."
+      }
+    },
+    {
+      "id": "friendsies-joy-jump",
+      "path": "public/animations/friendsies-joy-jump.glb",
+      "runtime": true,
+      "kind": "animation",
+      "family": "friendsies-animations",
+      "bytes": 34236,
+      "sha256": "985642e608caac9405ca43f285a70e16e19efcaadff1706be2f87c27438cdfe5",
+      "source": {
+        "originalFilename": "joy-jump.glb",
+        "url": "https://raw.githubusercontent.com/PIZZALORD713/animation_collection2/f8286ef2c5421d54115afdafdac33f206533ac25/joy-jump.glb",
+        "sha256": "441008097f4e8b1fc7de0b39f45a5b5135f6e2102aa1f0aaddad9de38fcfd97a",
+        "transform": "Removed token meshes, materials, and textures; retained animation data."
+      }
+    },
+    {
+      "id": "friendsies-walk",
+      "path": "public/animations/friendsies-walk.glb",
+      "runtime": true,
+      "kind": "animation",
+      "family": "friendsies-animations",
+      "bytes": 47704,
+      "sha256": "a1acaf9e7381ebc44698ac37c33dd0b12ff00706fd8b13ed9de39651a333105f",
+      "source": {
+        "originalFilename": "walk.glb",
+        "url": "https://raw.githubusercontent.com/PIZZALORD713/animation_collection2/f8286ef2c5421d54115afdafdac33f206533ac25/walk.glb",
+        "sha256": "6188c653463f18ad5dc170f4e77e7e1427259023cc96a9f5351cad1103319ebb",
+        "transform": "Removed token meshes, materials, and textures; retained animation data."
+      }
+    },
+    {
+      "id": "friendsies-0001-hand-flower-white",
+      "path": "public/friendsies/0001/hand-flower-white.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-0001",
+      "budgetGroups": ["friendsies-character:0001"],
+      "runtimeContexts": [
+        "environment:trait-echo-v1:welcome-flower"
+      ],
+      "bytes": 295916,
+      "sha256": "74dd400b309e652ba0fdcc06ec3c223be6806c2ee2c469c54683bcc9216955b6",
+      "source": {
+        "originalFilename": "dd0e1ba6ffcf7f581660060156e16c84.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/dd0e1ba6ffcf7f581660060156e16c84.glb",
+        "sha256": "74dd400b309e652ba0fdcc06ec3c223be6806c2ee2c469c54683bcc9216955b6",
+        "transform": "Bundled unchanged from the canonical token trait asset."
+      }
+    },
+    {
+      "id": "friendsies-6602-backpiece-ghostin",
+      "path": "public/friendsies/6602/backpiece-ghostin.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-6602",
+      "budgetGroups": ["friendsies-character:6602"],
+      "bytes": 170296,
+      "sha256": "d7233348ebd29b3f743600cfa292aee5a65faf89231b9b95a26bce50a5760112",
+      "source": {
+        "originalFilename": "e986156e7e3b6d7aedda377ca2e8347e.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/e986156e7e3b6d7aedda377ca2e8347e.glb",
+        "sha256": "e9d2ff362bef29efd863f0572fc25654be2971ec703c8ff3120f1d900debccdf",
+        "transform": "glTF Transform 4.4.1 encoded embedded textures as WebP at quality 92 and effort 100; geometry, skeleton, and animation contracts were preserved."
+      }
+    },
+    {
+      "id": "friendsies-6602-body",
+      "path": "public/friendsies/6602/body.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-6602",
+      "budgetGroups": ["friendsies-character:6602"],
+      "bytes": 236084,
+      "sha256": "aef864bd3b45024ce8499b0a398215e75b825ee337ebdb63c9a0a5d927500208",
+      "source": {
+        "originalFilename": "4b58d78f06903b5f89b80550bb48e2fd.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/4b58d78f06903b5f89b80550bb48e2fd.glb",
+        "sha256": "41381b4f9f2b0f515ec9dcb5653a219f6834025ee801fa7599de3a0be310101d",
+        "transform": "glTF Transform 4.4.1 encoded embedded textures as WebP at quality 92 and effort 100; geometry, skeleton, and animation contracts were preserved."
+      }
+    },
+    {
+      "id": "friendsies-6602-face-romeo",
+      "path": "public/friendsies/6602/face-romeo.png",
+      "runtime": true,
+      "kind": "character-texture",
+      "family": "friendsies-6602",
+      "budgetGroups": ["friendsies-character:6602"],
+      "bytes": 10979,
+      "sha256": "24d367fdee20235f189bd2e6227c2130c44948121135de2a8b9d9f15e2122200",
+      "source": {
+        "originalFilename": "88713c264c343b27acb1caf0ee7c261b.png",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/88713c264c343b27acb1caf0ee7c261b.png",
+        "sha256": "24d367fdee20235f189bd2e6227c2130c44948121135de2a8b9d9f15e2122200",
+        "transform": "Bundled unchanged from the canonical token trait asset."
+      }
+    },
+    {
+      "id": "friendsies-6602-hand-staffv",
+      "path": "public/friendsies/6602/hand-staffv.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-6602",
+      "budgetGroups": ["friendsies-character:6602"],
+      "bytes": 101836,
+      "sha256": "58fbd2ea47f3985fbd9e2f873cd785df79dbdd4cce8f0ee3ce83daecc8a60eea",
+      "source": {
+        "originalFilename": "50dfb90473c3b5dec9376114e5784f6a.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/50dfb90473c3b5dec9376114e5784f6a.glb",
+        "sha256": "b59937fd6263fd1986d2a20ec7e89fbf6d2049b59cf83b43569939f369713c68",
+        "transform": "glTF Transform 4.4.1 encoded embedded textures as WebP at quality 92 and effort 100; geometry, skeleton, and animation contracts were preserved."
+      }
+    },
+    {
+      "id": "friendsies-6602-head-deli",
+      "path": "public/friendsies/6602/head-deli.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-6602",
+      "budgetGroups": ["friendsies-character:6602"],
+      "bytes": 101904,
+      "sha256": "778e3cf66d58a5cae3a2427450040c0aae706436bb83deac63633cc6a47f4f54",
+      "source": {
+        "originalFilename": "7b8d7f689e2536b2528c4c90e3c1a467.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/7b8d7f689e2536b2528c4c90e3c1a467.glb",
+        "sha256": "bf921cc821b9c8ed210848c377a4ac850a794c4c73d69406fc045956ac84b8bb",
+        "transform": "glTF Transform 4.4.1 encoded embedded textures as WebP at quality 92 and effort 100; geometry, skeleton, and animation contracts were preserved."
+      }
+    },
+    {
+      "id": "friendsies-6602-shoes-high-boots-red",
+      "path": "public/friendsies/6602/shoes-high-boots-red.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-6602",
+      "budgetGroups": ["friendsies-character:6602"],
+      "bytes": 151340,
+      "sha256": "b7b9d795b2a010cbb94adeb38c33646e846f621fe95a7d48686cfccc255c0511",
+      "source": {
+        "originalFilename": "7294e598fe07bcc1af71ec277e640974.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/7294e598fe07bcc1af71ec277e640974.glb",
+        "sha256": "5d4e6aed5b813fbaec251a64788d38fc2626e7872ecfafc0ed9e7c8414e891a2",
+        "transform": "glTF Transform 4.4.1 encoded embedded textures as WebP at quality 92 and effort 100; geometry, skeleton, and animation contracts were preserved."
+      }
+    },
+    {
+      "id": "friendsies-6602-sprout-totem",
+      "path": "public/friendsies/6602/sprout-totem.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-6602",
+      "budgetGroups": ["friendsies-character:6602"],
+      "bytes": 116408,
+      "sha256": "da151889550b213de19b4194551c49b529af65d2ff284754ea5e979bae223ffa",
+      "source": {
+        "originalFilename": "389aac45bac35bdcd5ce2a8b59feaf33.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/389aac45bac35bdcd5ce2a8b59feaf33.glb",
+        "sha256": "b10bab8e4c4ca7b63a88b2b3ce9e50a3e6b05237e3aa838f5537b94e5c3bbd45",
+        "transform": "glTF Transform 4.4.1 encoded embedded textures as WebP at quality 92 and effort 100; geometry, skeleton, and animation contracts were preserved."
+      }
+    },
+    {
+      "id": "friendsies-8914-backpiece-pip",
+      "path": "public/friendsies/8914/backpiece-pip.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-8914",
+      "budgetGroups": ["friendsies-character:8914"],
+      "bytes": 355768,
+      "sha256": "ee6e2fd607578b539fb00a7b67616bfdcef420671e772b827591fef7ec347175",
+      "source": {
+        "originalFilename": "92da33bd033be42d12fa769f9aa8c3e2.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/92da33bd033be42d12fa769f9aa8c3e2.glb",
+        "sha256": "ee6e2fd607578b539fb00a7b67616bfdcef420671e772b827591fef7ec347175",
+        "transform": "Bundled unchanged from the canonical token trait asset."
+      }
+    },
+    {
+      "id": "friendsies-8914-body",
+      "path": "public/friendsies/8914/body.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-8914",
+      "budgetGroups": ["friendsies-character:8914"],
+      "bytes": 346284,
+      "sha256": "2bd4f3c4873c0ad98b933d0ca1723a86a5e2fa297e8fbbb5c4343e91b258a803",
+      "source": {
+        "originalFilename": "600f48634a2e9298a6e6d8dd6f3b60eb.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/600f48634a2e9298a6e6d8dd6f3b60eb.glb",
+        "sha256": "2bd4f3c4873c0ad98b933d0ca1723a86a5e2fa297e8fbbb5c4343e91b258a803",
+        "transform": "Bundled unchanged from the canonical token trait asset."
+      }
+    },
+    {
+      "id": "friendsies-8914-hand-torch",
+      "path": "public/friendsies/8914/hand-torch.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-8914",
+      "budgetGroups": ["friendsies-character:8914"],
+      "runtimeContexts": [
+        "character:8914:hand",
+        "environment:trait-echo-v1:civic-torch"
+      ],
+      "bytes": 362116,
+      "sha256": "ddf53a25732ec6b43e81b3630d1be27b8157c18cfcd6835327c64f3f77ed0e7f",
+      "source": {
+        "originalFilename": "b5b728235798d3920af800b4710f0219.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/b5b728235798d3920af800b4710f0219.glb",
+        "sha256": "ddf53a25732ec6b43e81b3630d1be27b8157c18cfcd6835327c64f3f77ed0e7f",
+        "transform": "Bundled unchanged from the canonical token trait asset."
+      }
+    },
+    {
+      "id": "friendsies-8914-head-white-elephant",
+      "path": "public/friendsies/8914/head-white-elephant.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-8914",
+      "budgetGroups": ["friendsies-character:8914"],
+      "bytes": 295652,
+      "sha256": "717ddd9e9dc4e8268279d84bcacc5c9f4f06df4f964f4c76ee2df99b5efc663f",
+      "source": {
+        "originalFilename": "9df9664cccd9444e49fce857f30aefa8.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/9df9664cccd9444e49fce857f30aefa8.glb",
+        "sha256": "717ddd9e9dc4e8268279d84bcacc5c9f4f06df4f964f4c76ee2df99b5efc663f",
+        "transform": "Bundled unchanged from the canonical token trait asset."
+      }
+    },
+    {
+      "id": "friendsies-8914-shoes-wrappers-gold",
+      "path": "public/friendsies/8914/shoes-wrappers-gold.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-8914",
+      "budgetGroups": ["friendsies-character:8914"],
+      "bytes": 71404,
+      "sha256": "5e7e1529e4c4d75cd580703b835e7655856f10a56fae9fc8417095a90d21c55e",
+      "source": {
+        "originalFilename": "674388b8ed5be28011a558f30f97680b.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/674388b8ed5be28011a558f30f97680b.glb",
+        "sha256": "5e7e1529e4c4d75cd580703b835e7655856f10a56fae9fc8417095a90d21c55e",
+        "transform": "Bundled unchanged from the canonical token trait asset."
+      }
+    },
+    {
+      "id": "friendsies-8914-sprout-crown-up",
+      "path": "public/friendsies/8914/sprout-crown-up.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-8914",
+      "budgetGroups": ["friendsies-character:8914"],
+      "runtimeContexts": [
+        "character:8914:sprout",
+        "environment:trait-echo-v1:civic-crown"
+      ],
+      "bytes": 178196,
+      "sha256": "6b8875347d5f01d1701e63760c28e128607df19ef0c18659a3831b456b392f78",
+      "source": {
+        "originalFilename": "cc116d05ffb83fcc2a6285b5dbcaa613.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/cc116d05ffb83fcc2a6285b5dbcaa613.glb",
+        "sha256": "6b8875347d5f01d1701e63760c28e128607df19ef0c18659a3831b456b392f78",
+        "transform": "Bundled unchanged from the canonical token trait asset."
+      }
+    },
+    {
+      "id": "thornvale-cottages",
+      "path": "public/town/cottages/thornvale-cottages.glb",
+      "runtime": true,
+      "kind": "environment-model",
+      "family": "thornvale-cottages",
+      "budgetGroups": ["active-town-glb"],
+      "bytes": 562828,
+      "sha256": "8ad8a1a4babd46e0221e98c60bdd20be1ed235a5d3c6d55c0246a7c84794afdc",
+      "source": {
+        "originalFilename": "thornvale-cottages.blend",
+        "path": "assets-src/town-cottages/thornvale-cottages.blend",
+        "sha256": "58362a9e3955a4365eeeefa4f9a110ba076914828b797c4d4fb5710a5dd53fbe",
+        "transform": "Deterministic Blender 4.5.9 LTS glTF export with canonicalized triangle ordering."
+      }
+    },
+    {
+      "id": "thornvale-village-dressing",
+      "path": "public/village/thornvale-village-dressing.glb",
+      "runtime": true,
+      "kind": "environment-model",
+      "family": "thornvale-village",
+      "budgetGroups": ["active-town-glb"],
+      "bytes": 407240,
+      "sha256": "bf5540deb62a3b14317350d0e04207a311a49c0e0fe068691e18203a930a22be",
+      "source": {
+        "originalFilename": "build-village-dressing.py",
+        "path": "scripts/build-village-dressing.py",
+        "sha256": "8f8ad2f88f097d4e75e001f3026212a38a9023e68b64159bd281942868c382f9",
+        "transform": "The deterministic generator creates the Blender scene and exports the baseline VillageWayfinder, GardenArch, and StoneWell roots."
+      }
+    },
+    {
+      "id": "thornvale-arrival-plaza-v1",
+      "path": "public/village/pilot/v1/thornvale-arrival-plaza.glb",
+      "runtime": true,
+      "kind": "environment-model",
+      "family": "thornvale-arrival-pilot",
+      "budgetGroups": ["pilot-arrival-glb"],
+      "bytes": 326584,
+      "sha256": "45725c402431f00a65082a27e6db0ad04d03cfdd3cf8f104907372639b52549b",
+      "source": {
+        "originalFilename": "build-village-dressing.py",
+        "path": "scripts/build-village-dressing.py",
+        "sha256": "8f8ad2f88f097d4e75e001f3026212a38a9023e68b64159bd281942868c382f9",
+        "transform": "The deterministic generator creates the Blender scene and exports the WelcomeGate, CommunityLedger, and TownBell pilot roots."
+      }
+    }
+  ]
+}

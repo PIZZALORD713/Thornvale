@@ -1,5 +1,20 @@
 # Steward Lumen fRiENDSiES #8914 provenance
 
+## Permission and release scope
+
+- Manifest status: `project-release-authorized`
+- Release blocked: no
+- Authorization: the Thornvale project owner explicitly authorized the six
+  exact manifested runtime files below as Steward Lumen and the documented
+  Torch and Crown Up Trait Echo v1 uses for publication in Thornvale builds on
+  `2026-07-12`.
+- Runtime distribution: permitted only when integrated into bundled Thornvale
+  game builds as Steward Lumen or in the documented Trait Echo v1 arrangement.
+- Raw-source and standalone character or trait-pack redistribution: prohibited
+  by this record; canonical source files remain external.
+- General reuse outside Thornvale or collection-wide bundling: not granted;
+  bounded remote in-game selection is authorized separately under ADR 0003.
+
 These are the six traits referenced by the canonical fRiENDSiES metadata entry
 for token `#8914`. They are bundled so the first-run steward does not depend on
 downloading the full collection index before the opening scene.
@@ -19,3 +34,29 @@ The project owner explicitly requested fRiENDSiES `#8914` as Thornvale's
 starting steward on 2026-07-11, then publication with the live Thornvale build
 on 2026-07-12. This project-specific authorization covers the bundled traits in
 Thornvale; it does not grant general redistribution rights outside Thornvale.
+
+## Trait Echo v1 environmental use
+
+On 2026-07-12, the project owner also requested strategic use of fRiENDSiES
+flowers, sprouts, and hand items in Thornvale's environment. Trait Echo v1
+reuses `hand-torch.glb` for three mounted placements: paired sconces on the
+Welcome Gate posts and one ritual sconce at the Town Bell. It reuses
+`sprout-crown-up.glb` once as the Community Ledger crest. Each
+rigid frame-zero pose is normalized in memory and rendered through one
+instanced mesh per trait family; no derived binary is written or added to the
+build.
+
+Torch has one semantic job: civic guidance becoming dusk ritual and authority.
+Crown Up has one semantic job: identity or office at the Ledger, with its
+posture tilting during the anomaly, intervention, and alter states. A shared
+code-native civic-mount draw physically grounds the three Torches and Crown as
+sconces and a crest; it is Thornvale-authored geometry, not another fRiENDSiES
+trait or binary. These arrangements are Thornvale-authored environmental
+adaptations, not canonical tokens or new fRiENDSiES traits. `?traits=off`
+removes the complete environmental treatment without changing the character.
+
+This authorization is hash-bound to the six runtime files above and the
+documented three-Torch/one-Crown Thornvale arrangement. It does not approve
+other `#8914` files, other traits, arbitrary token streaming, or standalone
+redistribution. The separate remote-player authorization in ADR 0003 does not
+broaden this local-file or environmental grant.

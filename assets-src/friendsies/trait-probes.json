@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "sourceIndex": "assets-src/friendsies/trait-index.json",
+  "updatedAt": "2026-07-12T09:11:35.823Z",
+  "probes": [
+    {
+      "key": "hand:Book Of Ocean",
+      "traitType": "hand",
+      "value": "Book Of Ocean",
+      "variant": {
+        "id": "5cbe4a655b2f44fc44377d8786420323",
+        "index": 0,
+        "assetHash": "5cbe4a655b2f44fc44377d8786420323",
+        "assetUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/5cbe4a655b2f44fc44377d8786420323.glb",
+        "previewUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/previews/aa7dbc0e97fd5fa334bb22f9aeac2d55.png",
+        "useCount": 381,
+        "sampleTokenIds": [
+          224,
+          346,
+          362,
+          395,
+          396,
+          431,
+          455,
+          463,
+          515,
+          584,
+          585,
+          588,
+          691,
+          737,
+          744,
+          755,
+          804,
+          854,
+          865,
+          933
+        ]
+      },
+      "probedAt": "2026-07-12T09:11:33.997Z",
+      "inspection": {
+        "format": "glTF 2.0 binary",
+        "bytes": 117440,
+        "sha256": "45fa17c72373696a560bb53ffc5371c1cdc3e528c5e7cb69e7b66dc19088e799",
+        "generator": "glTF-Transform v2.0.5",
+        "counts": {
+          "meshes": 1,
+          "primitives": 1,
+          "triangles": 396,
+          "skins": 1,
+          "joints": 20,
+          "uniqueJoints": 20,
+          "animations": 1,
+          "materials": 1,
+          "textures": 3,
+          "images": 3,
+          "nodes": 22,
+          "meshNodes": 1,
+          "skinnedMeshNodes": 1,
+          "morphTargets": 0
+        },
+        "extensionsUsed": [
+          "KHR_draco_mesh_compression"
+        ],
+        "extensionsRequired": [
+          "KHR_draco_mesh_compression"
+        ],
+        "compatibility": {
+          "classification": "rigid-candidate",
+          "reasons": [
+            "Single-skinned primitive; decoded weights must still prove one rigid joint."
+          ]
+        }
+      }
+    },
+    {
+      "key": "hand:Flower White",
+      "traitType": "hand",
+      "value": "Flower White",
+      "variant": {
+        "id": "dd0e1ba6ffcf7f581660060156e16c84",
+        "index": 0,
+        "assetHash": "dd0e1ba6ffcf7f581660060156e16c84",
+        "assetUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/dd0e1ba6ffcf7f581660060156e16c84.glb",
+        "previewUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/previews/fa7a4539781d8c7411ef20ccb0f47c86.png",
+        "useCount": 99,
+        "sampleTokenIds": [
+          1,
+          15,
+          43,
+          52,
+          80,
+          108,
+          139,
+          175,
+          185,
+          230,
+          338,
+          350,
+          351,
+          359,
+          371,
+          380,
+          425,
+          427,
+          446,
+          521
+        ]
+      },
+      "probedAt": "2026-07-12T09:11:30.046Z",
+      "inspection": {
+        "format": "glTF 2.0 binary",
+        "bytes": 295916,
+        "sha256": "74dd400b309e652ba0fdcc06ec3c223be6806c2ee2c469c54683bcc9216955b6",
+        "generator": "glTF-Transform v2.0.5",
+        "counts": {
+          "meshes": 1,
+          "primitives": 1,
+          "triangles": 4812,
+          "skins": 1,
+          "joints": 20,
+          "uniqueJoints": 20,
+          "animations": 1,
+          "materials": 1,
+          "textures": 3,
+          "images": 3,
+          "nodes": 22,
+          "meshNodes": 1,
+          "skinnedMeshNodes": 1,
+          "morphTargets": 0
+        },
+        "extensionsUsed": [
+          "KHR_draco_mesh_compression"
+        ],
+        "extensionsRequired": [
+          "KHR_draco_mesh_compression"
+        ],
+        "compatibility": {
+          "classification": "rigid-candidate",
+          "reasons": [
+            "Single-skinned primitive; decoded weights must still prove one rigid joint."
+          ]
+        }
+      }
+    },
+    {
+      "key": "hand:Torch",
+      "traitType": "hand",
+      "value": "Torch",
+      "variant": {
+        "id": "b5b728235798d3920af800b4710f0219",
+        "index": 0,
+        "assetHash": "b5b728235798d3920af800b4710f0219",
+        "assetUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/b5b728235798d3920af800b4710f0219.glb",
+        "previewUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/previews/d3b4ab05b4b858c68e116c49cd8e9347.png",
+        "useCount": 119,
+        "sampleTokenIds": [
+          54,
+          173,
+          186,
+          312,
+          345,
+          374,
+          459,
+          580,
+          613,
+          706,
+          707,
+          726,
+          730,
+          748,
+          749,
+          948,
+          957,
+          977,
+          995,
+          1004
+        ]
+      },
+      "probedAt": "2026-07-12T09:11:31.248Z",
+      "inspection": {
+        "format": "glTF 2.0 binary",
+        "bytes": 362116,
+        "sha256": "ddf53a25732ec6b43e81b3630d1be27b8157c18cfcd6835327c64f3f77ed0e7f",
+        "generator": "glTF-Transform v2.0.5",
+        "counts": {
+          "meshes": 1,
+          "primitives": 1,
+          "triangles": 3364,
+          "skins": 1,
+          "joints": 20,
+          "uniqueJoints": 20,
+          "animations": 1,
+          "materials": 1,
+          "textures": 4,
+          "images": 4,
+          "nodes": 22,
+          "meshNodes": 1,
+          "skinnedMeshNodes": 1,
+          "morphTargets": 0
+        },
+        "extensionsUsed": [
+          "KHR_draco_mesh_compression"
+        ],
+        "extensionsRequired": [
+          "KHR_draco_mesh_compression"
+        ],
+        "compatibility": {
+          "classification": "rigid-candidate",
+          "reasons": [
+            "Single-skinned primitive; decoded weights must still prove one rigid joint."
+          ]
+        }
+      }
+    },
+    {
+      "key": "sprout:Crown Up",
+      "traitType": "sprout",
+      "value": "Crown Up",
+      "variant": {
+        "id": "cc116d05ffb83fcc2a6285b5dbcaa613",
+        "index": 2,
+        "assetHash": "cc116d05ffb83fcc2a6285b5dbcaa613",
+        "assetUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/cc116d05ffb83fcc2a6285b5dbcaa613.glb",
+        "previewUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/previews/abd15509fa70ab78ff5360e49cca51cc.png",
+        "useCount": 52,
+        "sampleTokenIds": [
+          54,
+          88,
+          162,
+          208,
+          217,
+          281,
+          316,
+          331,
+          495,
+          516,
+          579,
+          605,
+          707,
+          845,
+          871,
+          901,
+          954,
+          955,
+          1511,
+          1990
+        ]
+      },
+      "probedAt": "2026-07-12T09:11:32.744Z",
+      "inspection": {
+        "format": "glTF 2.0 binary",
+        "bytes": 178196,
+        "sha256": "6b8875347d5f01d1701e63760c28e128607df19ef0c18659a3831b456b392f78",
+        "generator": "glTF-Transform v2.0.5",
+        "counts": {
+          "meshes": 1,
+          "primitives": 1,
+          "triangles": 2016,
+          "skins": 1,
+          "joints": 20,
+          "uniqueJoints": 20,
+          "animations": 1,
+          "materials": 1,
+          "textures": 3,
+          "images": 3,
+          "nodes": 22,
+          "meshNodes": 1,
+          "skinnedMeshNodes": 1,
+          "morphTargets": 0
+        },
+        "extensionsUsed": [
+          "KHR_draco_mesh_compression"
+        ],
+        "extensionsRequired": [
+          "KHR_draco_mesh_compression"
+        ],
+        "compatibility": {
+          "classification": "rigid-candidate",
+          "reasons": [
+            "Single-skinned primitive; decoded weights must still prove one rigid joint."
+          ]
+        }
+      }
+    },
+    {
+      "key": "sprout:Friends Key",
+      "traitType": "sprout",
+      "value": "Friends Key",
+      "variant": {
+        "id": "c61706dfde5db0fce0e93827e54094c1",
+        "index": 2,
+        "assetHash": "c61706dfde5db0fce0e93827e54094c1",
+        "assetUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/c61706dfde5db0fce0e93827e54094c1.glb",
+        "previewUrl": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/previews/6d132aa5d771c24f8058da033f60dfed.png",
+        "useCount": 18,
+        "sampleTokenIds": [
+          431,
+          506,
+          1752,
+          2171,
+          2514,
+          3043,
+          3187,
+          4018,
+          4112,
+          4234,
+          4722,
+          5057,
+          6175,
+          6608,
+          6643,
+          7865,
+          8244,
+          8709
+        ]
+      },
+      "probedAt": "2026-07-12T09:11:35.823Z",
+      "inspection": {
+        "format": "glTF 2.0 binary",
+        "bytes": 383936,
+        "sha256": "d56066a326b8390843a2bba90c34322901e51c86e60cde8cb1c0287dc667ab59",
+        "generator": "glTF-Transform v2.0.5",
+        "counts": {
+          "meshes": 1,
+          "primitives": 1,
+          "triangles": 1768,
+          "skins": 1,
+          "joints": 20,
+          "uniqueJoints": 20,
+          "animations": 1,
+          "materials": 1,
+          "textures": 3,
+          "images": 3,
+          "nodes": 22,
+          "meshNodes": 1,
+          "skinnedMeshNodes": 1,
+          "morphTargets": 0
+        },
+        "extensionsUsed": [
+          "KHR_draco_mesh_compression"
+        ],
+        "extensionsRequired": [
+          "KHR_draco_mesh_compression"
+        ],
+        "compatibility": {
+          "classification": "rigid-candidate",
+          "reasons": [
+            "Single-skinned primitive; decoded weights must still prove one rigid joint."
+          ]
+        }
+      }
+    }
+  ]
+}
