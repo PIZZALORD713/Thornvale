@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+* Added ADR 0005's standing Thornvale animation authorization. All current and
+  future animation sources and derivatives the project owner controls or may
+  lawfully use may serve any integrated Thornvale role without another owner
+  approval per file, clip, pack, rig, role, context, transform, delivery method,
+  or revision. Exact upstream source and license evidence, hashes, transforms,
+  budgets, fallbacks, and QA remain release gates. Raw sources, standalone
+  animation or motion packs, sublicensing, and outside-Thornvale use remain
+  excluded, and animation provenance stays separate from canonical fRiENDSiES.
 * Replaced fRiENDSiES per-file, per-token, and per-role release grants with the
   standing project-wide authorization in ADR 0004. All present and future
   canonical fRiENDSiES assets may be streamed, bundled, cached, transformed,
@@ -11,15 +19,16 @@
   family; per-trait rights fields and runtime legal metadata were removed.
   Catalog pins, exact canonical URL prefixes, hashes, transforms, budgets,
   fallbacks, and QA remain enforced. Standalone packs, bulk raw mirrors,
-  sublicensing, and outside-project reuse remain excluded; animation inputs with
-  separate Mixamo rights remain independently governed.
+  sublicensing, and outside-project reuse remain excluded; animation families
+  inherit ADR 0005 while retaining their independent Mixamo or other upstream
+  rights and provenance records.
 * Added the bounded Day One Proof between Steward Lumen's welcome and the
   Community Ledger: gather wood, fish the pond, light a fire, cook and eat,
   plant and water one seed bed, and brace a provisional forest-edge shelter.
   Nourishment, working energy, a small saved inventory, camp/garden projection,
   and recoverable pass-out with a clinic fee or debt now form one testable loop;
   broader recipes, economy, crop growth, and freeform building remain deferred.
-* Added the development-only `story-actions-v1` conversion pilot: six
+* Added the release-authorized `story-actions-v1` conversion family: six
   deterministic animation-only GLBs totaling 270,232 bytes provide four
   semantic Lumen gestures plus dedicated planting and watering performances.
   The converter strips wrapper translation, bakes only bounded rotation that
@@ -27,17 +36,21 @@
   emits no character geometry or material payload. Normal motion time-scales the
   garden clips into the authoritative action clock; reduced motion skips them,
   and missing catalog/files fall back locally without moving progression
-  authority out of `GameSession`. Browser acceptance remains pending, and the
-  family stays release-blocked until its six exact derivatives receive bundled-
-  Thornvale publication authorization.
+  authority out of `GameSession`. The family inherits ADR 0005's standing
+  animation authorization; its six exact sources, Mixamo product-use terms,
+  transforms, hashes, and runtime scope remain independently recorded. Raw
+  sources, standalone packs, sublicensing, and outside-project reuse remain
+  excluded.
 * Moved the provisional camp into a distinct western forest-edge clearing,
   spread the fire, seed bed, and shelter into a readable triangle, and extended
   both the town approach and altered-story trail to the new entrance. Added
   numeric regressions for cottage clearance, open working space, meadow-edge
   margin, and route continuity. The action-weight pass now gives every accepted
   Day One interaction a grounded three-to-four-second timeline with an exact
-  commit cue; invalid interactions remain immediate. The final visible-contact
-  browser pass is still open.
+  commit cue; invalid interactions remain immediate. An actual-interaction
+  browser route completed all eight chores and reached the Ledger objective,
+  with plant/water contact, reduced motion, save boundaries, and forced asset
+  failures checked separately; fresh-player action-feel validation remains open.
 * Replaced the town-wide peach dirt ribbon with a mixed route grammar. Arrival,
   cottage, and ritual lanes now share one deterministic, warm-brick-biased
   reclaimed-paver draw, while pond, forest, and meadow routes retain softer

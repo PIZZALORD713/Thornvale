@@ -21,21 +21,31 @@ The player should leave the first afternoon feeling fed, capable, and newly atta
 
 The gathering, fishing, gardening, and shelter steps may be completed in different safe orders. The fire, meal, and resource costs remain authored and deterministic for this proof.
 
-## Implementation evidence — 2026-07-13
+## Implementation evidence — updated 2026-07-14
 
-- `npm run check` passed with 170/170 deterministic tests, a production Vite build, the asset audit, and the release-size check after the camp relocation and walked-meadow path pass.
+- `npm run check` passed with 212/212 deterministic tests, a production Vite
+  build, the asset audit, and an 8,383,329 / 8,388,608 byte production bundle
+  after the complete action-weight implementation.
 - Focused coverage proves the clean resource loop, zero-energy fire/cook/eat recovery, pass-out fee and debt branches, retained progress, save migration, Day One world projection, survival HUD accessibility, and the Day One-to-Ledger gate.
 - An independent code review found no progression, recovery, migration, or Ledger-unlock blockers.
 - Browser smoke at 1280×720 confirmed the welcome screen, arrival letter, first objective, pointer-lock handoff, town presentation, and an error-free console. The pilot and `?assets=baseline&traits=off` variants both booted cleanly after the camp relocation.
 - The camp-spacing regression now enforces separate cottage clearance, authored-footprint breathing room, non-competing interaction radii, meadow-edge margin, a narrow approach that reaches the recovery point, local grass exclusions instead of a rendered clearing pad, and an altered-story trail that joins the approach.
 - The town path regression rejects the former universal dirt ribbon, requires five authored route profiles and four batched walked-meadow layers, and enforces non-competing depth tiers plus polygon offset for flat ground projection. Pilot and baseline grass both consume the same route/camp mask.
-- The development-only `story-actions-v1` pilot adds six deterministic
+- The release-authorized `story-actions-v1` family adds six deterministic
   animation-only GLBs totaling 270,232 bytes: four semantic Lumen gestures plus
   dedicated plant and water performances. Focused Story Actions, action-clock,
-  presenter, Core Hook, and Day One suites pass 29/29; the development asset
-  audit passes while the family remains explicitly release-blocked. Exact
-  browser observations are tracked separately and remain pending in
+  presenter, Core Hook, and Day One suites pass 33/33; both development and
+  strict release asset audits pass under ADR 0005's standing animation
+  authorization and the family's separately verified Mixamo source chain. Exact
+  action-quality browser observations are recorded separately in
   [`2026-07-13-story-actions-v1.md`](2026-07-13-story-actions-v1.md).
+- All eight successful chores now run through the same authoritative 3.0–3.6
+  second action clock, keep state unchanged until their contact cue, lock
+  movement for the bounded timeline, and commit exactly once. A desktop
+  Chromium pass completed all eight through actual `E` interactions and reached
+  the Community Ledger objective; detailed plant, water, reduced-motion,
+  missing-catalog, failed-file, and save-boundary evidence is recorded in the
+  Story Actions QA record.
 - The browser harness cannot hold continuous WASD input long enough for a representative 3D route traversal. The full walkable clean run and intentional pass-out run therefore remain manual playtest gates; they are not claimed as browser-validated here.
 
 ## Clean-run checks
@@ -77,8 +87,9 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
   one commit at the visible contact cue, no overlap under input spam, and no
   stuck movement lock after completion, cancellation, error, pass-out, or
   reload. For the plant/water skeletal pilot, record the exact observations in
-  [`2026-07-13-story-actions-v1.md`](2026-07-13-story-actions-v1.md); none are
-  claimed complete until that browser matrix is filled in.
+  [`2026-07-13-story-actions-v1.md`](2026-07-13-story-actions-v1.md). The
+  automated actual-interaction route proves wiring and state progression; it
+  does not replace the still-open fresh-player walk and action-feel gate.
 
 ## Fresh-player record
 

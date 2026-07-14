@@ -139,6 +139,14 @@ test('the complete first-afternoon loop preserves spent-resource progress and su
 
 test('exhaustion is an atomic, nonlethal recovery that retains progress and records doctor debt', async () => {
   const storage = new MemoryStorage();
+  const locks = [];
+  const actionController = new DayOneActionController({
+    control: {
+      setActionLocked(locked) {
+        locks.push(locked);
+      },
+    },
+  });
   let callbackPayload = null;
   let releaseRecovery;
   const recoveryGate = new Promise((resolve) => {
@@ -146,6 +154,7 @@ test('exhaustion is an atomic, nonlethal recovery that retains progress and reco
   });
   const { director, session } = createActiveDay({
     storage,
+    actionController,
     async onPassOut(payload) {
       callbackPayload = payload;
       const saved = JSON.parse(storage.getItem(session.storageKey));
@@ -180,6 +189,8 @@ test('exhaustion is an atomic, nonlethal recovery that retains progress and reco
   assert.equal(state.passedOutCount, 1);
   assert.equal(callbackPayload.paid, 2);
   assert.equal(callbackPayload.debtAdded, 2);
+  assert.equal(actionController.isActive, false, 'pass-out recovery bypasses the labor clock');
+  assert.deepEqual(locks, [], 'pass-out recovery does not leave an action movement lock behind');
 
   releaseRecovery();
   const message = await recovery;
@@ -219,6 +230,130 @@ test('lighting, cooking, and eating cost no energy so an exhausted player cannot
   assert.equal(state.nourishment, DAY_ONE_V01.tuning.mealRecovery.nourishment);
   assert.equal(director.stateForHud().energy.label, 'Tiring');
   assert.equal(director.stateForHud().nourishment.label, 'Peckish');
+});
+
+test('every remaining Day One chore locks movement and commits exactly once at its visible cue', async () => {
+  const cases = [
+    {
+      name: 'chop wood',
+      id: DAY_ONE_V01.ids.woodlot,
+      actionKey: 'chopWood',
+      verify(state) {
+        assert.equal(state.inventory.wood, 2);
+        assert.equal(state.activity.woodGathered, 2);
+      },
+    },
+    {
+      name: 'catch fish',
+      id: DAY_ONE_V01.ids.fishingSpot,
+      actionKey: 'catchFish',
+      verify(state) {
+        assert.equal(state.inventory.rawFish, 1);
+        assert.equal(state.activity.fishCaught, 1);
+      },
+    },
+    {
+      name: 'light fire at zero energy',
+      id: DAY_ONE_V01.ids.campfire,
+      actionKey: 'lightFire',
+      prepare(state) {
+        state.energy = 0;
+        state.nourishment = 0;
+        state.inventory.wood = 1;
+      },
+      verify(state) {
+        assert.equal(state.camp.fireLit, true);
+        assert.equal(state.inventory.wood, 0);
+        assert.equal(state.energy, 0);
+        assert.equal(state.passedOutCount, 0);
+      },
+    },
+    {
+      name: 'cook fish at zero energy',
+      id: DAY_ONE_V01.ids.campfire,
+      actionKey: 'cookFish',
+      prepare(state) {
+        state.energy = 0;
+        state.nourishment = 0;
+        state.camp.fireLit = true;
+        state.inventory.rawFish = 1;
+      },
+      verify(state) {
+        assert.equal(state.inventory.rawFish, 0);
+        assert.equal(state.inventory.cookedFish, 1);
+        assert.equal(state.activity.mealsCooked, 1);
+        assert.equal(state.energy, 0);
+        assert.equal(state.passedOutCount, 0);
+      },
+    },
+    {
+      name: 'eat fish at zero energy',
+      id: DAY_ONE_V01.ids.campfire,
+      actionKey: 'eatFish',
+      prepare(state) {
+        state.energy = 0;
+        state.nourishment = 0;
+        state.camp.fireLit = true;
+        state.inventory.cookedFish = 1;
+      },
+      verify(state) {
+        assert.equal(state.inventory.cookedFish, 0);
+        assert.equal(state.activity.mealsEaten, 1);
+        assert.equal(state.energy, DAY_ONE_V01.tuning.mealRecovery.energy);
+        assert.equal(state.nourishment, DAY_ONE_V01.tuning.mealRecovery.nourishment);
+        assert.equal(state.passedOutCount, 0);
+      },
+    },
+    {
+      name: 'repair shelter',
+      id: DAY_ONE_V01.ids.shelter,
+      actionKey: 'repairShelter',
+      prepare(state) {
+        state.inventory.wood = DAY_ONE_V01.tuning.shelterWoodCost;
+      },
+      verify(state) {
+        assert.equal(state.inventory.wood, 0);
+        assert.equal(state.camp.shelterRepaired, true);
+      },
+    },
+  ];
+
+  for (const chore of cases) {
+    const locks = [];
+    const actionController = new DayOneActionController({
+      control: {
+        setActionLocked(locked, options) {
+          locks.push({ locked, options });
+        },
+      },
+    });
+    const { director, session } = createActiveDay({ actionController });
+    if (chore.prepare) {
+      session.transact((draft) => chore.prepare(draft.dayOne));
+    }
+    const action = DAY_ONE_V01.actions[chore.actionKey];
+    assert.equal(director.actionFor(chore.id), action, chore.name);
+    const before = session.dayOne;
+    const context = { targetPosition: { x: 4, y: 0, z: -2 } };
+    const result = director.interact(chore.id, context);
+
+    assert.equal(actionController.snapshot.id, action.id, chore.name);
+    assert.equal(locks.length, 1, chore.name);
+    assert.equal(locks[0].locked, true, chore.name);
+    assert.equal(locks[0].options.context, context, chore.name);
+    actionController.update(action.commitTime - 0.01);
+    assert.deepEqual(session.dayOne, before, `${chore.name} changed before contact`);
+
+    actionController.update(0.02);
+    chore.verify(session.dayOne);
+    const afterContact = session.dayOne;
+    actionController.update(action.duration);
+    await result;
+    actionController.update(action.duration * 2);
+
+    assert.deepEqual(session.dayOne, afterContact, `${chore.name} committed more than once`);
+    assert.deepEqual(locks.map(({ locked }) => locked), [true, false], chore.name);
+  }
 });
 
 test('v2 saves backfill Day One only when the Ledger was already signed', () => {

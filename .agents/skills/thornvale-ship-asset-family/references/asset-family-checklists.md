@@ -27,13 +27,24 @@ Load only the section for the media being changed. Apply the core workflow in `S
 
 ## Animation GLBs
 
-- Verify rights to the animation source and any embedded character, mesh, material, or texture separately.
+- Apply ADR 0005's standing Thornvale-owner authorization to all current and
+  future animation sources and derivatives the owner controls or may lawfully
+  use inside Thornvale. Do not request another owner approval per file, clip,
+  pack, rig, role, context, transform, delivery method, or revision.
+- Verify upstream rights to the exact animation source and any embedded
+  performance, character, mesh, material, texture, audio, or repository content
+  separately. The standing authorization does not replace or broaden them.
 - Pin the source repository commit or exact source URL and record original and derivative hashes.
 - Remove redundant geometry, materials, and textures only through a documented transform. Do not silently alter the canonical skeleton.
 - Record skeleton, root bone, clip name, duration, sample rate, loop policy, root-motion policy, and frame-zero pose assumptions.
 - Test binding against the actual local character skeleton, selection and transition behavior, missing-clip fallback, and reduced-motion behavior.
 - Keep animation-only derivatives free of unnecessary token geometry and textures.
-- Use `public/animations/PROVENANCE.md` as the current derivative record pattern, including its exact-file project release scope and raw-source restriction.
+- Use `public/animations/PROVENANCE.md` as the current derivative record pattern,
+  but reference ADR 0005 instead of creating a new exact-file owner grant. Keep
+  the exact upstream source/license record and raw-source restriction.
+- Keep animation provenance separate from canonical fRiENDSiES provenance under
+  ADR 0004. Raw-source redistribution, standalone animation packs, sublicensing,
+  and outside-Thornvale use remain excluded.
 
 ## Audio
 
@@ -76,6 +87,7 @@ Load only the section for the media being changed. Apply the core workflow in `S
 - Do not use this authorization for standalone asset or character packs, bulk
   raw collection mirroring or dumps, sublicensing, raw-source redistribution as
   a separate product, or reuse outside ThornVale.
-- Keep `friendsies-animations` on its separate Mixamo and repository provenance
-  contract.
+- Keep animation families on their separate Mixamo, repository, or other
+  upstream provenance contracts. They inherit owner authorization from ADR 0005,
+  not canonical fRiENDSiES provenance from ADR 0004.
 - Use `public/friendsies/8914/PROVENANCE.md`, `src/content/friendsies-cast.js`, and the Trait Echo QA record as current patterns.

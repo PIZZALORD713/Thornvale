@@ -22,6 +22,7 @@
     "three": "^0.169.0"
   },
   "devDependencies": {
+    "lightningcss": "^1.32.0",
     "vite": "^8.1.4"
   }
 }

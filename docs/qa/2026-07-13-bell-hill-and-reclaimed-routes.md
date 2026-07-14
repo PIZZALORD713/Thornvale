@@ -44,7 +44,7 @@ Checked `http://127.0.0.1:3000/?story=off&quality=high` in the in-app browser.
 - Debug overlay reports grounded contact and `0.010 m` hover at entry.
 - No browser warnings or errors were recorded.
 
-## Repository gates
+## Repository gates — historical pre-resolution snapshot
 
 - `npm run build`: passed.
 - `npm run assets:audit`: passed for development; the pre-existing
@@ -56,3 +56,20 @@ Checked `http://127.0.0.1:3000/?story=off&quality=high` in the in-app browser.
 
 Do not remove the story-action authorization blocker or raise the dist ceiling
 as part of the Bell-hill change.
+
+## 2026-07-14 release resolution
+
+- ADR 0005 supersedes the earlier exact-file approval model with standing
+  Thornvale-owner authorization for all animation sources and derivatives the
+  owner controls or may lawfully use in integrated Thornvale work. The Story
+  Actions source rights, provenance, hashes, transforms, fallbacks, budgets, and
+  QA gates remain independently enforced.
+- The dist ceiling was not raised. Build-only minification of the existing
+  authored inline CSS and safe inter-tag whitespace collapse reduced the final
+  production candidate to 8,383,329 / 8,388,608 bytes, leaving 5,279 bytes of
+  headroom after the complete action-weight implementation.
+- `npm run assets:release` now passes with 27 runtime files / 4,482,517 bytes and
+  no release-blocked family. The final repository gate passes 212/212 tests.
+- The deterministic hill-surface and route regressions remain green. A genuine
+  walked Bell climb and descent is still a manual playfeel gate; a teleport or
+  boot smoke does not close it.

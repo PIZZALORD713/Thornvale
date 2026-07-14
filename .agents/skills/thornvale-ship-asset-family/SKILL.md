@@ -16,7 +16,7 @@ Keep the change as a bounded, reversible pilot until the evidence supports makin
 1. Confirm the repository root and inspect `git status --short --branch`. Preserve unrelated work.
 2. Read `wiki/Plan-2.0.md`, `assets-src/README.md`, and the live `assets-src/asset-manifest.json`.
 3. Read `wiki/Asset-Overhaul-Plan.md` when changing the opening-route pilot, CC0 intake, or fRiENDSiES trait treatment.
-4. Inspect `scripts/check-asset-budgets.mjs`, `package.json`, `docs/qa/README.md`, and `docs/release/README.md` before changing policy, budgets, or release claims.
+4. Read ADR 0005 when changing animation policy or release claims. Inspect `scripts/check-asset-budgets.mjs`, `package.json`, `docs/qa/README.md`, and `docs/release/README.md` before changing policy, budgets, or release claims.
 5. Read only the closest existing example:
    - Project-authored Blender family: `assets-src/village-dressing/SOURCE.md`, `assets-src/village-dressing/EXPORT.md`, and `public/village/pilot/v1/PROVENANCE.md`.
    - fRiENDSiES character or trait family: `public/friendsies/8914/PROVENANCE.md` and `src/content/friendsies-cast.js`.
@@ -72,10 +72,28 @@ ThornVale-authored arrangement so transforms and runtime behavior remain
 auditable. The standing authorization excludes standalone packs, bulk raw
 mirrors or dumps, sublicensing, and reuse outside ThornVale.
 
-Keep `friendsies-animations` separate: its Mixamo and repository source chain
-requires the existing animation-family permission and provenance record.
+All current and future animation sources and derivatives that the Thornvale
+project owner controls or may lawfully use inherit the standing animation
+authorization in ADR 0005 for any integrated Thornvale use. Do not ask for or
+block on another project-owner permission decision because a file, clip, pack,
+rig, role, context, transform, delivery method, or revision changes. This does
+not establish or broaden upstream rights: verify the exact source and every
+applicable motion, performance, character, mesh, material, texture, audio,
+repository, and product-use term. Unknown or incompatible upstream rights remain
+valid blockers. Raw-source redistribution, standalone animation or motion packs,
+sublicensing, and outside-Thornvale use remain excluded.
 
-If the user cannot supply missing authority, continue with metadata, placeholders, procedural fallbacks, or a non-runtime evaluation plan. Do not manufacture permission evidence.
+Keep animation provenance separate from canonical fRiENDSiES provenance.
+`friendsies-animations`, `friendsies-story-actions-v1`, and future animation
+families use ADR 0005 for project-owner authorization while retaining their own
+Mixamo, repository, or other upstream source and license records. An animated
+fRiENDSiES character may rely on both ADR 0004 and ADR 0005 without merging the
+two provenance families.
+
+If required upstream or unrelated third-party authority cannot be verified,
+continue with metadata, placeholders, procedural fallbacks, or a non-runtime
+evaluation plan. Do not manufacture permission evidence or request another
+project-owner grant for animation already covered by ADR 0005.
 
 ## Preserve baseline and rollback
 
@@ -180,7 +198,10 @@ Do not bypass an expected permission failure for unrelated third-party material,
 delete a blocked family from the manifest while it remains in runtime, or call
 a candidate release-ready until this command passes. Canonical fRiENDSiES work
 must inherit `friendsies-project`; a per-use permission blocker for that family
-is policy drift to fix, not a new grant to litigate.
+is policy drift to fix, not a new grant to litigate. Covered animation work must
+inherit ADR 0005; a repeated Thornvale-owner permission blocker is likewise
+policy drift, while an unresolved upstream license or source remains a valid
+release blocker.
 
 ## Hand off truthfully
 

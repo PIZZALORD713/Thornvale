@@ -107,6 +107,8 @@ export class DayOneWorld {
     this._soilMeshes = [];
     this._woodPieces = [];
     this._state = null;
+    this._actionCue = null;
+    this._actionTransforms = new Map();
   }
 
   init() {
@@ -173,6 +175,24 @@ export class DayOneWorld {
     return group;
   }
 
+  _rememberActionTransform(name, object) {
+    this._actionTransforms.set(name, {
+      object,
+      position: object.position.clone(),
+      quaternion: object.quaternion.clone(),
+      scale: object.scale.clone(),
+    });
+    return object;
+  }
+
+  _restoreActionTransforms() {
+    for (const { object, position, quaternion, scale } of this._actionTransforms.values()) {
+      object.position.copy(position);
+      object.quaternion.copy(quaternion);
+      object.scale.copy(scale);
+    }
+  }
+
   _createCampClearing() {
     const group = this._group('day_one_camp_identity', 'camp');
     const matWood = this._material('day_one_sign_wood', PALETTE.wood);
@@ -204,6 +224,7 @@ export class DayOneWorld {
   _createShelter() {
     const group = this._group('day_one_shelter_visual', 'shelter');
     group.rotation.y = 0.23;
+    this.shelterVisual = group;
     const canvas = this._material('day_one_tent_canvas', PALETTE.canvas, {
       roughness: 1,
       side: DoubleSide,
@@ -275,6 +296,7 @@ export class DayOneWorld {
     );
     this.shelterTear.position.set(0.83, 0.72, -0.28);
     this.shelterTear.rotation.set(0.18, -0.04, -0.69);
+    this._rememberActionTransform('shelter-tear', this.shelterTear);
     group.add(this.shelterTear);
 
     this.shelterRepair = this._group('day_one_shelter_repair_visible');
@@ -294,12 +316,15 @@ export class DayOneWorld {
     tie.position.set(-0.96, 0.55, -1.18);
     tie.rotation.z = -0.12;
     this.shelterRepair.add(patchMesh, tie);
+    this._rememberActionTransform('shelter-repair', this.shelterRepair);
     group.add(this.shelterRepair);
+    this._rememberActionTransform('shelter', group);
     this.root.add(group);
   }
 
   _createCampfire() {
     const group = this._group('day_one_campfire_visual', 'campfire');
+    this.campfireVisual = group;
     const stone = this._material('day_one_fire_stone', PALETTE.stone, {
       flatShading: true,
       roughness: 1,
@@ -393,13 +418,16 @@ export class DayOneWorld {
     meal.scale.set(1.5, 0.62, 0.34);
     meal.position.y = 0.73;
     this.cookedFishVisual.add(spit, meal);
+    this._rememberActionTransform('cooked-fish', this.cookedFishVisual);
     group.add(this.cookedFishVisual);
+    this._rememberActionTransform('campfire', group);
     this.root.add(group);
   }
 
   _createGarden() {
     const group = this._group('day_one_garden_visual', 'garden');
     group.rotation.y = -0.18;
+    this.gardenVisual = group;
     this.drySoilMaterial = this._material('day_one_garden_dry_soil', PALETTE.soil, {
       roughness: 1,
     });
@@ -473,6 +501,7 @@ export class DayOneWorld {
       this.wateredGlints.add(glint);
     }
     group.add(this.plantedSeeds, this.wateredGlints);
+    this._rememberActionTransform('garden', group);
     this.root.add(group);
   }
 
@@ -547,6 +576,8 @@ export class DayOneWorld {
     axe.add(handle, head);
     axe.position.set(0.22, 1.03, 0);
     axe.rotation.z = -0.22;
+    this.woodlotAxe = axe;
+    this._rememberActionTransform('woodlot-axe', axe);
     group.add(axe);
     this.root.add(group);
   }
@@ -582,6 +613,8 @@ export class DayOneWorld {
     );
     rod.position.set(0.16, 0.9, -0.56);
     rod.rotation.z = -0.88;
+    this.fishingRod = rod;
+    this._rememberActionTransform('fishing-rod', rod);
     group.add(rod);
 
     this.fishingBobber = this._group('day_one_fishing_bobber_group');
@@ -593,6 +626,7 @@ export class DayOneWorld {
     );
     float.scale.y = 1.35;
     this.fishingBobber.position.set(1.72, 0.16, 0.08);
+    this._rememberActionTransform('fishing-bobber', this.fishingBobber);
     this.fishingBobber.add(float);
     group.add(this.fishingBobber);
 
@@ -686,8 +720,88 @@ export class DayOneWorld {
     return dayOne;
   }
 
+  /** Project transient action-clock events into code-native prop motion. */
+  handleAction(event) {
+    if (!this.initialized || this.disposed || !event?.id) return false;
+    if (event.type === 'start') {
+      this._restoreActionTransforms();
+      this._actionCue = event;
+      return true;
+    }
+    if (this._actionCue?.id !== event.id) return false;
+    if (event.type === 'complete' || event.type === 'cancel' || event.type === 'error') {
+      this._actionCue = null;
+      this._restoreActionTransforms();
+      this.setState(this._state);
+      return true;
+    }
+    this._actionCue = event;
+    return true;
+  }
+
+  _applyActionCue() {
+    const event = this._actionCue;
+    if (!event || this.reducedMotion) return;
+    this._restoreActionTransforms();
+    const progress = Math.min(1, Math.max(0, numeric(event.progress)));
+    const contactProgress = Math.min(1, Math.max(
+      0.01,
+      numeric(event.commitTime, 1) / Math.max(0.01, numeric(event.duration, 1)),
+    ));
+    const beforeContact = Math.min(1, progress / contactProgress);
+    const effort = Math.sin(Math.PI * progress);
+
+    switch (event.action?.worldCue) {
+      case 'chop-wood':
+        if (this.woodlotAxe) {
+          this.woodlotAxe.rotation.z -= Math.sin(beforeContact * Math.PI * 2.5) * 0.62;
+          this.woodlotAxe.position.y += effort * 0.08;
+        }
+        break;
+      case 'catch-fish':
+        if (this.fishingRod) this.fishingRod.rotation.z += effort * 0.28;
+        if (this.fishingBobber?.visible) {
+          this.fishingBobber.position.y -= Math.sin(beforeContact * Math.PI) * 0.11;
+        }
+        break;
+      case 'light-fire':
+        if (this.campfireVisual) {
+          const pulse = 1 + effort * 0.035;
+          this.campfireVisual.scale.setScalar(pulse);
+        }
+        break;
+      case 'cook-fish':
+        if (this.cookedFishVisual) {
+          this.cookedFishVisual.visible = true;
+          this.cookedFishVisual.rotation.y += progress * Math.PI * 2;
+          this.cookedFishVisual.position.y += effort * 0.055;
+        }
+        break;
+      case 'eat-fish':
+        if (this.cookedFishVisual?.visible) {
+          this.cookedFishVisual.scale.multiplyScalar(Math.max(0.28, 1 - beforeContact * 0.68));
+          this.cookedFishVisual.position.y += effort * 0.1;
+        }
+        break;
+      case 'plant-seed':
+      case 'water-seed':
+        if (this.gardenVisual) {
+          const settle = 1 - effort * 0.018;
+          this.gardenVisual.scale.set(settle, 1 + effort * 0.025, settle);
+        }
+        break;
+      case 'repair-shelter':
+        if (this.shelterTear?.visible) this.shelterTear.rotation.z += effort * 0.16;
+        if (this.shelterVisual) this.shelterVisual.rotation.z += Math.sin(progress * Math.PI * 4) * 0.018;
+        break;
+      default:
+        break;
+    }
+  }
+
   update(dt) {
-    if (!this.initialized || this.disposed || this.reducedMotion) return;
+    if (!this.initialized || this.disposed) return;
+    if (this.reducedMotion) return;
     this.time += Math.min(Math.max(numeric(dt), 0), 0.1);
     if (this.fireFlame?.visible) {
       const flicker = 1 + Math.sin(this.time * 15.5) * 0.06;
@@ -700,16 +814,22 @@ export class DayOneWorld {
     if (this.wateredGlints?.visible) {
       this.wateredGlints.rotation.y = Math.sin(this.time * 0.8) * 0.06;
     }
+    // The committed chore pose wins over ambient prop motion for this frame.
+    this._applyActionCue();
   }
 
   dispose() {
     if (this.disposed) return;
+    this._restoreActionTransforms();
+    this.setState(this._state);
+    this._actionCue = null;
     this.disposed = true;
     this.root.removeFromParent();
     for (const geometry of this._geometries) geometry.dispose();
     for (const material of this._materials) material.dispose();
     this._geometries.clear();
     this._materials.clear();
+    this._actionTransforms.clear();
     this.interactables.length = 0;
   }
 }

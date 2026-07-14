@@ -10,23 +10,32 @@ export class DayOneActionPresenter {
     reducedMotion = false,
     documentRoot = globalThis.document?.documentElement || null,
     onCommitCue = null,
+    onFallbackCue = null,
   } = {}) {
     this.getAnimator = typeof getAnimator === 'function' ? getAnimator : () => null;
     this.reducedMotion = Boolean(reducedMotion);
     this.documentRoot = documentRoot;
     this.onCommitCue = typeof onCommitCue === 'function' ? onCommitCue : null;
+    this.onFallbackCue = typeof onFallbackCue === 'function' ? onFallbackCue : null;
     this.activeId = null;
     this.activeAnimator = null;
     this.activeClipName = null;
+    this.usingFallback = false;
     this.disposed = false;
   }
 
   handle(event) {
     if (this.disposed || !event) return false;
     try {
-      if (event.type === 'start') this._start(event);
-      else if (event.type === 'commit') this.onCommitCue?.(event);
-      else if (event.type === 'complete' || event.type === 'cancel' || event.type === 'error') {
+      if (event.type === 'start') {
+        this._start(event);
+      } else if (event.type === 'commit') {
+        if (this.usingFallback) this.onFallbackCue?.(event);
+        this.onCommitCue?.(event);
+      } else if (event.type === 'progress') {
+        if (this.usingFallback) this.onFallbackCue?.(event);
+      } else if (event.type === 'complete' || event.type === 'cancel' || event.type === 'error') {
+        if (this.usingFallback) this.onFallbackCue?.(event);
         this._finish(event.id);
       }
       return true;
@@ -44,12 +53,17 @@ export class DayOneActionPresenter {
     this.getAnimator = () => null;
     this.documentRoot = null;
     this.onCommitCue = null;
+    this.onFallbackCue = null;
   }
 
   _start(event) {
     this.activeId = event.id;
     if (this.documentRoot?.dataset) this.documentRoot.dataset.dayOneAction = event.id;
-    if (this.reducedMotion || !event.action.clipName) return;
+    if (this.reducedMotion || !event.action.clipName) {
+      this.usingFallback = true;
+      this.onFallbackCue?.(event);
+      return;
+    }
 
     const animator = this.getAnimator();
     const clip = animator?.getClip?.(event.action.clipName);
@@ -65,7 +79,10 @@ export class DayOneActionPresenter {
     if (played) {
       this.activeAnimator = animator;
       this.activeClipName = event.action.clipName;
+      return;
     }
+    this.usingFallback = true;
+    this.onFallbackCue?.(event);
   }
 
   _finish(id) {
@@ -74,6 +91,7 @@ export class DayOneActionPresenter {
     const clipName = this.activeClipName;
     this.activeAnimator = null;
     this.activeClipName = null;
+    this.usingFallback = false;
     try {
       animator?.cancelOneShot?.(clipName, {
         returnTo: 'idle',

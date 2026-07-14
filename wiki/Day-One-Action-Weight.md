@@ -6,8 +6,10 @@
 - **Implementation state:** Accepted chores now use one readable action timeline
   of at least three seconds, keep camera look available, lock movement only for
   that bounded timeline, and save exactly once at meaningful contact. The
-  `story-actions-v1` pilot supplies dedicated skeletal performances for planting
-  and watering; exact browser contact and fresh-player validation remain open.
+  `story-actions-v1` family supplies dedicated skeletal performances for
+  planting and watering; browser contact, reduced-motion, save-boundary, and
+  forced-fallback behavior are recorded, while fresh-player validation remains
+  open.
 - **Player-feeling shift:** checking tasks off a list → physically investing care in food and a place to sleep.
 - **Fresh-player hypothesis:** the extra anticipation, effort, contact, and recovery make food and camp improvement feel significant without testers describing the loop as slow or repetitive.
 
@@ -46,7 +48,7 @@ Missing-resource, full-inventory, completed, and other invalid interactions resp
 
 | File or symbol | Change | Source of truth | Proof |
 | --- | --- | --- | --- |
-| `src/content/day-one-v01.js` | Declare duration, commit time, pose, prop, sound, and reduced-motion cues | Authored content | Every successful action is at least 3.0 s and has one valid commit cue |
+| `src/content/day-one-actions-v01.js` | Declare duration, commit time, pose, prop, sound, and reduced-motion cues | Authored content | Every successful action is at least 3.0 s and has one valid commit cue |
 | `src/game/DayOneActionController.js` | Add a transient frame-driven action clock with run, update, cancel, subscribe, and dispose | Interaction orchestration, never save authority | Exact-once commit at 60/120/144 Hz and across slow frames; overlap and cancellation coverage |
 | `src/game/DayOneDirector.js` | Validate before starting; revalidate and transact once at the commit cue | Authoritative Day One state | No pre-commit mutation; save at commit; pass-out and zero-energy recovery stay safe |
 | `src/controllers/PlayerController.js` | Add a bounded action lock and facing target; retain camera look | Player movement intent | Move/jump suppression and guaranteed unlock on completion, cancel, error, or dispose |
@@ -73,11 +75,15 @@ file falls back locally without changing the action clock or save result. Chop,
 fish, fire, cook, eat, and repair retain their code-native presentation; Joy and
 dance are not relabeled as labor.
 
-The pilot remains `project-use-recorded` and release-blocked until the six exact
-derivatives receive bundled-Thornvale publication authorization. Raw Mixamo
-sources, standalone motion-pack redistribution, and outside-project reuse are
-not granted by this record. Browser evidence for the Lumen reads, plant/water
-contact cues, reduced motion, and failed-asset fallbacks remains pending in
+The family inherits ADR 0005's standing project-owner authorization for all
+current and future animation sources and derivatives the owner controls or may
+lawfully use inside Thornvale; it does not require another approval per file,
+clip, pack, role, transform, or revision. The six exact sources, Mixamo product-
+use terms, transforms, and hashes remain independently recorded and verified.
+Raw Mixamo sources, standalone motion-pack redistribution, sublicensing, and
+outside-project reuse remain excluded. Browser evidence for the Lumen reads,
+plant/water contact cues, reduced motion, and failed-asset fallbacks is recorded
+in
 [`docs/qa/2026-07-13-story-actions-v1.md`](../docs/qa/2026-07-13-story-actions-v1.md).
 
 ## Blind-playtest proof

@@ -29,14 +29,22 @@ budgets, fallbacks, and QA remain engineering integrity requirements. They do
 not create a new per-token, per-asset, per-role, per-context, per-transform, or
 per-revision permission decision.
 
-The exact animation-only runtime derivatives listed in
-`public/animations/PROVENANCE.md` are project-release-authorized for integrated
-Thornvale game builds. That authorization does not permit source-pack,
-standalone animation, or general outside-project redistribution.
+On 2026-07-14, the Thornvale project owner established a separate standing
+authorization for all current and future animation sources and derivatives the
+owner controls or may lawfully use, for any integrated Thornvale use. No new
+owner permission decision is required per file, clip, pack, rig, role, context,
+transform, delivery method, or revision. This authorization does not claim or
+expand upstream rights: exact sources and all applicable motion, performance,
+character, repository, and product-use licenses or permissions must still be
+verified. Unknown or incompatible upstream rights remain release blockers.
 
-The `friendsies-animations` family remains separately governed because its
-motion sources include Mixamo and an independent repository provenance chain;
-the collection-wide authorization above does not replace that record.
+Animation provenance remains separate from canonical fRiENDSiES provenance.
+The `friendsies-animations`, `friendsies-story-actions-v1`, and future animation
+families retain their Mixamo, repository, or other upstream records while
+inheriting project-owner authorization from ADR 0005. Raw animation-source
+redistribution, standalone animation or motion packs, sublicensing, and use
+outside Thornvale remain excluded; stricter upstream terms continue to control.
+See `docs/decisions/0005-thornvale-animation-project-wide-authorization.md`.
 
 See `CREDITS.md`, the machine-readable
 `assets-src/asset-manifest.json`, and adjacent `PROVENANCE.md` files before

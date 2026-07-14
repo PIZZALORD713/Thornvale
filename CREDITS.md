@@ -73,15 +73,25 @@ dependency pins remain in `assets-src/asset-manifest.json`.
 
 The walk, joy-jump, and rumba clips are animation-only derivatives of source
 files in `PIZZALORD713/animation_collection2` at commit
-`f8286ef2c5421d54115afdafdac33f206533ac25`. The project owner requested their
-use and publication in Thornvale. These exact hashed runtime derivatives are
-`project-release-authorized` for bundled Thornvale game builds. That scoped
-authorization does not permit raw-source or standalone animation-pack
-redistribution and does not grant general reuse outside Thornvale. Adobe's
+`f8286ef2c5421d54115afdafdac33f206533ac25`. The six Story Actions v1 clips are
+separate Mixamo-derived, animation-only outputs with their own pinned source and
+conversion record. ADR 0005 supplies standing project-owner authorization for
+these and all current or future animation sources and derivatives the owner
+controls or may lawfully use in integrated Thornvale work. It removes repeat
+approval per file, clip, pack, role, transform, or revision; it does not replace
+or broaden upstream rights. Adobe's
 [Mixamo FAQ](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html) separately
 permits royalty-free use of Mixamo-sourced motion in video games.
 
+Exact source commits or files, retrieval dates, hashes, transforms, runtime
+scope, fallbacks, budgets, and QA remain in each animation family's source and
+provenance records. Raw source redistribution, standalone animation or motion
+packs, sublicensing, and use outside Thornvale remain excluded. Animation
+provenance remains separate from canonical fRiENDSiES provenance under ADR 0004.
+
 - `public/animations/PROVENANCE.md`
+- `public/animations/story-actions-v1/PROVENANCE.md`
+- `docs/decisions/0005-thornvale-animation-project-wide-authorization.md`
 
 ## Draco decoder
 

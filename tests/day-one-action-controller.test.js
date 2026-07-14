@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { DAY_ONE_V01 } from '../src/content/day-one-v01.js';
 import { STORY_ACTIONS_V1 } from '../src/content/story-actions-v1.js';
 import { DayOneActionController } from '../src/game/DayOneActionController.js';
 
@@ -30,6 +31,40 @@ for (const hz of [60, 120, 144]) {
     assert.deepEqual(outcome.events, ['start', 'commit', 'complete']);
   });
 }
+
+test('every Day One action keeps the canonical three-second timing and contact cue', () => {
+  const expected = {
+    chopWood: [3.2, 2.1],
+    catchFish: [3.6, 2.9],
+    lightFire: [3.1, 2.2],
+    cookFish: [3.4, 2.7],
+    eatFish: [3.0, 2.25],
+    plantSeed: [3.1, 2.3],
+    waterSeed: [3.2, 2.35],
+    repairShelter: [3.6, 2.8],
+  };
+
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(DAY_ONE_V01.actions).map(([key, action]) => [
+      key,
+      [action.duration, action.commitTime],
+    ])),
+    expected,
+  );
+  for (const action of Object.values(DAY_ONE_V01.actions)) {
+    assert.ok(action.duration >= 3, action.id);
+    assert.ok(action.commitTime < action.duration, action.id);
+  }
+});
+
+test('the action clock rejects definitions shorter than the three-second floor', () => {
+  const controller = new DayOneActionController();
+  assert.throws(
+    () => controller.run({ id: 'too-quick', duration: 2.99, commitTime: 2 }),
+    /at least 3 seconds/,
+  );
+  assert.equal(controller.isActive, false);
+});
 
 test('a slow frame crosses the commit cue before completing the action', async () => {
   const controller = new DayOneActionController();
