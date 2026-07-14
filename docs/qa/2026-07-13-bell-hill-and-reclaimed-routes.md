@@ -66,7 +66,7 @@ as part of the Bell-hill change.
   QA gates remain independently enforced.
 - The dist ceiling was not raised. Build-only minification of the existing
   authored inline CSS and safe inter-tag whitespace collapse reduced the final
-  production candidate to 8,383,329 / 8,388,608 bytes, leaving 5,279 bytes of
+  production candidate to 8,383,699 / 8,388,608 bytes, leaving 4,909 bytes of
   headroom after the complete action-weight implementation.
 - `npm run assets:release` now passes with 27 runtime files / 4,482,517 bytes and
   no release-blocked family. The final repository gate passes 212/212 tests.
