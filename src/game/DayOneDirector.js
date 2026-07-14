@@ -124,15 +124,15 @@ export class DayOneDirector {
     try {
       switch (id) {
         case this.content.ids.woodlot:
-          return await this._chopWood();
+          return await this._chopWood(context);
         case this.content.ids.fishingSpot:
-          return await this._catchFish();
+          return await this._catchFish(context);
         case this.content.ids.campfire:
-          return await this._useCampfire();
+          return await this._useCampfire(context);
         case this.content.ids.garden:
           return await this._tendGarden(context);
         case this.content.ids.shelter:
-          return await this._repairShelter();
+          return await this._repairShelter(context);
         default:
           return null;
       }
@@ -177,11 +177,32 @@ export class DayOneDirector {
   }
 
   actionFor(id, snapshot = this.session.snapshot()) {
-    if (id !== this.content.ids.garden || !this._isActive(snapshot)) return null;
+    if (!this._isActive(snapshot)) return null;
     const state = snapshot.dayOne;
-    if (!state.garden.planted && state.inventory.seeds > 0) return this.content.actions?.plantSeed || null;
-    if (state.garden.planted && !state.garden.watered) return this.content.actions?.waterSeed || null;
-    return null;
+    const { actions, tuning } = this.content;
+    switch (id) {
+      case this.content.ids.woodlot:
+        return state.inventory.wood < tuning.woodInventoryLimit ? actions?.chopWood || null : null;
+      case this.content.ids.fishingSpot:
+        return state.activity.fishCaught < tuning.fishCatchLimit ? actions?.catchFish || null : null;
+      case this.content.ids.campfire:
+        if (!state.camp.fireLit) {
+          return state.inventory.wood >= tuning.fireWoodCost ? actions?.lightFire || null : null;
+        }
+        if (state.inventory.cookedFish > 0) return actions?.eatFish || null;
+        if (state.inventory.rawFish > 0) return actions?.cookFish || null;
+        return null;
+      case this.content.ids.garden:
+        if (!state.garden.planted && state.inventory.seeds > 0) return actions?.plantSeed || null;
+        if (state.garden.planted && !state.garden.watered) return actions?.waterSeed || null;
+        return null;
+      case this.content.ids.shelter:
+        return !state.camp.shelterRepaired && state.inventory.wood >= tuning.shelterWoodCost
+          ? actions?.repairShelter || null
+          : null;
+      default:
+        return null;
+    }
   }
 
   stateForHud(snapshot = this.session.snapshot()) {
@@ -236,7 +257,7 @@ export class DayOneDirector {
       && !events.includes(this.content.events.ledgerSigned);
   }
 
-  async _chopWood() {
+  async _chopWood(context = null) {
     const tuning = this.content.tuning;
     const before = this.session.snapshot().dayOne;
     if (before.inventory.wood >= tuning.woodInventoryLimit) {
@@ -250,10 +271,13 @@ export class DayOneDirector {
       );
       state.inventory.wood += amount;
       state.activity.woodGathered += amount;
-    }, this.content.messages.wood);
+    }, this.content.messages.wood, this.content.actions?.chopWood, {
+      context,
+      validate: (current) => current.inventory.wood < tuning.woodInventoryLimit,
+    });
   }
 
-  async _catchFish() {
+  async _catchFish(context = null) {
     const tuning = this.content.tuning;
     const before = this.session.snapshot().dayOne;
     if (before.activity.fishCaught >= tuning.fishCatchLimit) {
@@ -263,29 +287,32 @@ export class DayOneDirector {
     return this._performLabor(tuning.labor.fish, (state) => {
       state.inventory.rawFish += 1;
       state.activity.fishCaught += 1;
-    }, this.content.messages.fish);
+    }, this.content.messages.fish, this.content.actions?.catchFish, {
+      context,
+      validate: (current) => current.activity.fishCaught < tuning.fishCatchLimit,
+    });
   }
 
-  async _useCampfire() {
+  async _useCampfire(context = null) {
     const snapshot = this.session.snapshot();
     const state = snapshot.dayOne;
     const tuning = this.content.tuning;
-    let message;
-
     if (!state.camp.fireLit) {
       if (state.inventory.wood < tuning.fireWoodCost) {
         return this._announce(this.content.messages.needFireWood);
       }
-      this.session.transact((draft) => {
-        draft.dayOne.inventory.wood -= tuning.fireWoodCost;
-        draft.dayOne.camp.fireLit = true;
-        this._finishIfReady(draft);
+      return this._performAction(this.content.actions?.lightFire, (dayOne) => {
+        dayOne.inventory.wood -= tuning.fireWoodCost;
+        dayOne.camp.fireLit = true;
+      }, this.content.messages.fire, {
+        context,
+        validate: (current) => !current.camp.fireLit
+          && current.inventory.wood >= tuning.fireWoodCost,
       });
-      message = this.content.messages.fire;
-    } else if (state.inventory.cookedFish > 0) {
-      const completedNow = { value: false };
-      this.session.transact((draft) => {
-        const dayOne = draft.dayOne;
+    }
+
+    if (state.inventory.cookedFish > 0) {
+      return this._performAction(this.content.actions?.eatFish, (dayOne) => {
         dayOne.inventory.cookedFish -= 1;
         dayOne.activity.mealsEaten += 1;
         dayOne.energy = Math.min(
@@ -296,22 +323,24 @@ export class DayOneDirector {
           tuning.meters.max,
           dayOne.nourishment + tuning.mealRecovery.nourishment,
         );
-        completedNow.value = this._finishIfReady(draft);
+      }, this.content.messages.ateFish, {
+        context,
+        validate: (current) => current.camp.fireLit && current.inventory.cookedFish > 0,
       });
-      message = this._withCompletion(this.content.messages.ateFish, completedNow.value);
-    } else if (state.inventory.rawFish > 0) {
-      this.session.transact((draft) => {
-        draft.dayOne.inventory.rawFish -= 1;
-        draft.dayOne.inventory.cookedFish += 1;
-        draft.dayOne.activity.mealsCooked += 1;
-        this._finishIfReady(draft);
-      });
-      message = this.content.messages.cookedFish;
-    } else {
-      message = this.content.messages.nothingToCook;
     }
 
-    return this._announce(message);
+    if (state.inventory.rawFish > 0) {
+      return this._performAction(this.content.actions?.cookFish, (dayOne) => {
+        dayOne.inventory.rawFish -= 1;
+        dayOne.inventory.cookedFish += 1;
+        dayOne.activity.mealsCooked += 1;
+      }, this.content.messages.cookedFish, {
+        context,
+        validate: (current) => current.camp.fireLit && current.inventory.rawFish > 0,
+      });
+    }
+
+    return this._announce(this.content.messages.nothingToCook);
   }
 
   async _tendGarden(context = null) {
@@ -342,7 +371,7 @@ export class DayOneDirector {
     });
   }
 
-  async _repairShelter() {
+  async _repairShelter(context = null) {
     const state = this.session.snapshot().dayOne;
     const tuning = this.content.tuning;
     if (state.camp.shelterRepaired) {
@@ -355,7 +384,11 @@ export class DayOneDirector {
     return this._performLabor(tuning.labor.repairShelter, (draft) => {
       draft.inventory.wood -= tuning.shelterWoodCost;
       draft.camp.shelterRepaired = true;
-    }, this.content.messages.shelter);
+    }, this.content.messages.shelter, this.content.actions?.repairShelter, {
+      context,
+      validate: (current) => !current.camp.shelterRepaired
+        && current.inventory.wood >= tuning.shelterWoodCost,
+    });
   }
 
   async _performLabor(
@@ -368,17 +401,32 @@ export class DayOneDirector {
     const before = this.session.snapshot().dayOne;
     if (before.energy < cost.energy) return this._passOut();
 
+    return this._performAction(action, (state) => {
+      state.energy = Math.max(0, state.energy - cost.energy);
+      state.nourishment = Math.max(0, state.nourishment - cost.nourishment);
+      applyAction(state);
+    }, successMessage, {
+      context,
+      validate: (current) => current.energy >= cost.energy
+        && (!validate || validate(current)),
+    });
+  }
+
+  async _performAction(
+    action,
+    applyAction,
+    successMessage,
+    { validate = null, context = null } = {},
+  ) {
     const completedNow = { value: false };
     const commit = () => {
       const current = this.session.snapshot().dayOne;
-      if (current.energy < cost.energy || (validate && !validate(current))) {
+      if (validate && !validate(current)) {
         return Object.freeze({ applied: false, reason: 'stale-state' });
       }
 
       const snapshot = this.session.transact((draft) => {
         const state = draft.dayOne;
-        state.energy = Math.max(0, state.energy - cost.energy);
-        state.nourishment = Math.max(0, state.nourishment - cost.nourishment);
         applyAction(state);
         completedNow.value = this._finishIfReady(draft);
       });

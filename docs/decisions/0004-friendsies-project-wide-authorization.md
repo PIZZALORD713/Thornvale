@@ -48,9 +48,12 @@ budgets, local fallbacks, deterministic tests, and browser QA. Those checks are
 engineering and integrity gates, not permission gates. Unrelated third-party
 material continues through the normal rights review.
 
-The `friendsies-animations` family remains separately governed because its
-motion sources include Mixamo and an independent repository provenance chain;
-this collection authorization does not replace that record.
+Animation provenance remains separate from this canonical collection record.
+The `friendsies-animations`, `friendsies-story-actions-v1`, and future covered
+animation families inherit the standing Thornvale animation authorization in
+[ADR 0005](0005-thornvale-animation-project-wide-authorization.md), while their
+Mixamo, repository, and other upstream source chains retain independent license
+and provenance records. This collection authorization does not replace them.
 
 ## Consequences
 

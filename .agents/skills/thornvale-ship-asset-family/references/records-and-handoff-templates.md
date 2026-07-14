@@ -118,9 +118,16 @@ Set `releaseBlocked` to `false` and omit `releaseBlockReason` only when the evid
 For canonical fRiENDSiES material, reference `friendsies-project` and ADR 0004
 instead of creating per-token, per-trait, per-role, per-transform, or
 per-revision permission language. Continue to record the exact source, hash,
-transform, runtime scope, budgets, fallback, and QA evidence. Keep
-`friendsies-animations` separate because its Mixamo source chain is governed by
-its own family record.
+transform, runtime scope, budgets, fallback, and QA evidence.
+
+For animation sources and derivatives the Thornvale project owner controls or
+may lawfully use, reference ADR 0005 instead of creating per-file, per-clip,
+per-pack, per-role, per-transform, or per-revision owner-permission language.
+Record the exact upstream source, license or permission evidence, hashes,
+transforms, runtime scope, budgets, fallback, and QA. Keep animation provenance
+separate from canonical fRiENDSiES provenance; Mixamo, repository, and other
+upstream terms retain their own records. Unknown or incompatible upstream rights
+remain release blockers.
 
 ## Runtime asset entry
 

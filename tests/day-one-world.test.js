@@ -196,6 +196,92 @@ test('Day One world projects progress without owning gameplay state', () => {
   world.dispose();
 });
 
+test('clipless chores animate truthful code-native props and restore them on completion', () => {
+  const world = createDayOneWorld();
+  world.setState({
+    camp: { fireLit: true, shelterRepaired: false },
+    garden: { planted: true, watered: false },
+    inventory: { cookedFish: 1 },
+    activity: { woodGathered: 0, fishCaught: 0 },
+  });
+  const probes = {
+    chopWood: () => world.woodlotAxe.quaternion.toArray(),
+    catchFish: () => world.fishingRod.quaternion.toArray(),
+    lightFire: () => world.campfireVisual.scale.toArray(),
+    cookFish: () => world.cookedFishVisual.quaternion.toArray(),
+    eatFish: () => world.cookedFishVisual.scale.toArray(),
+    repairShelter: () => world.shelterVisual.quaternion.toArray(),
+  };
+
+  for (const [index, [actionKey, probe]] of Object.entries(probes).entries()) {
+    const action = DAY_ONE_V01.actions[actionKey];
+    const event = (type, progress) => ({
+      type,
+      id: action.id,
+      action,
+      duration: action.duration,
+      commitTime: action.commitTime,
+      progress,
+    });
+    const before = probe();
+    assert.equal(world.handleAction(event('start', 0)), true, actionKey);
+    assert.equal(world.handleAction(event('progress', 0.45)), true, actionKey);
+    world.update(1 / 60);
+    assert.notDeepEqual(probe(), before, `${actionKey} should visibly move its world prop`);
+    const terminalType = index % 2 === 0 ? 'complete' : 'cancel';
+    assert.equal(world.handleAction(event(terminalType, 1)), true, actionKey);
+    assert.deepEqual(probe(), before, `${actionKey} should restore its transient transform`);
+  }
+
+  world.dispose();
+});
+
+test('reduced motion preserves native state cues without moving props', () => {
+  const world = createDayOneWorld({ reducedMotion: true });
+  const action = DAY_ONE_V01.actions.chopWood;
+  const before = world.woodlotAxe.quaternion.toArray();
+  world.handleAction({ type: 'start', id: action.id, action, progress: 0 });
+  world.handleAction({
+    type: 'progress',
+    id: action.id,
+    action,
+    duration: action.duration,
+    commitTime: action.commitTime,
+    progress: 0.5,
+  });
+  world.update(1 / 60);
+  assert.deepEqual(world.woodlotAxe.quaternion.toArray(), before);
+
+  world.setState({ camp: { fireLit: true } });
+  assert.equal(world.fireFlame.visible, true, 'authoritative state projection remains visible');
+  world.handleAction({ type: 'cancel', id: action.id, action, progress: 0.5 });
+  assert.equal(world._actionCue, null);
+  world.dispose();
+});
+
+test('disposing during a native cue restores and clears its transient state', () => {
+  const world = createDayOneWorld();
+  const action = DAY_ONE_V01.actions.chopWood;
+  const before = world.woodlotAxe.quaternion.toArray();
+  world.handleAction({ type: 'start', id: action.id, action, progress: 0 });
+  world.handleAction({
+    type: 'progress',
+    id: action.id,
+    action,
+    duration: action.duration,
+    commitTime: action.commitTime,
+    progress: 0.45,
+  });
+  world.update(1 / 60);
+  assert.notDeepEqual(world.woodlotAxe.quaternion.toArray(), before);
+
+  world.dispose();
+
+  assert.deepEqual(world.woodlotAxe.quaternion.toArray(), before);
+  assert.equal(world._actionCue, null);
+  assert.equal(world._actionTransforms.size, 0);
+});
+
 test('Day One world releases its code-native GPU resources', () => {
   const world = createDayOneWorld({ reducedMotion: true });
   const scene = new Scene();

@@ -237,5 +237,8 @@ revision, and delivery changes do not reopen permission.
 The pinned `1..10000` catalog, exact component prefix, local hashes, transforms,
 budgets, fallbacks, and QA remain engineering release gates. Standalone asset
 packs, bulk raw collection mirrors or dumps, sublicensing, and outside-Thornvale
-reuse remain excluded. `friendsies-animations` stays separately governed where
-Mixamo supplies upstream motion rights.
+reuse remain excluded. Animation sources and derivatives inherit the separate
+standing project-owner authorization in ADR 0005 while retaining their own
+Mixamo, repository, or other upstream licenses and provenance. Animation
+provenance is not merged into canonical fRiENDSiES provenance; unknown or
+incompatible upstream rights remain release blockers.

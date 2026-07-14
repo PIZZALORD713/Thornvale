@@ -4,8 +4,8 @@ function asActionDefinition(value) {
   const duration = Number(value?.duration);
   const commitTime = Number(value?.commitTime);
   if (!id) throw new TypeError('Day One action requires an id');
-  if (!Number.isFinite(duration) || duration <= 0) {
-    throw new TypeError(`${id} requires a positive duration`);
+  if (!Number.isFinite(duration) || duration < 3) {
+    throw new TypeError(`${id} requires a duration of at least 3 seconds`);
   }
   if (!Number.isFinite(commitTime) || commitTime < 0 || commitTime > duration) {
     throw new TypeError(`${id} commitTime must be inside its duration`);
@@ -29,6 +29,8 @@ function publicState(active, type) {
     commitTime: active.definition.commitTime,
     progress: Math.min(1, active.elapsed / active.definition.duration),
     committed: active.committed,
+    commitResult: active.commitResult,
+    context: active.context,
   });
 }
 

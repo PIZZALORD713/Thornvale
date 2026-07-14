@@ -5,13 +5,18 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  ANIMATION_AUTHORIZATION_FAMILY_ID,
+  ANIMATION_AUTHORIZATION_PROVENANCE_PATH,
+  ANIMATION_UPSTREAM_RIGHTS_STATUSES,
   FRIENDSIES_CANONICAL_ASSET_URL_PREFIX,
   FRIENDSIES_PROJECT_FAMILY_ID,
   FRIENDSIES_REMOTE_PLAYER_DEPENDENCY_ID,
   RELEASE_APPROVED_RUNTIME_STATUSES,
   runAssetAudit,
   validateExternalRuntimeDependencies,
+  validateFamilyContract,
   validateFriendsiesProjectAssetAuthorization,
+  validateRuntimeAnimationFamilyAuthorization,
 } from '../scripts/check-asset-budgets.mjs';
 
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,27 +37,8 @@ test('asset manifest covers runtime media and stays within pilot budgets', async
   assert.equal(report.cc0RuntimeBytes, 0);
   assert.equal(report.compressedAudioBytes, 0);
   assert.deepEqual(report.sourceBatchBytes, {});
-  assert.equal(report.releaseReady, false);
-  assert.deepEqual(
-    report.releaseBlockedFamilies.map((family) => ({
-      id: family.id,
-      status: family.status,
-      assetCount: family.assetCount,
-      bytes: family.bytes,
-      externalDependencyCount: family.externalDependencyCount,
-    })),
-    [{
-      id: 'friendsies-story-actions-v1',
-      status: 'project-use-recorded',
-      assetCount: 6,
-      bytes: 270_232,
-      externalDependencyCount: 0,
-    }],
-  );
-  assert.match(
-    report.releaseBlockedFamilies[0].reason,
-    /exact-file bundled Thornvale publication authorization/,
-  );
+  assert.equal(report.releaseReady, true);
+  assert.deepEqual(report.releaseBlockedFamilies, []);
 });
 
 test('fRiENDSiES uses one standing project authorization without per-use gates', async () => {
@@ -93,22 +79,155 @@ test('fRiENDSiES uses one standing project authorization without per-use gates',
   assert.equal(canonicalAssets.length, 14);
   assert.ok(canonicalAssets.every((asset) => asset.family === FRIENDSIES_PROJECT_FAMILY_ID));
 
-  // Mixamo contributes separate upstream motion rights, so animation derivatives
-  // deliberately remain outside the native fRiENDSiES umbrella.
+  // Mixamo contributes separate upstream motion rights, while publication
+  // authority comes from the animation umbrella rather than fRiENDSiES.
   assert.equal(manifest.families['friendsies-animations'].status, 'project-release-authorized');
   assert.match(manifest.families['friendsies-animations'].licenseOrPermission, /Mixamo/);
+  assert.equal(
+    manifest.families['friendsies-animations'].authorizationFamily,
+    ANIMATION_AUTHORIZATION_FAMILY_ID,
+  );
 });
 
-test('release audit rejects only the development-only Story Actions family', async () => {
-  const developmentReport = await runAssetAudit({ rootDir: REPOSITORY_ROOT });
-  assert.deepEqual(
-    developmentReport.releaseBlockedFamilies.map((family) => family.id),
-    ['friendsies-story-actions-v1'],
+test('all runtime animations inherit one standing project authorization', async () => {
+  const manifest = JSON.parse(await readFile(
+    resolve(REPOSITORY_ROOT, 'assets-src/asset-manifest.json'),
+    'utf8',
+  ));
+  const authorizationFamily = manifest.families[ANIMATION_AUTHORIZATION_FAMILY_ID];
+
+  assert.equal(ANIMATION_AUTHORIZATION_FAMILY_ID, 'thornvale-animation-project');
+  assert.deepEqual(ANIMATION_UPSTREAM_RIGHTS_STATUSES, [
+    'project-authored',
+    'verified-for-game-use',
+  ]);
+  assert.equal(authorizationFamily.status, 'project-release-authorized');
+  assert.equal(authorizationFamily.assetKind, 'animation');
+  assert.equal(authorizationFamily.releaseBlocked, false);
+  assert.equal(authorizationFamily.rawSourceRedistribution, false);
+  assert.equal(authorizationFamily.provenance, ANIMATION_AUTHORIZATION_PROVENANCE_PATH);
+  assert.deepEqual(authorizationFamily.standingAuthorization, {
+    assetKind: 'animation',
+    coverage: 'present-and-future',
+    integratedProject: 'Thornvale',
+    itemApprovalRequired: false,
+    upstreamRightsRequired: true,
+  });
+  assert.match(authorizationFamily.licenseOrPermission, /all present and future animation assets/);
+  assert.match(authorizationFamily.licenseOrPermission, /controls or may lawfully use/);
+  assert.match(authorizationFamily.runtimeDistributionScope, /verified upstream rights/);
+
+  const validation = validateRuntimeAnimationFamilyAuthorization(manifest);
+  assert.deepEqual(validation.errors, []);
+  assert.deepEqual(validation.animationFamilyIds, [
+    'friendsies-animations',
+    'friendsies-story-actions-v1',
+  ]);
+
+  for (const familyId of validation.animationFamilyIds) {
+    const family = manifest.families[familyId];
+    assert.equal(family.assetKind, 'animation');
+    assert.equal(family.authorizationFamily, ANIMATION_AUTHORIZATION_FAMILY_ID);
+    assert.equal(family.upstreamRights.status, 'verified-for-game-use');
+    assert.ok(family.upstreamRights.evidence.length > 0);
+    assert.ok(family.fallbackContract.length > 0);
+    assert.ok(family.qaEvidence.length > 0);
+    assert.doesNotMatch(family.licenseOrPermission, /six exact|exact-file|ship PR #13/i);
+    assert.doesNotMatch(family.runtimeDistributionScope, /six exact|exact-file|ship PR #13/i);
+  }
+
+  const report = await runAssetAudit({ rootDir: REPOSITORY_ROOT, releaseMode: true });
+  assert.equal(report.releaseReady, true);
+  assert.deepEqual(report.releaseBlockedFamilies, []);
+});
+
+test('animation audit rejects narrowed owner approval and unsafe upstream sources', async () => {
+  const manifest = JSON.parse(await readFile(
+    resolve(REPOSITORY_ROOT, 'assets-src/asset-manifest.json'),
+    'utf8',
+  ));
+
+  const missingInheritance = structuredClone(manifest);
+  delete missingInheritance.families['friendsies-story-actions-v1'].authorizationFamily;
+  assert.match(
+    validateRuntimeAnimationFamilyAuthorization(missingInheritance).errors.join('\n'),
+    new RegExp(`friendsies-story-actions-v1 must inherit standing authorization from family ${ANIMATION_AUTHORIZATION_FAMILY_ID}`),
   );
 
-  await assert.rejects(
-    runAssetAudit({ rootDir: REPOSITORY_ROOT, releaseMode: true }),
-    /release-blocked runtime family friendsies-story-actions-v1:.*exact-file bundled Thornvale publication authorization/,
+  for (const unsafeStatus of ['unknown', 'prohibited']) {
+    const unsafeUpstream = structuredClone(manifest);
+    unsafeUpstream.families['friendsies-story-actions-v1'].upstreamRights.status = unsafeStatus;
+    assert.match(
+      validateRuntimeAnimationFamilyAuthorization(unsafeUpstream).errors.join('\n'),
+      /unknown or prohibited upstream sources cannot ship/,
+    );
+  }
+
+  for (const releaseBlockReason of [
+    'Record project owner approval for this animation clip.',
+    'Record exact-file bundled publication authorization before release.',
+  ]) {
+    const narrowedApproval = structuredClone(manifest);
+    Object.assign(narrowedApproval.families['friendsies-story-actions-v1'], {
+      status: 'project-use-recorded',
+      releaseBlocked: true,
+      releaseBlockCategory: 'qa',
+      releaseBlockReason,
+    });
+    assert.match(
+      validateRuntimeAnimationFamilyAuthorization(narrowedApproval).errors.join('\n'),
+      new RegExp(`cannot require item-level project-owner approval; it inherits ${ANIMATION_AUTHORIZATION_FAMILY_ID}`),
+    );
+  }
+
+  const narrowedFamilyRecord = structuredClone(manifest);
+  narrowedFamilyRecord.families['friendsies-animations'].licenseOrPermission =
+    'The project owner authorized these exact animation files for publication.';
+  assert.match(
+    validateRuntimeAnimationFamilyAuthorization(narrowedFamilyRecord).errors.join('\n'),
+    new RegExp(`friendsies-animations licenseOrPermission must inherit ${ANIMATION_AUTHORIZATION_FAMILY_ID}`),
+  );
+
+  const missingFallback = structuredClone(manifest);
+  delete missingFallback.families['friendsies-animations'].fallbackContract;
+  assert.match(
+    validateRuntimeAnimationFamilyAuthorization(missingFallback).errors.join('\n'),
+    /friendsies-animations must declare fallbackContract/,
+  );
+
+  const missingQa = structuredClone(manifest);
+  missingQa.families['friendsies-animations'].qaEvidence = [];
+  assert.match(
+    validateRuntimeAnimationFamilyAuthorization(missingQa).errors.join('\n'),
+    /friendsies-animations qaEvidence must be a non-empty array/,
+  );
+
+  const mislabeledAnimations = structuredClone(manifest);
+  for (const asset of mislabeledAnimations.assets) {
+    if (asset.kind === 'animation') asset.kind = 'model';
+  }
+  assert.match(
+    validateRuntimeAnimationFamilyAuthorization(mislabeledAnimations).errors.join('\n'),
+    /runtime animation asset .* kind must be animation/,
+  );
+
+  const qaBlockedButAuthorized = {
+    ...manifest.families['friendsies-story-actions-v1'],
+    releaseBlocked: true,
+    releaseBlockCategory: 'qa',
+    releaseBlockReason: 'Complete the recorded browser acceptance matrix.',
+  };
+  assert.deepEqual(
+    validateFamilyContract('friendsies-story-actions-v1', qaBlockedButAuthorized, { runtime: true }),
+    [],
+    'project authorization must remain recorded while a non-permission release gate is open',
+  );
+  const qaBlockedManifest = structuredClone(manifest);
+  qaBlockedManifest.families['friendsies-story-actions-v1'] = qaBlockedButAuthorized;
+  assert.deepEqual(
+    validateRuntimeAnimationFamilyAuthorization(qaBlockedManifest).errors,
+    [],
+    'a categorized QA blocker is valid and must not reopen owner authorization',
   );
 });
 

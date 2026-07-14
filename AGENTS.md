@@ -14,6 +14,32 @@
      wiki or QA guide for implementation constraints.
 - Treat `wiki/Plan-2.0.md` as current over older roadmap or feature promises.
 
+## Orchestrate non-trivial work
+
+- Before starting a non-trivial task, separate prerequisite-ordered work from
+  independent tracks. Delegate independent exploration, test or log analysis,
+  QA, and review concurrently when doing so materially improves speed or quality.
+- Give every delegated track a bounded deliverable, relevant source-of-truth
+  inputs, file or system ownership, and required evidence. Default delegated
+  work to read-only unless write scopes are explicitly disjoint.
+- Keep the lead agent responsible for scope, sequencing, shared contracts,
+  integration, and final verification. Do not let agents edit the same file or
+  seam concurrently; use an isolated worktree when independent write streams
+  genuinely justify it.
+- Keep causal gates serial: reproduce, state the invariant, add the fail-before
+  regression, fix, integrate, then run browser or release validation. Run safe
+  reconnaissance, provenance checks, subsystem inspection, and focused tests in
+  parallel around that chain.
+- Keep useful lead-agent work moving while delegated tracks run. Reconcile every
+  result against the current worktree, inspect the combined diff, and run the
+  relevant integrated gates; an isolated passing check is evidence, not proof of
+  the combined state.
+- Do not delegate tiny or tightly coupled tasks when coordination cost is likely
+  to exceed the work. For tasks expected to exceed ten minutes, tell the user
+  what is parallel, what must remain sequential, which gate controls completion,
+  and the rough time spent in discovery, implementation, integration, automated
+  checks, browser QA, and release work so future bottlenecks are measured.
+
 ## Protect the ThornVale identity
 
 - Build sincere comfort first. Introduce wrongness through one precise social,
@@ -72,9 +98,19 @@
   permission review per token, asset, trait, role, context, transform, delivery
   method, or catalog revision. Continue to verify exact sources, hashes, pins,
   origins, transforms, budgets, fallbacks, and QA as engineering integrity gates.
-  The separate `friendsies-animations` family keeps its own Mixamo provenance.
+  Animation provenance remains separate from canonical fRiENDSiES provenance.
+- Treat all current and future animation sources and derivatives the project
+  owner controls or may lawfully use as covered by the standing Thornvale
+  animation authorization in ADR 0005 for any integrated Thornvale use. Do not
+  reopen owner-permission review per file, clip, pack, rig, role, context,
+  transform, delivery method, or revision. Continue to verify every upstream
+  license or permission, exact source, hash, transform, budget, fallback, and QA;
+  unknown or incompatible upstream rights remain release blockers. Raw-source
+  redistribution, standalone animation packs, sublicensing, and outside-
+  Thornvale use remain excluded.
 - Run `npm run assets:audit` after asset changes. For a release candidate, build
-  and run `npm run assets:release`; do not bypass an expected permission blocker.
+  and run `npm run assets:release`; do not bypass an expected upstream-rights,
+  provenance, integrity, or performance blocker.
 - Preserve procedural or previous-version fallbacks for experimental asset pilots.
   Compare baseline and pilot behavior before making a pilot the default.
 

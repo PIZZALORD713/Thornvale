@@ -81,26 +81,67 @@
       "releaseBlocked": false
     },
     "friendsies-animations": {
+      "assetKind": "animation",
       "creator": "PIZZALORD713 / fRiENDSiES",
       "status": "project-release-authorized",
-      "licenseOrPermission": "The source repository and Thornvale project owner authorized these exact animation-only runtime derivatives for publication in Thornvale builds; Adobe permits royalty-free video-game use of Mixamo-sourced motion",
+      "licenseOrPermission": "Inherits the standing thornvale-animation-project authorization for integrated Thornvale publication; Adobe permits royalty-free video-game use of Mixamo-sourced motion and the source repository provenance is recorded",
       "sourcePage": "https://github.com/PIZZALORD713/animation_collection2/tree/f8286ef2c5421d54115afdafdac33f206533ac25",
       "sourceRetrievedOn": "2026-07-12",
       "provenance": "public/animations/PROVENANCE.md",
-      "runtimeDistributionScope": "Bundled distribution as part of Thornvale game builds; no standalone asset-pack or raw-source redistribution",
+      "authorizationFamily": "thornvale-animation-project",
+      "upstreamRights": {
+        "status": "verified-for-game-use",
+        "evidence": "Adobe Mixamo FAQ permits royalty-free use of Mixamo animations in video games; the pinned source repository and derivative chain are recorded in provenance"
+      },
+      "runtimeDistributionScope": "Integrated bundled distribution inside Thornvale game builds under thornvale-animation-project; raw Mixamo sources, standalone motion packs, sublicensing, and outside-project redistribution remain excluded",
+      "fallbackContract": "Each optional animation file may fail independently; the bundled body idle and code-native movement remain available without these clips",
+      "qaEvidence": [
+        "tests/friendsies-animation-assets.test.js",
+        "tests/friendsies-animation.test.js"
+      ],
       "rawSourceRedistribution": false,
       "releaseBlocked": false
     },
     "friendsies-story-actions-v1": {
+      "assetKind": "animation",
       "creator": "Adobe Mixamo / fRiENDSiES / Thornvale",
-      "status": "project-use-recorded",
-      "licenseOrPermission": "The project owner requested these six Mixamo-derived clips as an integrated Thornvale proof on 2026-07-13; exact-file bundled-release authorization for the new runtime derivatives remains to be recorded",
+      "status": "project-release-authorized",
+      "licenseOrPermission": "Inherits the standing thornvale-animation-project authorization for integrated Thornvale publication; Adobe permits royalty-free video-game use of Mixamo-sourced motion",
       "sourcePage": "https://www.mixamo.com/",
       "sourceRetrievedOn": "2026-07-12",
       "provenance": "public/animations/story-actions-v1/PROVENANCE.md",
+      "authorizationFamily": "thornvale-animation-project",
+      "upstreamRights": {
+        "status": "verified-for-game-use",
+        "evidence": "Adobe Mixamo FAQ permits royalty-free use of Mixamo animations in video games; signed export identifiers, source archive hashes, and derivative transforms are recorded in provenance"
+      },
+      "runtimeDistributionScope": "Integrated bundled distribution inside Thornvale game builds under thornvale-animation-project; raw Mixamo sources, standalone motion packs, sublicensing, and outside-project redistribution remain excluded",
+      "fallbackContract": "The catalog and every clip are optional; a missing catalog or file preserves established locomotion, authored idle or joy roles, code-native Day One presentation, and authoritative gameplay timing",
+      "qaEvidence": [
+        "tests/story-actions-assets.test.js",
+        "docs/qa/2026-07-13-story-actions-v1.md"
+      ],
       "rawSourceRedistribution": false,
-      "releaseBlocked": true,
-      "releaseBlockReason": "The existing friendsies-animations release grant covers only the three earlier runtime GLBs; record exact-file bundled Thornvale publication authorization for these six derivatives before release"
+      "releaseBlocked": false
+    },
+    "thornvale-animation-project": {
+      "assetKind": "animation",
+      "creator": "Thornvale project owner",
+      "status": "project-release-authorized",
+      "licenseOrPermission": "On 2026-07-14, the Thornvale project owner granted standing publication authorization for all present and future animation assets and derivatives the owner controls or may lawfully use as integrated parts of Thornvale; authorization applies by asset kind and project use rather than individual item",
+      "sourcePage": null,
+      "sourceRetrievedOn": null,
+      "provenance": "docs/decisions/0005-thornvale-animation-project-wide-authorization.md",
+      "standingAuthorization": {
+        "assetKind": "animation",
+        "coverage": "present-and-future",
+        "integratedProject": "Thornvale",
+        "itemApprovalRequired": false,
+        "upstreamRightsRequired": true
+      },
+      "runtimeDistributionScope": "Animation assets and derivatives with verified upstream rights may be inspected, transformed, bundled, hosted, and published for integrated Thornvale game, documentation, testing, capture, streaming, and promotional use; raw third-party sources, standalone motion packs, sublicensing, and outside-project reuse remain excluded",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
     },
     "friendsies-project": {
       "creator": "fRiENDSiES",

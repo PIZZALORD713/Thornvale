@@ -164,7 +164,7 @@ The default build now plays the complete first-run Core Hook test, **A Courtesy 
 
 Progress is saved locally and restores the story phase, time, steward position, route, choice, and ending. Use `?story=reset` (or `?reset=1`) for a clean first run. Use `?story=off` only for the presentation sandbox.
 
-The optimized runtime clips are animation-only derivatives of [`PIZZALORD713/animation_collection2`](https://github.com/PIZZALORD713/animation_collection2). These exact derivatives are authorized for publication as part of Thornvale builds; their source files and standalone animation assets are not generally redistributable. The first collection was audited but is not shipped because its files are outside that exact authorization. See [`public/animations/PROVENANCE.md`](public/animations/PROVENANCE.md). Default player [`#6602`](public/friendsies/6602/PROVENANCE.md), Steward [`#8914`](public/friendsies/8914/PROVENANCE.md), the `#0001` Flower White trait, and the Draco decoder are bundled for a dependable first run.
+The optimized runtime clips are animation-only derivatives of [`PIZZALORD713/animation_collection2`](https://github.com/PIZZALORD713/animation_collection2). ADR 0005 grants standing project-owner authorization for all current and future animation sources and derivatives the owner controls or may lawfully use in integrated Thornvale work, without a new approval per file, clip, pack, role, transform, or revision. It does not replace upstream terms or permit raw-source, standalone-pack, sublicense, or outside-Thornvale redistribution. The first collection remains unshipped until its exact source, upstream terms, transforms, budgets, fallbacks, and QA complete intake; owner reapproval is not the gate. See [`public/animations/PROVENANCE.md`](public/animations/PROVENANCE.md) and [ADR 0005](docs/decisions/0005-thornvale-animation-project-wide-authorization.md). Default player [`#6602`](public/friendsies/6602/PROVENANCE.md), Steward [`#8914`](public/friendsies/8914/PROVENANCE.md), the `#0001` Flower White trait, and the Draco decoder are bundled for a dependable first run.
 
 ## What is Thornvale?
 **Thornvale** is a warm, cottage-core valley town that feels like a hug… until you notice the hug has a grip strength rating.
@@ -260,9 +260,11 @@ npm run check
 asset audit. `npm run assets:release` applies the stricter release gate. The
 canonical fRiENDSiES collection has one standing authorization for integrated
 Thornvale use; catalog pins, origins, hashes, transforms, budgets, fallbacks, and
-QA remain engineering release gates. The animation derivatives remain a
-separate `friendsies-animations` family because their Mixamo source chain has
-its own provenance contract.
+QA remain engineering release gates. Covered animation sources and derivatives
+inherit the separate standing authorization in ADR 0005, while their Mixamo,
+repository, and other upstream source chains keep independent provenance and
+license gates. Repeated project-owner approval is not required; unknown or
+incompatible upstream rights still block release.
 
 ### Build for Production
 ```bash

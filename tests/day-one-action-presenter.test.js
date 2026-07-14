@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { DAY_ONE_V01 } from '../src/content/day-one-v01.js';
 import { STORY_ACTIONS_V1 } from '../src/content/story-actions-v1.js';
 import { DayOneActionPresenter } from '../src/visuals/DayOneActionPresenter.js';
 
@@ -59,4 +60,39 @@ test('reduced motion preserves the action timeline without playing a skeletal cl
   presenter.handle(event('start'));
   presenter.handle(event('cancel'));
   assert.equal(plays, 0);
+});
+
+test('an action without a skeletal clip streams its full timeline to the code-native fallback', () => {
+  const action = DAY_ONE_V01.actions.chopWood;
+  const fallbackEvents = [];
+  const commitEvents = [];
+  const root = { dataset: {} };
+  let plays = 0;
+  const presenter = new DayOneActionPresenter({
+    getAnimator: () => ({ playOneShot: () => { plays += 1; return false; } }),
+    documentRoot: root,
+    onFallbackCue: (fallbackEvent) => fallbackEvents.push(fallbackEvent.type),
+    onCommitCue: (commitEvent) => commitEvents.push(commitEvent.type),
+  });
+  const context = { targetPosition: { x: 2, y: 0, z: 4 } };
+  const makeEvent = (type, progress, committed = false) => ({
+    type,
+    id: action.id,
+    action,
+    duration: action.duration,
+    commitTime: action.commitTime,
+    progress,
+    committed,
+    context,
+  });
+
+  presenter.handle(makeEvent('start', 0));
+  presenter.handle(makeEvent('progress', 0.5));
+  presenter.handle(makeEvent('commit', action.commitTime / action.duration, true));
+  presenter.handle(makeEvent('complete', 1, true));
+
+  assert.equal(plays, 0);
+  assert.deepEqual(fallbackEvents, ['start', 'progress', 'commit', 'complete']);
+  assert.deepEqual(commitEvents, ['commit']);
+  assert.equal(root.dataset.dayOneAction, undefined);
 });

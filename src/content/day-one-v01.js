@@ -1,4 +1,4 @@
-import { STORY_ACTIONS_V1 } from './story-actions-v1.js';
+import { DAY_ONE_ACTIONS_V01 } from './day-one-actions-v01.js';
 
 function deepFreeze(value) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
@@ -26,7 +26,7 @@ export const DAY_ONE_V01 = deepFreeze({
     ledgerSigned: 'community-ledger-signed',
   },
 
-  actions: STORY_ACTIONS_V1.dayOne,
+  actions: DAY_ONE_ACTIONS_V01,
 
   anchors: {
     camp: { x: -24.2, y: 0, z: 6.25 },

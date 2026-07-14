@@ -35,9 +35,10 @@ What becomes easier, harder, or newly required?
 ## Index
 
 - [`0001-project-layout-and-asset-boundaries.md`](0001-project-layout-and-asset-boundaries.md) — Accepted
-- [`0002-project-scoped-asset-release-authorization.md`](0002-project-scoped-asset-release-authorization.md) — Accepted; narrow fRiENDSiES scope superseded by 0004
+- [`0002-project-scoped-asset-release-authorization.md`](0002-project-scoped-asset-release-authorization.md) — Accepted; narrow fRiENDSiES scope superseded by 0004 and exact-file animation approval superseded by 0005
 - [`0003-external-runtime-asset-dependencies.md`](0003-external-runtime-asset-dependencies.md) — Accepted; fRiENDSiES permission scope superseded by 0004
 - [`0004-friendsies-project-wide-authorization.md`](0004-friendsies-project-wide-authorization.md) — Accepted
+- [`0005-thornvale-animation-project-wide-authorization.md`](0005-thornvale-animation-project-wide-authorization.md) — Accepted
 
 The wiki remains the home for product and design decisions. Its
 [`Tech Decisions`](../../wiki/Tech-Decisions-ADR-Log.md) page can summarize

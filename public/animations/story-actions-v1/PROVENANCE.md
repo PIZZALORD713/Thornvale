@@ -3,11 +3,13 @@
 ## Permission status
 
 - Manifest family ID: `friendsies-story-actions-v1`
+- Authorization family: `thornvale-animation-project`
 - Creator: Adobe Mixamo motion on the fRiENDSiES `8448` rig; converted by the Thornvale/fRiENEMiES pilot pipeline
-- Status: `project-use-recorded`
-- Authorization: integrated Thornvale pilot requested by the project owner on 2026-07-13; exact bundled-release authorization for these six new derivatives remains to be recorded
-- Release blocked: yes
-- Block reason: current `friendsies-animations` publication permission names only the three earlier derivatives
+- Status: `project-release-authorized`
+- Project authorization: inherits the standing 2026-07-14 authorization for all present and future animation assets and derivatives the owner controls or may lawfully use as integrated parts of Thornvale
+- Upstream rights: verified for game use through Adobe's Mixamo FAQ; signed export identifiers, source archive hashes, and the derivative chain are recorded below and in `SOURCE.md`
+- Runtime distribution scope: integrated bundled distribution inside Thornvale game builds; raw Mixamo sources, standalone motion packs, sublicensing, and outside-project redistribution remain excluded
+- Release blocked: no
 - Raw-source redistribution: prohibited by this record
 - Standalone derived-motion redistribution: not granted
 
@@ -55,14 +57,19 @@
 - `tests/story-actions-assets.test.js` parses every GLB with Three.js, verifies the canonical 20-by-TRS target set, 30 Hz sample grid, finite values, constant Root tracks, and absence of geometry, materials, textures, skins, cameras, and lights.
 - Frame-rate, slow-frame, cancellation, fallback, movement-lock, cue-time revalidation, and exact commit behavior are covered by focused Node tests.
 - `npm run animations:verify` passed for six clips; the focused story-action,
-  action-clock, presenter, Core Hook, and Day One suites passed 29/29 on
-  2026-07-13. The development asset audit passed with 27 managed runtime files,
-  4,482,517 total runtime bytes, and this 270,232-byte family reported as the
-  only release blocker in that run.
-- The strict release-mode audit exits nonzero for
-  `friendsies-story-actions-v1` as designed until the exact bundled-release
-  grant is recorded.
-- Story-actions-specific browser observations have not yet been recorded. The
-  Lumen gesture reads, Day One crouch/lean, ground contact, 2.30/2.35 second
-  commit cues, reduced-motion projection, and failed-catalog/file fallbacks all
-  remain pending in `docs/qa/2026-07-13-story-actions-v1.md`.
+  action-clock, presenter, Core Hook, and Day One suites passed 33/33, and the
+  final repository gate passed 212/212 tests on 2026-07-14. The development and
+  strict asset audits pass with 27 managed runtime files, 4,482,517 total
+  runtime bytes, and this 270,232-byte family release-authorized and unblocked.
+- The standing animation authorization and separate upstream-rights gate were
+  encoded on 2026-07-14; strict release-mode audit evidence is retained in the
+  QA record.
+- Desktop Chromium observations record the Lumen welcome gesture, grounded
+  plant and water reads, exact 2.30/2.35 second contact cues, reduced-motion
+  projection, pre/post-contact save restoration, missing-catalog fallback, one-
+  file failure isolation, and an actual-interaction Day One route through the
+  Community Ledger objective. The remaining walked route, later Lumen gesture
+  silhouettes, reference-device profile, and fresh-player observations are
+  Milestone 1 playfeel evidence, not animation publication or permission
+  blockers. Exact observations remain in
+  `docs/qa/2026-07-13-story-actions-v1.md`.

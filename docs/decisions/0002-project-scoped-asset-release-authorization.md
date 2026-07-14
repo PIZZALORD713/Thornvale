@@ -5,8 +5,11 @@
 
 > The narrow exact-file and exact-use fRiENDSiES scope is superseded by
 > [ADR 0004](0004-friendsies-project-wide-authorization.md). This record is
-> retained as history; its generic release-status model and independent
-> `friendsies-animations` contract remain active.
+> retained as history; its exact-file animation approval model is superseded by
+> [ADR 0005](0005-thornvale-animation-project-wide-authorization.md). Its
+> animation source/provenance requirements remain active. The 2026-07-14
+> authorization/readiness addendum below supersedes the original requirement
+> that every authorized family must also be technically release-ready.
 
 ## Context
 
@@ -19,8 +22,13 @@ explicit owner authorization for publication in Thornvale.
 ## Decision
 
 - Add `project-release-authorized` as a hard-coded release-approved status.
-- Require an exact runtime-distribution scope, `releaseBlocked: false`, and
-  `rawSourceRedistribution: false` for every family using that status.
+- Require an exact runtime-distribution scope, an explicit `releaseBlocked`
+  value, and `rawSourceRedistribution: false` for every family using that
+  status.
+- Treat `project-release-authorized` as the owner-publication scope, independent
+  from technical readiness. An authorized family may remain
+  `releaseBlocked: true` for a categorized upstream-rights, provenance,
+  transform, fallback, budget, or QA reason without reopening owner permission.
 - Limit the grant to the exact manifested runtime files and Thornvale game
   builds. It does not authorize source-file, standalone asset-pack, or general
   outside-project redistribution.
@@ -55,3 +63,19 @@ runtime scope. General reuse remains intentionally narrower than release inside
 Thornvale. `friendsies-remote-player-streaming` remains a separate family whose
 authorization comes from the explicit bounded grant above, not from the local-
 file grants.
+
+On 2026-07-14, the project owner instructed the project to ship PR #13. That
+release instruction authorizes the six exact manifested animation-only files
+in `friendsies-story-actions-v1` for integrated bundled publication inside
+Thornvale. It does not authorize redistribution of the raw Mixamo ZIPs or FBXs,
+a standalone derived-motion pack, sublicensing, or use outside Thornvale.
+Later that day, ADR 0005 replaced this exact-file approval model with a standing
+authorization for all current and future animation sources and derivatives the
+owner controls or may lawfully use inside Thornvale. This paragraph remains as
+the historical clearance for the first Story Actions release.
+
+The same 2026-07-14 revision separated authorization from technical readiness.
+The original `releaseBlocked: false` requirement conflated those two decisions;
+the current audit permits an authorized family to carry a specific non-
+permission blocker until its engineering or QA gate is complete. A covered
+family may not use repeated project-owner approval as that blocker.

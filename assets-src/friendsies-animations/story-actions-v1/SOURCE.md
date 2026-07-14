@@ -3,19 +3,20 @@
 ## Ownership and permission
 
 - Manifest family ID: `friendsies-story-actions-v1`
+- Authorization family: `thornvale-animation-project`
 - Creator or owning project: Adobe Mixamo motion exported for the fRiENDSiES `8448` rig; Thornvale/fRiENEMiES conversion tooling
-- Intended status: `project-use-recorded`
-- Authorization family or license: the project owner requested this integrated Thornvale pilot on 2026-07-13; [Adobe's Mixamo FAQ](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html) permits royalty-free use of Mixamo characters and animations in video games
+- Intended status: `project-release-authorized`
+- Authorization family or license: inherits the Thornvale project owner's standing 2026-07-14 authorization for all present and future animation assets and derivatives the owner controls or may lawfully use as integrated parts of Thornvale; [Adobe's Mixamo FAQ](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html) permits royalty-free use of Mixamo characters and animations in video games
 - Source item page: <https://www.mixamo.com/>
 - Retrieved: 2026-07-12
 - Acquisition evidence: Chrome download metadata records signed Mixamo S3 export `export_f999de8b-0212-4186-ace4-c6dba43f8a64` for `Gestures Pack Basic.zip` and `export_1cdfdecf-9b05-49ff-844b-6aa3778995d7` for `Farming Pack.zip`
 - Raw-source redistribution allowed: false; ZIPs and FBXs remain in the owner's external archive and are never copied into `public/`
-- Release blocker: the existing exact-file Thornvale animation authorization covers the three earlier runtime GLBs, not these six new derivatives; record an explicit exact-file bundled-release grant before release
+- Release blocker: none; the standing project authorization removes item-by-item owner approval, while upstream source, license, hash, transform, fallback, budget, and QA gates remain mandatory
 
-This record supports an integrated development pilot. It does not claim that
-the raw Mixamo exports or derived GLBs form a standalone open asset pack. The
-converter, rig profile, catalog format, hashes, and tests are separable from
-binary distribution.
+This record supports integrated development and bundled publication inside
+Thornvale. It does not claim that the raw Mixamo exports or derived GLBs form a
+standalone open asset pack. The converter, rig profile, catalog format, hashes,
+and tests are separable from binary distribution.
 
 ## Canonical inputs
 

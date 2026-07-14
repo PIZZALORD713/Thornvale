@@ -269,6 +269,16 @@ async function init() {
   dayOneActionPresenter = new DayOneActionPresenter({
     getAnimator: () => playerFriendsiesAnimator,
     reducedMotion,
+    onFallbackCue: (event) => dayOneWorld?.handleAction?.(event),
+    onCommitCue: (event) => {
+      if (event.commitResult?.applied === false) return;
+      const target = event.context?.targetPosition;
+      if (!target) return;
+      celebrateInteraction(
+        target,
+        event.action?.feedbackKind || event.context?.feedbackKind || 'kindness',
+      );
+    },
   });
   dayOneActionUnsubscribe = dayOneActionController.subscribe((event) => {
     dayOneActionPresenter?.handle?.(event);
@@ -462,6 +472,7 @@ function registerStoryInteractions(interactables) {
         : null;
       const result = await director?.interact(interactable.id, {
         targetPosition: interactable.position,
+        feedbackKind: dayOneFeedbackKind(interactable.id),
       });
       if (isDayOneInteraction) {
         const dayOneAfter = gameSession?.dayOne;

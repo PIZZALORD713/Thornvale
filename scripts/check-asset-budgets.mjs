@@ -20,6 +20,27 @@ const PROJECT_RELEASE_AUTHORIZED_STATUS = 'project-release-authorized';
 export const FRIENDSIES_PROJECT_FAMILY_ID = 'friendsies-project';
 export const FRIENDSIES_REMOTE_PLAYER_DEPENDENCY_ID = 'friendsies-remote-player-streaming';
 export const FRIENDSIES_CANONICAL_ASSET_URL_PREFIX = 'https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/';
+export const ANIMATION_AUTHORIZATION_FAMILY_ID = 'thornvale-animation-project';
+export const ANIMATION_AUTHORIZATION_PROVENANCE_PATH = 'docs/decisions/0005-thornvale-animation-project-wide-authorization.md';
+export const ANIMATION_UPSTREAM_RIGHTS_STATUSES = Object.freeze([
+  'project-authored',
+  'verified-for-game-use',
+]);
+const ANIMATION_UPSTREAM_RIGHTS_STATUS_SET = new Set(ANIMATION_UPSTREAM_RIGHTS_STATUSES);
+const ANIMATION_RELEASE_BLOCK_CATEGORIES = new Set([
+  'provenance',
+  'transform',
+  'fallback',
+  'budget',
+  'qa',
+]);
+const ITEM_OWNER_REAPPROVAL_PATTERN = /(?:owner|project)[^.!\n]*(?:approv|authoriz|permission|grant)[^.!\n]*(?:item|clip|file|animation)|(?:item|clip|file|animation)[^.!\n]*(?:approv|authoriz|permission|grant)[^.!\n]*(?:owner|project)/i;
+const NARROWED_ANIMATION_APPROVAL_PATTERN = /(?:exact[- ]file|item[- ]level|per[- ](?:item|clip|file|animation))[^.!\n]*(?:approv|authoriz|permission|grant)|(?:approv|authoriz|permission|grant)[^.!\n]*(?:exact[- ]file|item[- ]level|per[- ](?:item|clip|file|animation))/i;
+
+function claimsItemLevelAnimationAuthorization(value) {
+  return ITEM_OWNER_REAPPROVAL_PATTERN.test(value ?? '')
+    || NARROWED_ANIMATION_APPROVAL_PATTERN.test(value ?? '');
+}
 
 function formatBytes(bytes) {
   return `${bytes.toLocaleString('en-US')} B`;
@@ -85,7 +106,7 @@ function checkLimit(errors, label, actual, maximum) {
   }
 }
 
-function validateFamilyContract(familyId, family, { runtime = false } = {}) {
+export function validateFamilyContract(familyId, family, { runtime = false } = {}) {
   const errors = [];
   if (!family) {
     errors.push(`unknown family: ${familyId}`);
@@ -118,9 +139,6 @@ function validateFamilyContract(familyId, family, { runtime = false } = {}) {
     }
     if (family.rawSourceRedistribution !== false) {
       errors.push(`project-release-authorized family ${familyId} must keep rawSourceRedistribution false`);
-    }
-    if (family.releaseBlocked !== false) {
-      errors.push(`project-release-authorized family ${familyId} cannot remain release blocked`);
     }
   }
   if (runtime && family.status !== 'project-authored') {
@@ -170,6 +188,151 @@ export function validateFriendsiesProjectAssetAuthorization(asset) {
     errors.push(`${label} claims ${FRIENDSIES_PROJECT_FAMILY_ID} without a canonical fRiENDSiES source URL`);
   }
   return errors;
+}
+
+/**
+ * Every runtime animation family inherits one project-owner authorization.
+ * Source rights remain family-specific so the standing project grant cannot
+ * admit an unknown or prohibited upstream source.
+ */
+export function validateRuntimeAnimationFamilyAuthorization(manifest) {
+  const errors = [];
+  const families = manifest?.families ?? {};
+  const assets = Array.isArray(manifest?.assets) ? manifest.assets : [];
+  const runtimeAssetsByFamily = new Map();
+  for (const asset of assets) {
+    if (asset?.runtime !== true || typeof asset?.family !== 'string' || !asset.family) continue;
+    const familyAssets = runtimeAssetsByFamily.get(asset.family) ?? [];
+    familyAssets.push(asset);
+    runtimeAssetsByFamily.set(asset.family, familyAssets);
+  }
+  const animationFamilyIds = [...new Set([...runtimeAssetsByFamily.entries()]
+    .filter(([familyId, familyAssets]) => (
+      families[familyId]?.assetKind === 'animation'
+      || families[familyId]?.authorizationFamily === ANIMATION_AUTHORIZATION_FAMILY_ID
+      || familyAssets.some((asset) => asset.kind === 'animation')
+      || familyAssets.some((asset) => asset.path?.startsWith('public/animations/'))
+    ))
+    .map(([familyId]) => familyId))]
+    .sort();
+  const qaEvidencePaths = [];
+
+  const authorizationFamily = families[ANIMATION_AUTHORIZATION_FAMILY_ID];
+  errors.push(...validateFamilyContract(
+    ANIMATION_AUTHORIZATION_FAMILY_ID,
+    authorizationFamily,
+  ));
+
+  if (authorizationFamily) {
+    if (authorizationFamily.status !== PROJECT_RELEASE_AUTHORIZED_STATUS) {
+      errors.push(`animation authorization family ${ANIMATION_AUTHORIZATION_FAMILY_ID} must use status ${PROJECT_RELEASE_AUTHORIZED_STATUS}`);
+    }
+    if (authorizationFamily.releaseBlocked !== false) {
+      errors.push(`animation authorization family ${ANIMATION_AUTHORIZATION_FAMILY_ID} cannot be release blocked`);
+    }
+    if (authorizationFamily.rawSourceRedistribution !== false) {
+      errors.push(`animation authorization family ${ANIMATION_AUTHORIZATION_FAMILY_ID} must keep rawSourceRedistribution false`);
+    }
+    if (authorizationFamily.assetKind !== 'animation') {
+      errors.push(`animation authorization family ${ANIMATION_AUTHORIZATION_FAMILY_ID} assetKind must be animation`);
+    }
+    if (authorizationFamily.provenance !== ANIMATION_AUTHORIZATION_PROVENANCE_PATH) {
+      errors.push(`animation authorization family ${ANIMATION_AUTHORIZATION_FAMILY_ID} provenance must be ${ANIMATION_AUTHORIZATION_PROVENANCE_PATH}`);
+    }
+
+    const standingAuthorization = authorizationFamily.standingAuthorization;
+    if (!standingAuthorization || typeof standingAuthorization !== 'object' || Array.isArray(standingAuthorization)) {
+      errors.push(`animation authorization family ${ANIMATION_AUTHORIZATION_FAMILY_ID} must declare standingAuthorization`);
+    } else {
+      const expectedStandingAuthorization = {
+        assetKind: 'animation',
+        coverage: 'present-and-future',
+        integratedProject: 'Thornvale',
+        itemApprovalRequired: false,
+        upstreamRightsRequired: true,
+      };
+      for (const [field, expectedValue] of Object.entries(expectedStandingAuthorization)) {
+        if (standingAuthorization[field] !== expectedValue) {
+          errors.push(`animation authorization family ${ANIMATION_AUTHORIZATION_FAMILY_ID} standingAuthorization.${field} must be ${JSON.stringify(expectedValue)}`);
+        }
+      }
+    }
+  }
+
+  for (const familyId of animationFamilyIds) {
+    const family = families[familyId];
+    if (!family) continue;
+
+    if (familyId === ANIMATION_AUTHORIZATION_FAMILY_ID) {
+      errors.push(`runtime animation assets must use a source-specific family that inherits ${ANIMATION_AUTHORIZATION_FAMILY_ID}`);
+      continue;
+    }
+    if (family.assetKind !== 'animation') {
+      errors.push(`runtime animation family ${familyId} assetKind must be animation`);
+    }
+    for (const asset of runtimeAssetsByFamily.get(familyId) ?? []) {
+      if (asset.kind !== 'animation') {
+        errors.push(`runtime animation asset ${asset.id || asset.path || '<unknown>'} in family ${familyId} kind must be animation`);
+      }
+    }
+    if (family.authorizationFamily !== ANIMATION_AUTHORIZATION_FAMILY_ID) {
+      errors.push(`runtime animation family ${familyId} must inherit standing authorization from family ${ANIMATION_AUTHORIZATION_FAMILY_ID}`);
+    }
+    for (const field of ['licenseOrPermission', 'runtimeDistributionScope']) {
+      if (claimsItemLevelAnimationAuthorization(family[field])) {
+        errors.push(`runtime animation family ${familyId} ${field} must inherit ${ANIMATION_AUTHORIZATION_FAMILY_ID} without item-level project-owner authorization language`);
+      }
+    }
+
+    const upstreamRights = family.upstreamRights;
+    if (!upstreamRights || typeof upstreamRights !== 'object' || Array.isArray(upstreamRights)) {
+      errors.push(`runtime animation family ${familyId} must declare upstreamRights`);
+    } else {
+      if (!ANIMATION_UPSTREAM_RIGHTS_STATUS_SET.has(upstreamRights.status)) {
+        errors.push(`runtime animation family ${familyId} upstreamRights.status must be one of ${ANIMATION_UPSTREAM_RIGHTS_STATUSES.join(', ')}; unknown or prohibited upstream sources cannot ship`);
+      }
+      if (typeof upstreamRights.evidence !== 'string' || upstreamRights.evidence.length === 0) {
+        errors.push(`runtime animation family ${familyId} must declare upstreamRights.evidence`);
+      }
+    }
+
+    if (typeof family.fallbackContract !== 'string' || family.fallbackContract.length === 0) {
+      errors.push(`runtime animation family ${familyId} must declare fallbackContract`);
+    }
+    if (!Array.isArray(family.qaEvidence) || family.qaEvidence.length === 0) {
+      errors.push(`runtime animation family ${familyId} qaEvidence must be a non-empty array`);
+    } else {
+      const seenPaths = new Set();
+      for (const evidencePath of family.qaEvidence) {
+        if (typeof evidencePath !== 'string' || evidencePath.length === 0) {
+          errors.push(`runtime animation family ${familyId} qaEvidence entries must be non-empty repository-relative paths`);
+          continue;
+        }
+        if (seenPaths.has(evidencePath)) {
+          errors.push(`runtime animation family ${familyId} has duplicate qaEvidence path: ${evidencePath}`);
+        }
+        seenPaths.add(evidencePath);
+        qaEvidencePaths.push({ familyId, path: evidencePath });
+      }
+    }
+
+    if (family.releaseBlocked === true) {
+      if (!ANIMATION_RELEASE_BLOCK_CATEGORIES.has(family.releaseBlockCategory)) {
+        errors.push(`release-blocked runtime animation family ${familyId} must declare releaseBlockCategory as provenance, transform, fallback, budget, or qa`);
+      }
+      if (claimsItemLevelAnimationAuthorization(family.releaseBlockReason)) {
+        errors.push(`runtime animation family ${familyId} cannot require item-level project-owner approval; it inherits ${ANIMATION_AUTHORIZATION_FAMILY_ID}`);
+      }
+    } else if (Object.hasOwn(family, 'releaseBlockCategory')) {
+      errors.push(`unblocked runtime animation family ${familyId} cannot declare releaseBlockCategory`);
+    }
+  }
+
+  return {
+    animationFamilyIds,
+    errors,
+    qaEvidencePaths,
+  };
 }
 
 /**
@@ -359,6 +522,29 @@ export async function runAssetAudit({
   errors.push(...externalValidation.errors);
   for (const familyId of externalValidation.releaseBlockedFamilyIds) {
     releaseBlockedFamilyIds.add(familyId);
+  }
+
+  const animationValidation = validateRuntimeAnimationFamilyAuthorization(manifest);
+  errors.push(...animationValidation.errors);
+  const animationEvidencePaths = [
+    {
+      label: `animation authorization family ${ANIMATION_AUTHORIZATION_FAMILY_ID} provenance`,
+      path: families[ANIMATION_AUTHORIZATION_FAMILY_ID]?.provenance,
+    },
+    ...animationValidation.qaEvidencePaths.map((entry) => ({
+      label: `runtime animation family ${entry.familyId} QA evidence`,
+      path: entry.path,
+    })),
+  ];
+  for (const evidence of animationEvidencePaths) {
+    const evidencePath = resolveRepoPath(absoluteRoot, evidence.path, errors, evidence.label);
+    if (!evidencePath) continue;
+    try {
+      const evidenceStat = await stat(evidencePath);
+      if (!evidenceStat.isFile()) errors.push(`${evidence.label} is not a file: ${evidence.path}`);
+    } catch {
+      errors.push(`${evidence.label} is missing: ${evidence.path}`);
+    }
   }
 
   const checkedExternalProvenance = new Set();
