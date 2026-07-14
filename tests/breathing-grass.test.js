@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { Color, Group, InstancedMesh } from 'three';
+import {
+  Color,
+  Group,
+  InstancedMesh,
+  Matrix4,
+} from 'three';
 import { TOWN_LAYOUT } from '../src/config/town.js';
 import { ASSET_VARIANTS } from '../src/config/assets.js';
 import { createGroundDressing } from '../src/visuals/CozyTownKit.js';
@@ -119,6 +124,13 @@ test('the meadow mask protects paths, plaza, cottages, pond, and interaction lan
     for (const point of path.points) {
       assert.equal(isGrassPlacementAllowed(point[0], point[1]), false, path.id);
     }
+  }
+  for (const exclusion of TOWN_LAYOUT.grassExclusions) {
+    assert.equal(
+      isGrassPlacementAllowed(exclusion.x, exclusion.z),
+      false,
+      exclusion.id,
+    );
   }
   for (const [routeId, points] of Object.entries(TOWN_LAYOUT.storyRoutes)) {
     for (const point of points) {
@@ -284,4 +296,13 @@ test('asset rollback restores the bounded v0.3 grass tufts', () => {
   assert.ok(legacyTufts instanceof InstancedMesh);
   assert.equal(legacyTufts.count, 64);
   assert.equal(animator.animations.length, 0);
+  const matrix = new Matrix4();
+  for (let index = 0; index < legacyTufts.count; index += 1) {
+    legacyTufts.getMatrixAt(index, matrix);
+    assert.equal(
+      isGrassPlacementAllowed(matrix.elements[12], matrix.elements[14], TOWN_LAYOUT),
+      true,
+      `baseline tuft ${index} should respect the shared meadow mask`,
+    );
+  }
 });

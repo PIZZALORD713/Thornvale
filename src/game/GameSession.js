@@ -1,4 +1,6 @@
-export const GAME_SESSION_VERSION = 2;
+import { DAY_ONE_V01 } from '../content/day-one-v01.js';
+
+export const GAME_SESSION_VERSION = 3;
 export const DEFAULT_GAME_SESSION_STORAGE_KEY = 'thornvale.core-hook-v03';
 export const MAX_PLAYER_NAME_LENGTH = 40;
 
@@ -32,6 +34,12 @@ function clampNeighborliness(value) {
   return Math.min(100, Math.max(0, Math.round(numeric)));
 }
 
+function clampInteger(value, fallback, minimum = 0, maximum = Number.MAX_SAFE_INTEGER) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(maximum, Math.max(minimum, Math.round(numeric)));
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -39,6 +47,184 @@ function clone(value) {
 function uniqueStrings(value) {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.filter((item) => typeof item === 'string' && item.length > 0))];
+}
+
+function isPlainObject(value) {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function pushUnique(list, value) {
+  if (!list.includes(value)) list.push(value);
+}
+
+export function createDefaultDayOneState() {
+  const tuning = DAY_ONE_V01.tuning;
+  return {
+    nourishment: tuning.meters.startingNourishment,
+    energy: tuning.meters.startingEnergy,
+    coins: tuning.startingCoins,
+    doctorDebt: 0,
+    inventory: {
+      ...tuning.startingInventory,
+    },
+    activity: {
+      woodGathered: 0,
+      fishCaught: 0,
+      mealsCooked: 0,
+      mealsEaten: 0,
+      seedsPlanted: 0,
+    },
+    garden: {
+      planted: false,
+      watered: false,
+    },
+    camp: {
+      fireLit: false,
+      shelterRepaired: false,
+    },
+    passedOutCount: 0,
+    complete: false,
+  };
+}
+
+export function createCompletedDayOneState() {
+  const state = createDefaultDayOneState();
+  const requirements = DAY_ONE_V01.tuning.requirements;
+  state.inventory.seeds = Math.max(0, state.inventory.seeds - 1);
+  state.activity.woodGathered = requirements.woodGathered;
+  state.activity.fishCaught = 1;
+  state.activity.mealsCooked = requirements.mealsEaten;
+  state.activity.mealsEaten = requirements.mealsEaten;
+  state.activity.seedsPlanted = 1;
+  state.garden.planted = true;
+  state.garden.watered = true;
+  state.camp.fireLit = true;
+  state.camp.shelterRepaired = true;
+  state.complete = true;
+  return state;
+}
+
+export function dayOneRequirementsMet(state) {
+  const requirements = DAY_ONE_V01.tuning.requirements;
+  return Boolean(
+    state
+    && state.activity?.woodGathered >= requirements.woodGathered
+    && state.activity?.mealsEaten >= requirements.mealsEaten
+    && state.garden?.planted === requirements.gardenPlanted
+    && state.garden?.watered === requirements.gardenWatered
+    && state.camp?.shelterRepaired === requirements.shelterRepaired
+  );
+}
+
+function sanitizeDayOneState(raw, { forceComplete = false } = {}) {
+  const defaults = createDefaultDayOneState();
+  const source = isPlainObject(raw) ? raw : defaults;
+  const inventorySource = isPlainObject(source.inventory) ? source.inventory : {};
+  const activitySource = isPlainObject(source.activity) ? source.activity : {};
+  const gardenSource = isPlainObject(source.garden) ? source.garden : {};
+  const campSource = isPlainObject(source.camp) ? source.camp : {};
+  const tuning = DAY_ONE_V01.tuning;
+  const meterMax = tuning.meters.max;
+
+  const rawFish = clampInteger(
+    inventorySource.rawFish,
+    defaults.inventory.rawFish,
+    0,
+    tuning.fishCatchLimit,
+  );
+  const cookedFish = clampInteger(
+    inventorySource.cookedFish,
+    defaults.inventory.cookedFish,
+    0,
+    Math.max(0, tuning.fishCatchLimit - rawFish),
+  );
+
+  const state = {
+    nourishment: clampInteger(
+      source.nourishment,
+      defaults.nourishment,
+      0,
+      meterMax,
+    ),
+    energy: clampInteger(source.energy, defaults.energy, 0, meterMax),
+    coins: clampInteger(source.coins, defaults.coins),
+    doctorDebt: clampInteger(source.doctorDebt, defaults.doctorDebt),
+    inventory: {
+      wood: clampInteger(
+        inventorySource.wood,
+        defaults.inventory.wood,
+        0,
+        tuning.woodInventoryLimit,
+      ),
+      rawFish,
+      cookedFish,
+      seeds: clampInteger(inventorySource.seeds, defaults.inventory.seeds, 0, 99),
+    },
+    activity: {
+      woodGathered: clampInteger(activitySource.woodGathered, 0),
+      fishCaught: clampInteger(activitySource.fishCaught, 0),
+      mealsCooked: clampInteger(activitySource.mealsCooked, 0),
+      mealsEaten: clampInteger(activitySource.mealsEaten, 0),
+      seedsPlanted: clampInteger(activitySource.seedsPlanted, 0),
+    },
+    garden: {
+      planted: gardenSource.planted === true,
+      watered: gardenSource.watered === true,
+    },
+    camp: {
+      fireLit: campSource.fireLit === true,
+      shelterRepaired: campSource.shelterRepaired === true,
+    },
+    passedOutCount: clampInteger(source.passedOutCount, 0),
+    complete: false,
+  };
+
+  // Keep durable progress coherent even after a partial or hand-edited save.
+  // These counters intentionally remember resources that have already been
+  // consumed by the fire, meal, seed bed, or shelter.
+  if (state.garden.watered) state.garden.planted = true;
+  if (state.garden.planted) state.activity.seedsPlanted = Math.max(1, state.activity.seedsPlanted);
+  if (state.activity.mealsEaten > 0) {
+    state.activity.mealsCooked = Math.max(state.activity.mealsCooked, state.activity.mealsEaten);
+  }
+  if (state.activity.mealsCooked > 0) state.camp.fireLit = true;
+  state.activity.fishCaught = Math.max(
+    state.activity.fishCaught,
+    state.inventory.rawFish
+      + state.inventory.cookedFish
+      + state.activity.mealsEaten,
+  );
+  state.activity.woodGathered = Math.max(
+    state.activity.woodGathered,
+    state.inventory.wood
+      + (state.camp.fireLit ? tuning.fireWoodCost : 0)
+      + (state.camp.shelterRepaired ? tuning.shelterWoodCost : 0),
+  );
+
+  if (forceComplete) {
+    const requirements = tuning.requirements;
+    state.activity.woodGathered = Math.max(
+      state.activity.woodGathered,
+      requirements.woodGathered,
+    );
+    state.activity.fishCaught = Math.max(state.activity.fishCaught, 1);
+    state.activity.mealsCooked = Math.max(
+      state.activity.mealsCooked,
+      requirements.mealsEaten,
+    );
+    state.activity.mealsEaten = Math.max(
+      state.activity.mealsEaten,
+      requirements.mealsEaten,
+    );
+    state.activity.seedsPlanted = Math.max(state.activity.seedsPlanted, 1);
+    state.garden.planted = true;
+    state.garden.watered = true;
+    state.camp.fireLit = true;
+    state.camp.shelterRepaired = true;
+  }
+
+  state.complete = Boolean(source.complete || forceComplete) && dayOneRequirementsMet(state);
+  return state;
 }
 
 export function normalizePlayerName(value) {
@@ -80,6 +266,7 @@ export function createDefaultGameSession(now = Date.now()) {
     choices: {},
     eventsSeen: [],
     ending: null,
+    dayOne: createDefaultDayOneState(),
     updatedAt: Number.isFinite(Number(now)) ? Number(now) : Date.now(),
   };
 }
@@ -92,26 +279,35 @@ function migrateState(raw) {
 
   // Schema 0 was the unversioned prototype shape. Its supported fields map
   // directly into the current schema; unknown data is intentionally discarded.
+  let migrated;
   if (incomingVersion === 0) {
-    return {
+    migrated = {
       ...raw,
-      version: GAME_SESSION_VERSION,
       playerName: normalizePlayerName(raw.playerName) || null,
       relationship: raw.relationship || {
         steward: raw.stewardRelationship || 'guarded',
       },
     };
-  }
-
-  if (incomingVersion === 1) {
-    return {
+  } else if (incomingVersion === 1) {
+    migrated = {
       ...raw,
-      version: GAME_SESSION_VERSION,
       playerName: normalizePlayerName(raw.playerName) || null,
     };
+  } else {
+    migrated = { ...raw };
   }
 
-  return raw;
+  if (incomingVersion < 3) {
+    const hasPassedFirstAfternoon = uniqueStrings(raw.eventsSeen).includes(
+      DAY_ONE_V01.events.ledgerSigned,
+    );
+    migrated.dayOne = hasPassedFirstAfternoon
+      ? createCompletedDayOneState()
+      : createDefaultDayOneState();
+  }
+
+  migrated.version = GAME_SESSION_VERSION;
+  return migrated;
 }
 
 function sanitizeState(raw, now) {
@@ -122,7 +318,7 @@ function sanitizeState(raw, now) {
   if (migrated.ending != null && !ENDING_STATES.has(migrated.ending)) return null;
   const ending = migrated.ending ?? null;
   const choices = cleanChoices(migrated.choices);
-  const eventsSeen = uniqueStrings(migrated.eventsSeen);
+  let eventsSeen = uniqueStrings(migrated.eventsSeen);
   const eventSet = new Set(eventsSeen);
   const highestKnownEvent = CORE_EVENT_ORDER.reduce(
     (highest, eventId, index) => (eventSet.has(eventId) ? index : highest),
@@ -156,6 +352,18 @@ function sanitizeState(raw, now) {
             : 'arrival';
   if (migrated.phase !== expectedPhase) return null;
 
+  const dayOne = sanitizeDayOneState(migrated.dayOne, {
+    // Older and direct Core Hook saves already beyond the Ledger must remain
+    // playable after the schema upgrade. Normal play reaches this state via
+    // DayOneDirector before the Ledger can be signed.
+    forceComplete: eventSet.has(DAY_ONE_V01.events.ledgerSigned),
+  });
+  if (dayOne.complete) {
+    pushUnique(eventsSeen, DAY_ONE_V01.events.afternoonComplete);
+  } else {
+    eventsSeen = eventsSeen.filter((event) => event !== DAY_ONE_V01.events.afternoonComplete);
+  }
+
   return {
     version: GAME_SESSION_VERSION,
     phase: PHASE_SET.has(migrated.phase) ? migrated.phase : 'arrival',
@@ -170,6 +378,7 @@ function sanitizeState(raw, now) {
     choices,
     eventsSeen,
     ending,
+    dayOne,
     updatedAt: Number.isFinite(Number(migrated.updatedAt))
       ? Number(migrated.updatedAt)
       : now,
@@ -214,6 +423,10 @@ export class GameSession {
 
   get playerName() {
     return this._state.playerName;
+  }
+
+  get dayOne() {
+    return clone(this._state.dayOne);
   }
 
   snapshot() {
@@ -414,6 +627,12 @@ export class GameSession {
 
   _emit() {
     const state = this.snapshot();
-    for (const listener of this.listeners) listener(state);
+    for (const listener of [...this.listeners]) {
+      try {
+        listener(state);
+      } catch (error) {
+        console.warn('[GameSession] Subscriber failed.', error);
+      }
+    }
   }
 }

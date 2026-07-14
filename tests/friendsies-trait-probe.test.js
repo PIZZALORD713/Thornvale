@@ -225,7 +225,7 @@ test('probe URL validation accepts only pinned fRiENDSiES GLB assets', () => {
   );
 });
 
-test('manual curation stays bounded, exact-keyed, semantic, and rights-gated', async () => {
+test('manual curation stays bounded, exact-keyed, semantic, and technically classified', async () => {
   const curation = JSON.parse(await readFile(new URL(
     '../assets-src/friendsies/trait-curation.json',
     import.meta.url,
@@ -236,7 +236,10 @@ test('manual curation stays bounded, exact-keyed, semantic, and rights-gated', a
   )));
   const indexedTraits = new Map(index.traits.map((entry) => [entry.id, entry]));
   const entries = Object.entries(curation.entries ?? {});
-  assert.equal(curation.schemaVersion, 2);
+  assert.equal(curation.schemaVersion, 3);
+  assert.equal(curation.authorizationFamily, 'friendsies-project');
+  assert.match(curation.scope, /never permission/);
+  assert.equal(Object.hasOwn(curation, 'rightsStatus'), false);
   assert.equal(entries.length, 27);
 
   const allowedStatuses = new Set(['active', 'shortlist', 'hold']);
@@ -252,7 +255,6 @@ test('manual curation stays bounded, exact-keyed, semantic, and rights-gated', a
     'shotRole',
     'maximumPerShot',
     'technicalReadiness',
-    'rightsCoverage',
   ];
   const profileEnums = {
     silhouetteClass: new Set([
@@ -282,25 +284,17 @@ test('manual curation stays bounded, exact-keyed, semantic, and rights-gated', a
     technicalReadiness: new Set([
       'runtime-proven', 'metadata-probed-rigid-candidate', 'unprobed',
     ]),
-    rightsCoverage: new Set([
-      'project-release-authorized-thornvale-only', 'metadata-only-review-required',
-    ]),
   };
   for (const [key, entry] of entries) {
     assert.equal(key, `${entry.traitType}:${entry.value}`);
-    assert.ok(['hand', 'sprout'].includes(entry.traitType));
+    assert.ok(['hand', 'sprout', 'backpiece'].includes(entry.traitType));
     assert.ok(allowedStatuses.has(entry.status));
     assert.ok(Array.isArray(entry.semanticTags) && entry.semanticTags.length > 0);
     assert.equal(typeof entry.environmentRole, 'string');
     assert.ok(Array.isArray(entry.storyPhase) && entry.storyPhase.length > 0);
     assert.equal(typeof entry.placementAdvice, 'string');
     assert.equal(typeof entry.rationale, 'string');
-    assert.equal(
-      entry.rightsStatus,
-      entry.status === 'active'
-        ? 'project-release-authorized'
-        : 'project-use-review-required',
-    );
+    assert.equal(Object.hasOwn(entry, 'rightsStatus'), false);
     assert.ok(indexedTraits.has(key), `${key} is not an exact catalog entry`);
 
     const profile = entry.designProfile;
@@ -333,20 +327,13 @@ test('manual curation stays bounded, exact-keyed, semantic, and rights-gated', a
   assert.equal(curation.entries['hand:Flower White'].status, 'active');
   assert.equal(curation.entries['hand:Torch'].status, 'active');
   assert.equal(curation.entries['sprout:Crown Up'].status, 'active');
-  for (const key of ['hand:Flower White', 'hand:Torch', 'sprout:Crown Up']) {
-    assert.equal(curation.entries[key].rightsStatus, 'project-release-authorized');
-    assert.equal(
-      curation.entries[key].designProfile.rightsCoverage,
-      'project-release-authorized-thornvale-only',
-    );
-  }
   assert.equal(curation.entries['hand:Book Of Ocean'].status, 'shortlist');
   assert.equal(curation.entries['sprout:Friends Key'].status, 'shortlist');
   assert.equal(curation.entries['hand:Orb'].status, 'hold');
   assert.equal(curation.entries['sprout:All Seeing'].status, 'hold');
 });
 
-test('local atlas exposes the schema-v2 casting controls and decision surface', async () => {
+test('local atlas exposes the schema-v3 creative and technical decision surface', async () => {
   const [html, app, styles] = await Promise.all([
     readFile(new URL('../tools/friendsies-trait-atlas/index.html', import.meta.url), 'utf8'),
     readFile(new URL('../tools/friendsies-trait-atlas/app.js', import.meta.url), 'utf8'),
@@ -360,7 +347,7 @@ test('local atlas exposes the schema-v2 casting controls and decision surface', 
   for (const field of [
     'surfaceMeaning', 'counterMeaning', 'silhouetteClass', 'mountType',
     'readDistance', 'paletteFamily', 'phaseReveal', 'affordanceRisk',
-    'shotRole', 'maximumPerShot', 'technicalReadiness', 'rightsCoverage',
+    'shotRole', 'maximumPerShot', 'technicalReadiness',
   ]) {
     assert.match(app, new RegExp(`\\b${field}\\b`), `atlas omits ${field}`);
   }
@@ -371,6 +358,7 @@ test('local atlas exposes the schema-v2 casting controls and decision surface', 
   assert.match(styles, /\.casting-profile/);
   assert.match(styles, /\.profile-grid/);
   assert.match(styles, /\.meaning-pair/);
+  assert.doesNotMatch(app, /rightsStatus|rightsCoverage|Rights coverage/);
 });
 
 test('the checked-in probe ledger covers the active vocabulary and next records/access pair', async () => {

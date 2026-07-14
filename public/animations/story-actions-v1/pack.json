@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "friendsies-motion-runtime-pack-v1",
+  "id": "story-actions-v1",
+  "label": "Story Actions v1",
+  "rigProfile": "friendsies-humanoid-v1",
+  "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+  "clips": [
+    {
+      "id": "lumen.acknowledging",
+      "actor": "lumen",
+      "intent": "acknowledging",
+      "clipName": "story-actions-v1-lumen-acknowledging",
+      "url": "/animations/story-actions-v1/lumen-acknowledging.glb",
+      "bytes": 33052,
+      "sha256": "e74157124a69e1ed4534c5b99308e2a414a9b60a38a69e8ca65782f43bcff82f",
+      "sourceDurationSeconds": 1.9166666666666667,
+      "durationSeconds": 1.9333333333333333,
+      "sourceSampleRate": 60,
+      "sampleRate": 30,
+      "loop": "once",
+      "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+      "playback": null,
+      "reducedMotion": "allowed-low-displacement"
+    },
+    {
+      "id": "lumen.happy-hand-gesture",
+      "actor": "lumen",
+      "intent": "welcome",
+      "clipName": "story-actions-v1-lumen-happy-hand-gesture",
+      "url": "/animations/story-actions-v1/lumen-happy-hand-gesture.glb",
+      "bytes": 39868,
+      "sha256": "f05dd225d6d425517ee8a52b89d0c4b604cefce1caaeecf257b57f276b8da6a4",
+      "sourceDurationSeconds": 2.933333333333333,
+      "durationSeconds": 2.933333333333333,
+      "sourceSampleRate": 60,
+      "sampleRate": 30,
+      "loop": "once",
+      "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+      "playback": null,
+      "reducedMotion": "allowed-low-displacement"
+    },
+    {
+      "id": "lumen.thoughtful-head-shake",
+      "actor": "lumen",
+      "intent": "polite-correction",
+      "clipName": "story-actions-v1-lumen-thoughtful-head-shake",
+      "url": "/animations/story-actions-v1/lumen-thoughtful-head-shake.glb",
+      "bytes": 41028,
+      "sha256": "4e0b1baddc1bcd62b3417771ad84f0880945875820f2fedac581fbcd08247a9b",
+      "sourceDurationSeconds": 3.05,
+      "durationSeconds": 3.066666666666667,
+      "sourceSampleRate": 60,
+      "sampleRate": 30,
+      "loop": "once",
+      "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+      "playback": null,
+      "reducedMotion": "allowed-low-displacement"
+    },
+    {
+      "id": "lumen.relieved-sigh",
+      "actor": "lumen",
+      "intent": "relieved-approval",
+      "clipName": "story-actions-v1-lumen-relieved-sigh",
+      "url": "/animations/story-actions-v1/lumen-relieved-sigh.glb",
+      "bytes": 40252,
+      "sha256": "a4a8a9f27d89de2d3acf74dcfb348c690ce8167389cb01536b820e34879bb35e",
+      "sourceDurationSeconds": 3,
+      "durationSeconds": 3,
+      "sourceSampleRate": 60,
+      "sampleRate": 30,
+      "loop": "once",
+      "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+      "playback": null,
+      "reducedMotion": "allowed-low-displacement"
+    },
+    {
+      "id": "day-one.plant-seed",
+      "actor": "player",
+      "intent": "plant-seed",
+      "clipName": "story-actions-v1-day-one-plant-seed",
+      "url": "/animations/story-actions-v1/day-one-plant-seed.glb",
+      "bytes": 57532,
+      "sha256": "6d84a8572dda3d9eae698e0f6f5528cac02eba7fad27359652dfdd786d2cb82a",
+      "sourceDurationSeconds": 5.483333333333333,
+      "durationSeconds": 5.5,
+      "sourceSampleRate": 60,
+      "sampleRate": 30,
+      "loop": "once",
+      "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+      "playback": {
+        "durationSeconds": 3.1,
+        "commitSeconds": 2.3,
+        "markers": [
+          {
+            "id": "commit",
+            "seconds": 2.3,
+            "meaning": "The planting hand reaches the bed and seeded mounds appear."
+          }
+        ]
+      },
+      "reducedMotion": "no-skeletal-motion-world-cue"
+    },
+    {
+      "id": "day-one.water-seed",
+      "actor": "player",
+      "intent": "water-seed",
+      "clipName": "story-actions-v1-day-one-water-seed",
+      "url": "/animations/story-actions-v1/day-one-water-seed.glb",
+      "bytes": 58500,
+      "sha256": "493f4f22070f5316acf3398fd4a764bfdf12863103f058f6f342c7df773451d9",
+      "sourceDurationSeconds": 5.583333333333333,
+      "durationSeconds": 5.6,
+      "sourceSampleRate": 60,
+      "sampleRate": 30,
+      "loop": "once",
+      "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+      "playback": {
+        "durationSeconds": 3.2,
+        "commitSeconds": 2.35,
+        "markers": [
+          {
+            "id": "commit",
+            "seconds": 2.35,
+            "meaning": "The pour reaches its planted-bed lean and the soil darkens."
+          }
+        ]
+      },
+      "reducedMotion": "no-skeletal-motion-world-cue"
+    }
+  ]
+}

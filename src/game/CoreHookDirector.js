@@ -51,6 +51,8 @@ export class CoreHookDirector {
       setRoute: deps.setRoute || null,
       getRouteDestination: deps.getRouteDestination || null,
       resetPlayer: deps.resetPlayer || null,
+      isDayOneComplete: deps.isDayOneComplete || (() => Boolean(this.session.dayOne?.complete)),
+      getDayOneObjective: deps.getDayOneObjective || (() => null),
       setStoryBlocking: deps.setStoryBlocking || null,
       onError: deps.onError || null,
     };
@@ -114,6 +116,12 @@ export class CoreHookDirector {
     }
 
     if (generation === this.generation) await this._setCurrentObjective();
+    return this.session.snapshot();
+  }
+
+  async refreshObjective() {
+    this._assertUsable();
+    await this._setCurrentObjective();
     return this.session.snapshot();
   }
 
@@ -217,13 +225,14 @@ export class CoreHookDirector {
     const events = this.content.events;
     const met = this.session.hasEvent(events.stewardMet);
     const signed = this.session.hasEvent(events.ledgerSigned);
+    const dayOneComplete = this._isDayOneComplete();
     const firstBell = this.session.hasEvent(events.firstBellRung);
     const anomaly = this.session.hasEvent(events.anomalyBellRang);
     const falseRecord = this.session.hasEvent(events.falseRecordSeen);
     const choiceMade = this.session.hasEvent(events.choiceMade);
 
     if (role === 'steward') return !met || (falseRecord && !choiceMade);
-    if (role === 'ledger') return (met && !signed) || (anomaly && !falseRecord);
+    if (role === 'ledger') return (met && dayOneComplete && !signed) || (anomaly && !falseRecord);
     if (role === 'bell') return signed && !firstBell;
     return false;
   }
@@ -290,6 +299,8 @@ export class CoreHookDirector {
   async _interactSteward() {
     const events = this.content.events;
     if (!this.session.hasEvent(events.stewardMet)) {
+      const welcomeGesture = this.content.gestures?.happyHandGesture;
+      this._playStewardAction(welcomeGesture, 'joy');
       await this._ui('say', this.content.dialogue.welcome);
 
       const change = this.content.neighborliness.welcome;
@@ -301,14 +312,15 @@ export class CoreHookDirector {
         draft.neighborliness = clampScore(draft.neighborliness + change.amount);
       });
 
-      this.deps.stewardActor?.play?.('joy');
+      this._stopStewardAction(welcomeGesture);
       await this._moveSteward('routine');
       await this._setNeighborliness(change);
-      await this._setObjective(this.content.objectives.signLedger);
+      await this._setCurrentObjective();
       return;
     }
 
     if (!this.session.hasEvent(events.correctionHeard)) {
+      this._playStewardAction(this.content.gestures?.thoughtfulHeadShake, 'idle');
       await this._ui('say', this.content.dialogue.correction);
       this.session.markEvent(events.correctionHeard);
     }
@@ -340,7 +352,7 @@ export class CoreHookDirector {
       });
       await this._ui('say', this.content.dialogue.ledgerAccepted);
 
-      this.deps.stewardActor?.play?.('joy');
+      this._playStewardAction(this.content.gestures?.acknowledging, 'joy');
       this._interactionFeedback(this.content.ids.ledger, 'kindness', 0.28);
       await this._setNeighborliness(change);
       await this._applyStoryTime('dusk');
@@ -377,7 +389,7 @@ export class CoreHookDirector {
     this.deps.worldAnimator?.ringBell?.();
     this._interactionFeedback(this.content.ids.bell, 'bell', 0.5);
     await this._ui('say', this.content.dialogue.firstBell);
-    this.deps.stewardActor?.play?.('joy');
+    this._playStewardAction(this.content.gestures?.relievedSigh, 'joy');
     await this._setNeighborliness(change);
     await this._applyStoryTime('night');
     await this._setObjective(this.content.objectives.leaveBell);
@@ -547,6 +559,9 @@ export class CoreHookDirector {
       const choice = this.session.getChoice(this.content.ids.choice);
       objective = this.content.objectives[this.content.outcomes[choice]?.objective];
     } else if (!this.session.hasEvent(events.stewardMet)) objective = this.content.objectives.meetSteward;
+    else if (!this._isDayOneComplete()) {
+      objective = this._getDayOneObjective() || this.content.objectives.firstAfternoon;
+    }
     else if (!this.session.hasEvent(events.ledgerSigned)) objective = this.content.objectives.signLedger;
     else if (!this.session.hasEvent(events.firstBellRung)) objective = this.content.objectives.ringBell;
     else if (!this.session.hasEvent(events.anomalyBellRang)) objective = this.content.objectives.leaveBell;
@@ -557,6 +572,26 @@ export class CoreHookDirector {
     }
     else objective = this.content.objectives.hearCorrection;
     await this._setObjective(objective);
+  }
+
+  _isDayOneComplete() {
+    const eventId = this.content.events.firstAfternoonComplete;
+    if (eventId && this.session.hasEvent(eventId)) return true;
+    try {
+      return Boolean(this.deps.isDayOneComplete?.());
+    } catch (error) {
+      this._reportError(error, 'day-one-completion');
+      return false;
+    }
+  }
+
+  _getDayOneObjective() {
+    try {
+      return this.deps.getDayOneObjective?.() || null;
+    } catch (error) {
+      this._reportError(error, 'day-one-objective');
+      return null;
+    }
   }
 
   async _ui(method, value) {
@@ -591,6 +626,36 @@ export class CoreHookDirector {
     } catch (error) {
       this._reportError(error, 'effect');
       return undefined;
+    }
+  }
+
+  _playStewardAction(name, fallbackRole = 'idle') {
+    const actor = this.deps.stewardActor;
+    try {
+      if (name && actor?.playAction?.(name)) return true;
+      return actor?.play?.(fallbackRole) ?? false;
+    } catch (error) {
+      this._reportError(error, 'steward-action');
+      try {
+        return actor?.play?.(fallbackRole) ?? false;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  _stopStewardAction(name) {
+    const actor = this.deps.stewardActor;
+    try {
+      if (name && actor?.cancelAction?.(name)) return true;
+      return actor?.play?.('idle') ?? false;
+    } catch (error) {
+      this._reportError(error, 'steward-action-stop');
+      try {
+        return actor?.play?.('idle') ?? false;
+      } catch {
+        return false;
+      }
     }
   }
 

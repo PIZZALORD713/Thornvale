@@ -91,47 +91,25 @@
       "rawSourceRedistribution": false,
       "releaseBlocked": false
     },
-    "friendsies-0001": {
-      "creator": "fRiENDSiES",
-      "status": "project-release-authorized",
-      "licenseOrPermission": "The Thornvale project owner authorized the exact manifested Flower White runtime file and its documented Trait Echo v1 environmental use for publication in bundled Thornvale builds on 2026-07-12",
-      "sourcePage": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/",
+    "friendsies-story-actions-v1": {
+      "creator": "Adobe Mixamo / fRiENDSiES / Thornvale",
+      "status": "project-use-recorded",
+      "licenseOrPermission": "The project owner requested these six Mixamo-derived clips as an integrated Thornvale proof on 2026-07-13; exact-file bundled-release authorization for the new runtime derivatives remains to be recorded",
+      "sourcePage": "https://www.mixamo.com/",
       "sourceRetrievedOn": "2026-07-12",
-      "provenance": "public/friendsies/0001/PROVENANCE.md",
-      "runtimeDistributionScope": "Integrated bundled distribution in Thornvale game builds, including the documented Trait Echo v1 arrangement; no raw-source, standalone asset-pack, collection-wide bundling, or general outside-project redistribution; the separate remote-player authorization does not broaden this exact local/environmental grant",
+      "provenance": "public/animations/story-actions-v1/PROVENANCE.md",
       "rawSourceRedistribution": false,
-      "releaseBlocked": false
+      "releaseBlocked": true,
+      "releaseBlockReason": "The existing friendsies-animations release grant covers only the three earlier runtime GLBs; record exact-file bundled Thornvale publication authorization for these six derivatives before release"
     },
-    "friendsies-6602": {
+    "friendsies-project": {
       "creator": "fRiENDSiES",
       "status": "project-release-authorized",
-      "licenseOrPermission": "The Thornvale project owner authorized the seven exact manifested runtime files for token #6602 as Thornvale's bundled default player for publication in Thornvale builds on 2026-07-12",
-      "sourcePage": "https://www.frienemies.xyz/fren/6602",
-      "sourceRetrievedOn": "2026-07-12",
-      "provenance": "public/friendsies/6602/PROVENANCE.md",
-      "runtimeDistributionScope": "Integrated bundled distribution of the exact manifested #6602 runtime files as part of Thornvale game builds; no raw-source, standalone character-pack, collection-wide bundling, or general outside-project redistribution; the separate remote-player authorization does not broaden this exact local-file grant",
-      "rawSourceRedistribution": false,
-      "releaseBlocked": false
-    },
-    "friendsies-8914": {
-      "creator": "fRiENDSiES",
-      "status": "project-release-authorized",
-      "licenseOrPermission": "The Thornvale project owner authorized the six exact manifested runtime files for token #8914 as Steward Lumen and the documented Torch and Crown Up Trait Echo v1 uses for publication in Thornvale builds on 2026-07-12",
-      "sourcePage": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/",
-      "sourceRetrievedOn": "2026-07-12",
-      "provenance": "public/friendsies/8914/PROVENANCE.md",
-      "runtimeDistributionScope": "Integrated bundled distribution in Thornvale game builds as Steward Lumen and in the documented Trait Echo v1 arrangement; no raw-source, standalone character or trait pack, collection-wide bundling, or general outside-project redistribution; the separate remote-player authorization does not broaden this exact local/environmental grant",
-      "rawSourceRedistribution": false,
-      "releaseBlocked": false
-    },
-    "friendsies-remote-player-streaming": {
-      "creator": "fRiENDSiES",
-      "status": "project-release-authorized",
-      "licenseOrPermission": "On 2026-07-12, the Thornvale project owner authorized published Thornvale builds to fetch the revision-pinned catalog for token IDs 1..10000 and stream, render, and assemble the selected token's components from https://storage.googleapis.com as an integrated in-game player avatar only",
+      "licenseOrPermission": "The Thornvale project owner grants standing project-wide authorization for all present and future canonical fRiENDSiES assets under their control for any integrated Thornvale use, without per-asset, per-token, per-role, per-context, per-transform, per-delivery-model, or per-revision approval",
       "sourcePage": "https://gist.githubusercontent.com/IntergalacticPizzaLord/a7b0eeac98041a483d715c8320ccf660/raw/ce7d37a94c33c63e2b50d5922e0711e72494c8dd/fRiENDSiES",
       "sourceRetrievedOn": "2026-07-12",
-      "provenance": "docs/decisions/0003-external-runtime-asset-dependencies.md",
-      "runtimeDistributionScope": "Published Thornvale builds may fetch only the revision-pinned catalog for token IDs 1..10000 and stream, render, and assemble the selected token's components only from https://storage.googleapis.com as an integrated in-game player avatar; no full-collection bundling, canonical or raw copying, mirroring, standalone asset or character packs, environmental reuse or adaptation, sublicensing, unrelated-origin delivery, or reuse outside Thornvale",
+      "provenance": "docs/decisions/0004-friendsies-project-wide-authorization.md",
+      "runtimeDistributionScope": "Canonical fRiENDSiES assets and Thornvale derivatives may be inspected, cached, streamed, bundled, hosted, separated, recombined, optimized, transformed, rendered, and published for any integrated Thornvale character, item, equipment, prop, environment, UI, documentation, testing, or promotional use; standalone asset packs, bulk raw collection mirrors or dumps, sublicensing for unrelated products, and use outside Thornvale remain excluded",
       "rawSourceRedistribution": false,
       "releaseBlocked": false
     }
@@ -139,7 +117,7 @@
   "externalRuntimeDependencies": [
     {
       "id": "friendsies-remote-player-streaming",
-      "family": "friendsies-remote-player-streaming",
+      "family": "friendsies-project",
       "metadataCatalog": {
         "url": "https://gist.githubusercontent.com/IntergalacticPizzaLord/a7b0eeac98041a483d715c8320ccf660/raw/ce7d37a94c33c63e2b50d5922e0711e72494c8dd/fRiENDSiES",
         "sha256": "9f1c4e1cf8d848bd2ceaff7cde48c4ecf60a4b1d0afe273e7a5c5b68c2aee3ef",
@@ -148,13 +126,15 @@
       "allowedAssetOrigins": [
         "https://storage.googleapis.com"
       ],
+      "allowedAssetUrlPrefixes": [
+        "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/"
+      ],
       "tokenScope": {
         "type": "inclusive-range",
         "minimum": 1,
         "maximum": 10000
       },
-      "runtimeUse": "Shareable player links fetch one ranged entry from the pinned catalog, then stream the selected token's component assets; bundled #6602 and #8914 remain failure fallbacks.",
-      "reason": "On 2026-07-12, the Thornvale project owner authorized published Thornvale builds to fetch the revision-pinned catalog for token IDs 1..10000 and stream, render, and assemble the selected token's components from https://storage.googleapis.com as an integrated in-game player avatar only"
+      "runtimeUse": "Shareable player links fetch one ranged entry from the pinned catalog, then stream the selected token's component assets; bundled #6602 and #8914 remain failure fallbacks. Runtime use is engineering metadata and does not narrow the standing project authorization."
     }
   ],
   "assets": [
@@ -219,11 +199,101 @@
       }
     },
     {
+      "id": "friendsies-story-actions-v1-lumen-acknowledging",
+      "path": "public/animations/story-actions-v1/lumen-acknowledging.glb",
+      "runtime": true,
+      "kind": "animation",
+      "family": "friendsies-story-actions-v1",
+      "bytes": 33052,
+      "sha256": "e74157124a69e1ed4534c5b99308e2a414a9b60a38a69e8ca65782f43bcff82f",
+      "source": {
+        "originalFilename": "acknowledging.fbx",
+        "url": "https://www.mixamo.com/",
+        "sha256": "ffc5c47a44565cb5796a2875d60ab468dab56b4687d0d1b925d2cbd06f1c8149",
+        "transform": "Verified the pinned ZIP member, stripped wrapper translation, baked bounded returning wrapper rotation onto the canonical Root, preserved the terminal pose on the 30 Hz grid, and exported one deterministic 20-bone animation-only GLB with Blender 4.5.9 LTS."
+      }
+    },
+    {
+      "id": "friendsies-story-actions-v1-lumen-happy-hand-gesture",
+      "path": "public/animations/story-actions-v1/lumen-happy-hand-gesture.glb",
+      "runtime": true,
+      "kind": "animation",
+      "family": "friendsies-story-actions-v1",
+      "bytes": 39868,
+      "sha256": "f05dd225d6d425517ee8a52b89d0c4b604cefce1caaeecf257b57f276b8da6a4",
+      "source": {
+        "originalFilename": "happy hand gesture.fbx",
+        "url": "https://www.mixamo.com/",
+        "sha256": "b4a200bdf82cdc614bf866203da0a8b7d0982f4abc2c1e4c96b824fb9b0bed49",
+        "transform": "Verified the pinned ZIP member, stripped wrapper translation, baked bounded returning wrapper rotation onto the canonical Root, preserved the terminal pose on the 30 Hz grid, and exported one deterministic 20-bone animation-only GLB with Blender 4.5.9 LTS."
+      }
+    },
+    {
+      "id": "friendsies-story-actions-v1-lumen-thoughtful-head-shake",
+      "path": "public/animations/story-actions-v1/lumen-thoughtful-head-shake.glb",
+      "runtime": true,
+      "kind": "animation",
+      "family": "friendsies-story-actions-v1",
+      "bytes": 41028,
+      "sha256": "4e0b1baddc1bcd62b3417771ad84f0880945875820f2fedac581fbcd08247a9b",
+      "source": {
+        "originalFilename": "thoughtful head shake.fbx",
+        "url": "https://www.mixamo.com/",
+        "sha256": "145c7d2304eda466ddf0e490cfca1e69f3140cb85a7bb08daec502c7edb94107",
+        "transform": "Verified the pinned ZIP member, stripped wrapper translation, baked bounded returning wrapper rotation onto the canonical Root, preserved the terminal pose on the 30 Hz grid, and exported one deterministic 20-bone animation-only GLB with Blender 4.5.9 LTS."
+      }
+    },
+    {
+      "id": "friendsies-story-actions-v1-lumen-relieved-sigh",
+      "path": "public/animations/story-actions-v1/lumen-relieved-sigh.glb",
+      "runtime": true,
+      "kind": "animation",
+      "family": "friendsies-story-actions-v1",
+      "bytes": 40252,
+      "sha256": "a4a8a9f27d89de2d3acf74dcfb348c690ce8167389cb01536b820e34879bb35e",
+      "source": {
+        "originalFilename": "relieved sigh.fbx",
+        "url": "https://www.mixamo.com/",
+        "sha256": "6b32d8d1714833d8564a38b1179e8441f8c18917812efdab79172cc6c1d0327c",
+        "transform": "Verified the pinned ZIP member, stripped wrapper translation, baked bounded returning wrapper rotation onto the canonical Root, preserved the terminal pose on the 30 Hz grid, and exported one deterministic 20-bone animation-only GLB with Blender 4.5.9 LTS."
+      }
+    },
+    {
+      "id": "friendsies-story-actions-v1-day-one-plant-seed",
+      "path": "public/animations/story-actions-v1/day-one-plant-seed.glb",
+      "runtime": true,
+      "kind": "animation",
+      "family": "friendsies-story-actions-v1",
+      "bytes": 57532,
+      "sha256": "6d84a8572dda3d9eae698e0f6f5528cac02eba7fad27359652dfdd786d2cb82a",
+      "source": {
+        "originalFilename": "dig and plant seeds.fbx",
+        "url": "https://www.mixamo.com/",
+        "sha256": "c5f7ba37645c69eb0e5a7535ba264127f7a201782b3e94ccf8dc4b2c64c0d46e",
+        "transform": "Verified the pinned ZIP member, stripped wrapper translation, baked bounded returning wrapper rotation onto the canonical Root, preserved the terminal pose on the 30 Hz grid, and exported one deterministic 20-bone animation-only GLB with Blender 4.5.9 LTS."
+      }
+    },
+    {
+      "id": "friendsies-story-actions-v1-day-one-water-seed",
+      "path": "public/animations/story-actions-v1/day-one-water-seed.glb",
+      "runtime": true,
+      "kind": "animation",
+      "family": "friendsies-story-actions-v1",
+      "bytes": 58500,
+      "sha256": "493f4f22070f5316acf3398fd4a764bfdf12863103f058f6f342c7df773451d9",
+      "source": {
+        "originalFilename": "watering.fbx",
+        "url": "https://www.mixamo.com/",
+        "sha256": "6bce580e09d4fd580e3f2a2fe309d99546f46146cbe3d62bf2d46662a896afc4",
+        "transform": "Verified the pinned ZIP member, stripped wrapper translation, baked bounded returning wrapper rotation onto the canonical Root, preserved the terminal pose on the 30 Hz grid, and exported one deterministic 20-bone animation-only GLB with Blender 4.5.9 LTS."
+      }
+    },
+    {
       "id": "friendsies-0001-hand-flower-white",
       "path": "public/friendsies/0001/hand-flower-white.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-0001",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:0001"],
       "runtimeContexts": [
         "environment:trait-echo-v1:welcome-flower"
@@ -242,7 +312,7 @@
       "path": "public/friendsies/6602/backpiece-ghostin.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-6602",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:6602"],
       "bytes": 170296,
       "sha256": "d7233348ebd29b3f743600cfa292aee5a65faf89231b9b95a26bce50a5760112",
@@ -258,7 +328,7 @@
       "path": "public/friendsies/6602/body.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-6602",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:6602"],
       "bytes": 236084,
       "sha256": "aef864bd3b45024ce8499b0a398215e75b825ee337ebdb63c9a0a5d927500208",
@@ -274,7 +344,7 @@
       "path": "public/friendsies/6602/face-romeo.png",
       "runtime": true,
       "kind": "character-texture",
-      "family": "friendsies-6602",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:6602"],
       "bytes": 10979,
       "sha256": "24d367fdee20235f189bd2e6227c2130c44948121135de2a8b9d9f15e2122200",
@@ -290,7 +360,7 @@
       "path": "public/friendsies/6602/hand-staffv.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-6602",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:6602"],
       "bytes": 101836,
       "sha256": "58fbd2ea47f3985fbd9e2f873cd785df79dbdd4cce8f0ee3ce83daecc8a60eea",
@@ -306,7 +376,7 @@
       "path": "public/friendsies/6602/head-deli.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-6602",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:6602"],
       "bytes": 101904,
       "sha256": "778e3cf66d58a5cae3a2427450040c0aae706436bb83deac63633cc6a47f4f54",
@@ -322,7 +392,7 @@
       "path": "public/friendsies/6602/shoes-high-boots-red.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-6602",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:6602"],
       "bytes": 151340,
       "sha256": "b7b9d795b2a010cbb94adeb38c33646e846f621fe95a7d48686cfccc255c0511",
@@ -338,7 +408,7 @@
       "path": "public/friendsies/6602/sprout-totem.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-6602",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:6602"],
       "bytes": 116408,
       "sha256": "da151889550b213de19b4194551c49b529af65d2ff284754ea5e979bae223ffa",
@@ -354,7 +424,7 @@
       "path": "public/friendsies/8914/backpiece-pip.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-8914",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:8914"],
       "bytes": 355768,
       "sha256": "ee6e2fd607578b539fb00a7b67616bfdcef420671e772b827591fef7ec347175",
@@ -370,7 +440,7 @@
       "path": "public/friendsies/8914/body.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-8914",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:8914"],
       "bytes": 346284,
       "sha256": "2bd4f3c4873c0ad98b933d0ca1723a86a5e2fa297e8fbbb5c4343e91b258a803",
@@ -386,7 +456,7 @@
       "path": "public/friendsies/8914/hand-torch.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-8914",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:8914"],
       "runtimeContexts": [
         "character:8914:hand",
@@ -406,7 +476,7 @@
       "path": "public/friendsies/8914/head-white-elephant.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-8914",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:8914"],
       "bytes": 295652,
       "sha256": "717ddd9e9dc4e8268279d84bcacc5c9f4f06df4f964f4c76ee2df99b5efc663f",
@@ -422,7 +492,7 @@
       "path": "public/friendsies/8914/shoes-wrappers-gold.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-8914",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:8914"],
       "bytes": 71404,
       "sha256": "5e7e1529e4c4d75cd580703b835e7655856f10a56fae9fc8417095a90d21c55e",
@@ -438,7 +508,7 @@
       "path": "public/friendsies/8914/sprout-crown-up.glb",
       "runtime": true,
       "kind": "character-model",
-      "family": "friendsies-8914",
+      "family": "friendsies-project",
       "budgetGroups": ["friendsies-character:8914"],
       "runtimeContexts": [
         "character:8914:sprout",

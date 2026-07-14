@@ -1,5 +1,9 @@
 # Aesthetic System v1 QA — 2026-07-12
 
+> Historical authorization note: ADR 0004 superseded the narrow fRiENDSiES
+> permission scopes in this record on 2026-07-13. Preserve the QA evidence
+> below; canonical fRiENDSiES assets now share one standing Thornvale-wide grant.
+
 ## Candidate status
 
 **The coordinated local aesthetic slice is implementation- and browser-ready

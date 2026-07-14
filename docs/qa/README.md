@@ -40,6 +40,11 @@ For a shareable build, verify at minimum:
     construct or flash it first.
 
 Use a targeted checklist for the changed surface in addition to this smoke pass.
+The bounded first-afternoon survival, camp, save/reload, and pass-out checks are
+recorded in [`2026-07-13-day-one-proof.md`](2026-07-13-day-one-proof.md).
+The six-clip fRiENDSiES conversion, Lumen gesture, plant/water contact,
+reduced-motion, failure-fallback, and release-blocker matrix is recorded in
+[`2026-07-13-story-actions-v1.md`](2026-07-13-story-actions-v1.md).
 The Trait Echo v1 checklist and pending results record is
 [`2026-07-12-trait-echo-v1.md`](2026-07-12-trait-echo-v1.md).
 The coordinated Courtesy/Correction shell, consequence grammar, trait-casting

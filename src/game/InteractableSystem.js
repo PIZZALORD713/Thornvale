@@ -4,6 +4,7 @@ export class InteractableSystem {
     this.interactables = [];
     this.activeInteractable = null;
     this.activePrompt = '';
+    this.inFlight = null;
   }
 
   register(interactable) {
@@ -47,8 +48,15 @@ export class InteractableSystem {
       return;
     }
 
-    if (inputManager.consumeKeyPress('KeyE')) {
-      Promise.resolve(closest.onInteract?.())
+    if (inputManager.consumeKeyPress('KeyE') && !this.inFlight) {
+      const interaction = closest;
+      let pending;
+      try {
+        pending = interaction.onInteract?.();
+      } catch (error) {
+        pending = Promise.reject(error);
+      }
+      this.inFlight = Promise.resolve(pending)
         .then((message) => {
           // Story directors return structured interaction results for tests and
           // save-state consumers. Only authored string messages belong in the
@@ -56,8 +64,11 @@ export class InteractableSystem {
           if (typeof message === 'string' && message.trim()) this.hud.setStatus(message);
         })
         .catch((error) => {
-          console.error(`[InteractableSystem] ${closest.id || 'interaction'} failed`, error);
+          console.error(`[InteractableSystem] ${interaction.id || 'interaction'} failed`, error);
           this.hud.setStatus('The valley lost its train of thought. Please try again.');
+        })
+        .finally(() => {
+          this.inFlight = null;
         });
     }
   }

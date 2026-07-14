@@ -51,6 +51,17 @@ infrastructure depend on a feature UI or visual implementation.
   [`../../assets-src/README.md`](../../assets-src/README.md) before changing
   asset locations.
 
+## Current authored gameplay flow
+
+`GameSession` is the single save and progression authority for both the Core
+Hook and the bounded Day One Proof. `CoreHookDirector` owns the social-horror
+story spine; `DayOneDirector` owns resource costs, survival recovery, camp and
+garden progress, and the first-afternoon completion predicate. `src/main.js`
+routes each stable interaction ID to the appropriate director, then projects
+the resulting session snapshot into `DayOneWorld`, the survival HUD, the story
+world, and the aesthetic presentation. Visual and UI modules never write the
+saved state.
+
 ## Incremental target
 
 Do not pre-create empty source trees. Add these seams only when the stated

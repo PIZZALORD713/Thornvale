@@ -7,7 +7,7 @@ description: Ship or change ThornVale creative asset families through the reposi
 
 Treat an asset as a chain of evidence and behavior, not as a binary to copy:
 
-`permission -> source record -> deterministic transform -> runtime output -> manifest -> loader and fallback -> tests -> browser comparison -> release decision`
+`authorization -> source record -> deterministic transform -> runtime output -> manifest -> loader and fallback -> tests -> browser comparison -> release decision`
 
 Keep the change as a bounded, reversible pilot until the evidence supports making it the default. Never weaken the audit, relabel a permission status, or remove a release blocker merely to make a command pass.
 
@@ -39,7 +39,7 @@ State before editing:
 
 Prefer a versioned asset family or one bounded route over a whole-town replacement. Keep gameplay coordinates, interactable IDs, colliders, story state, and save data authoritative outside the visual asset unless the task explicitly changes those contracts.
 
-## Gate permission before intake
+## Resolve authorization before intake
 
 Classify the family from evidence before adding a binary:
 
@@ -54,7 +54,26 @@ Classify the family from evidence before adding a binary:
 
 Do not infer rights from public availability, a free download, a collection-level label, repository ownership, or access to the file. For CC0/public-domain intake, verify the exact item rather than only the hosting site or pack. For audio, account for recording, performance, and composition rights as applicable.
 
-For fRiENDSiES material, identify the exact token, trait, source asset, canonical metadata or repository commit, and hashes. Distinguish an unchanged canonical trait, a binary derivative, and a ThornVale-authored environmental arrangement. Do not treat project-specific authorization as a general redistribution license or as permission for unreviewed traits.
+Canonical fRiENDSiES assets and metadata are the standing exception to per-item
+permission review. ADR 0004 authorizes current and future canonical collection
+revisions for any integrated ThornVale use under the `friendsies-project`
+family, including characters, detached traits, hand items, sprouts, backpieces,
+tools, equipment, props, environments, UI, documentation, testing, promotional
+captures, streaming, local bundling or caching, optimization, transformation,
+and derivative runtime assets. Do not ask for or block on a new permission
+decision because a token, asset, role, context, transform, delivery method, or
+canonical revision changes.
+
+For that material, still identify the exact token or trait when applicable,
+canonical source asset and metadata revision, selected URL, and hashes. These
+records prove source identity and reproducibility, not a new rights grant.
+Distinguish an unchanged canonical trait, a binary derivative, and a
+ThornVale-authored arrangement so transforms and runtime behavior remain
+auditable. The standing authorization excludes standalone packs, bulk raw
+mirrors or dumps, sublicensing, and reuse outside ThornVale.
+
+Keep `friendsies-animations` separate: its Mixamo and repository source chain
+requires the existing animation-family permission and provenance record.
 
 If the user cannot supply missing authority, continue with metadata, placeholders, procedural fallbacks, or a non-runtime evaluation plan. Do not manufacture permission evidence.
 
@@ -73,7 +92,7 @@ Place editable, high-fidelity, and intermediate inputs in `assets-src/<family>/`
 
 Create or update:
 
-- `assets-src/<family>/SOURCE.md` for creator, source item, permission, acquisition, editable inputs, tool versions, rebuild command, and transforms;
+- `assets-src/<family>/SOURCE.md` for creator, source item, authorization or license, acquisition, editable inputs, tool versions, rebuild command, and transforms;
 - an `EXPORT.md` only when the family has a substantial, repeatable export contract;
 - `public/<family>/PROVENANCE.md` for runtime filenames, hashes, transformations, dimensions or geometry, loader contract, redistribution constraints, and release status;
 - `assets-src/asset-manifest.json` for every managed runtime file and any tracked source binary; and
@@ -112,7 +131,11 @@ Preserve the runtime contract:
 - disposal of GPU, audio, and event resources; and
 - reduced-motion, quality-mode, and offline behavior.
 
-Keep backlog-only or unapproved fRiENDSiES traits data-only: no runtime URL, preload, request, or bundled binary. Keep curated local characters independent of a full remote metadata index.
+Keep backlog-only or technically unapproved fRiENDSiES traits data-only: no
+runtime URL, preload, request, or bundled binary until their design role,
+variant selection, performance, and fallback are ready. This is a curation and
+engineering boundary, not a rights boundary. Keep curated local characters
+independent of a full remote metadata index.
 
 ## Add contract tests
 
@@ -153,7 +176,11 @@ For a release candidate only, follow `docs/release/README.md` and run the strict
 npm run assets:release
 ```
 
-Do not bypass an expected permission failure, delete a blocked family from the manifest while it remains in runtime, or call a candidate release-ready until this command passes.
+Do not bypass an expected permission failure for unrelated third-party material,
+delete a blocked family from the manifest while it remains in runtime, or call
+a candidate release-ready until this command passes. Canonical fRiENDSiES work
+must inherit `friendsies-project`; a per-use permission blocker for that family
+is policy drift to fix, not a new grant to litigate.
 
 ## Hand off truthfully
 
@@ -163,4 +190,9 @@ Distinguish these states:
 - **Cross-cutting verified:** `npm run check` passes and the recorded browser matrix passes, but strict release blockers may remain.
 - **Release-ready candidate:** the intended commit is known, all relevant browser and release checks pass, and `npm run assets:release` passes with no unresolved family.
 
-Report the player-visible effect, family and paths changed, source and permission evidence, transforms and hashes, payload or performance delta, selector/default/fallback behavior, automated and browser evidence, unresolved blockers, and safest next gate. State whether the work is committed, on `main`, opt-in, or only local. Use the handoff template in [records-and-handoff-templates.md](references/records-and-handoff-templates.md).
+Report the player-visible effect, family and paths changed, source and
+authorization or license reference, transforms and hashes, payload or
+performance delta, selector/default/fallback behavior, automated and browser
+evidence, unresolved blockers, and safest next gate. State whether the work is
+committed, on `main`, opt-in, or only local. Use the handoff template in
+[records-and-handoff-templates.md](references/records-and-handoff-templates.md).

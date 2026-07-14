@@ -22,6 +22,7 @@ Copy only the relevant template sections. Replace every placeholder with verifie
 - Manifest family ID: `<family-id>`
 - Creator or owning project: `<name>`
 - Intended status: `<status accepted by the live audit>`
+- Authorization family or license: `<family ID, ADR, or exact license>`
 - Source item page: `<URL or none for wholly project-authored work>`
 - Direct source URL or repository commit: `<URL/commit or none>`
 - Retrieved or authored: `<YYYY-MM-DD>`
@@ -66,7 +67,7 @@ Do not replace missing evidence with “free,” “online,” or “owned by th
 
 - Manifest family ID: `<family-id>`
 - Creator: `<name>`
-- License or permission: `<evidence summary>`
+- Authorization family or license: `<family ID, ADR, or evidence summary>`
 - Release blocked: `<yes/no>`
 - Block reason: `<exact reason or none>`
 - Raw-source redistribution: `<allowed/prohibited/unknown>`
@@ -113,6 +114,13 @@ Use the exact schema already present in the live manifest:
 ```
 
 Set `releaseBlocked` to `false` and omit `releaseBlockReason` only when the evidence supports it. Never change the status or blocker solely to pass strict release mode.
+
+For canonical fRiENDSiES material, reference `friendsies-project` and ADR 0004
+instead of creating per-token, per-trait, per-role, per-transform, or
+per-revision permission language. Continue to record the exact source, hash,
+transform, runtime scope, budgets, fallback, and QA evidence. Keep
+`friendsies-animations` separate because its Mixamo source chain is governed by
+its own family record.
 
 ## Runtime asset entry
 
@@ -220,7 +228,7 @@ Player-visible result: <one sentence>
 
 - State: <local/opt-in/on main; internal/cross-cutting verified/release-ready candidate>
 - Family and paths: <source, runtime, manifest, loader>
-- Permission: <evidence and status>
+- Authorization or license: <family/ADR or evidence and status>
 - Transform: <tool/version/command; source and runtime hashes>
 - Budget delta: <bytes, dimensions/geometry/duration, deployment and frame-time impact>
 - Default and rollback: <selector/fallback behavior>

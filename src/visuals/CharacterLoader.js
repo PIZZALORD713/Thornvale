@@ -366,8 +366,6 @@ export class CharacterLoader {
       instanceId,
       role: entry.role || null,
       storyUse: Array.isArray(entry.storyUse) ? [...entry.storyUse] : [],
-      licenseStatus: entry.licenseStatus || null,
-      redistributionStatus: entry.redistributionStatus || null,
       source: entry.source || null,
       traits,
       bodyRoot,

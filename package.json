@@ -11,6 +11,8 @@
     "friendsies:index": "node scripts/build-friendsies-trait-index.mjs",
     "friendsies:atlas": "node scripts/serve-friendsies-trait-atlas.mjs",
     "friendsies:probe": "node scripts/probe-friendsies-trait.mjs",
+    "animations:build": "node scripts/build-story-actions-v1.mjs",
+    "animations:verify": "node scripts/build-story-actions-v1.mjs --verify",
     "assets:audit": "node scripts/check-asset-budgets.mjs",
     "assets:release": "node scripts/check-asset-budgets.mjs --dist --release",
     "check": "npm run test && npm run build && npm run assets:audit -- --dist"

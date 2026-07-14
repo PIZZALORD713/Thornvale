@@ -1,14 +1,14 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "source": {
     "metadataUrl": "https://gist.githubusercontent.com/IntergalacticPizzaLord/a7b0eeac98041a483d715c8320ccf660/raw/ce7d37a94c33c63e2b50d5922e0711e72494c8dd/fRiENDSiES",
     "revision": "ce7d37a94c33c63e2b50d5922e0711e72494c8dd",
     "sha256": "9f1c4e1cf8d848bd2ceaff7cde48c4ecf60a4b1d0afe273e7a5c5b68c2aee3ef",
     "retrievedOn": "2026-07-12"
   },
-  "scope": "Metadata-only environmental curation for the opening route. Inclusion is not permission to bundle or publish a trait.",
+  "scope": "Design and technical curation for integrated Thornvale use. Curation status controls creative fit and runtime readiness, never permission.",
+  "authorizationFamily": "friendsies-project",
   "keyFormat": "${traitType}:${value}",
-  "rightsStatus": "project-use-review-required",
   "entries": {
     "hand:Flower White": {
       "traitType": "hand",
@@ -19,7 +19,6 @@
       "storyPhase": ["arrival", "day-routine", "resolution"],
       "placementAdvice": "Use as one deliberate arrival bouquet and a restrained Ledger pair; do not scatter it as meadow filler.",
       "rationale": "It already belongs to the default player's welcome language, but only reads as authored when isolated from generic flowers.",
-      "rightsStatus": "project-release-authorized",
       "designProfile": {
         "surfaceMeaning": "A white flower offered at arrival makes the welcome feel personal and freely given.",
         "counterMeaning": "Beside the Ledger, the same flower becomes a receipt proving that the town already counted the player's gratitude.",
@@ -31,8 +30,7 @@
         "affordanceRisk": "low",
         "shotRole": "support",
         "maximumPerShot": 2,
-        "technicalReadiness": "runtime-proven",
-        "rightsCoverage": "project-release-authorized-thornvale-only"
+        "technicalReadiness": "runtime-proven"
       }
     },
     "hand:Torch": {
@@ -44,7 +42,6 @@
       "storyPhase": ["arrival", "dusk", "night-investigation", "intervention", "resolution"],
       "placementAdvice": "Mount at the arrival threshold, Gate, and Bell; let warmth and light change with the town's intent.",
       "rationale": "A single repeated hand item can turn friendly wayfinding into controlled ritual without changing the landmark silhouette.",
-      "rightsStatus": "project-release-authorized",
       "designProfile": {
         "surfaceMeaning": "A warm torch marks the safe route from arrival to the Bell.",
         "counterMeaning": "When its warmth cools at intervention, the guide light reads as a boundary the town expects the player to obey.",
@@ -56,8 +53,7 @@
         "affordanceRisk": "medium",
         "shotRole": "primary",
         "maximumPerShot": 2,
-        "technicalReadiness": "runtime-proven",
-        "rightsCoverage": "project-release-authorized-thornvale-only"
+        "technicalReadiness": "runtime-proven"
       }
     },
     "hand:Book Of Ocean": {
@@ -71,7 +67,6 @@
       "storyPhase": ["day-routine", "night-investigation", "intervention", "resolution"],
       "placementAdvice": "Anchor one copy to the Community Ledger shelf; never repeat it as general library dressing.",
       "rationale": "It gives the false record a physical source and pairs naturally with the Ledger's Crown Up office marker.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A single ocean-blue book gives the Ledger shelf the familiarity of a cherished community record.",
         "counterMeaning": "After the false entry appears, the book becomes the physical source of an official memory that outranks the player's own.",
@@ -83,8 +78,7 @@
         "affordanceRisk": "medium",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "metadata-probed-rigid-candidate",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "metadata-probed-rigid-candidate"
       }
     },
     "hand:Moon Staff": {
@@ -96,7 +90,6 @@
       "storyPhase": ["dusk", "night-investigation"],
       "placementAdvice": "Test one vertical standard near the Bell approach, clear of the Torch silhouette and interaction prompt.",
       "rationale": "Its celestial read could announce story-controlled time without another UI marker, if it remains secondary to the Bell.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A crescent-topped staff beside the Bell path makes dusk feel ceremonially anticipated.",
         "counterMeaning": "Once the routine is enforced, the celestial marker reads less like wayfinding and more like a public curfew standard.",
@@ -108,8 +101,7 @@
         "affordanceRisk": "high",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "hand:Heavens Key": {
@@ -121,7 +113,6 @@
       "storyPhase": ["arrival", "resolution"],
       "placementAdvice": "Reserve for one locked or newly opened route; place it beside the threshold rather than floating over the path.",
       "rationale": "It can make access feel granted by the town, while Friends Key remains the stronger civic-identity crest candidate.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "An ornate key at a threshold promises that a previously closed route can be opened for the player.",
         "counterMeaning": "At resolution, the key makes access feel conditional because Thornvale visibly decides which path the player deserves.",
@@ -133,8 +124,7 @@
         "affordanceRisk": "high",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "hand:Cane": {
@@ -146,7 +136,6 @@
       "storyPhase": ["day-routine", "intervention"],
       "placementAdvice": "Lean one against a bench or office post where it suggests a person has just stepped away.",
       "rationale": "A quiet domestic prop can imply repeated supervision more subtly than another glowing magical object.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A cane resting beside a civic bench suggests an elder or steward has only briefly stepped away.",
         "counterMeaning": "During intervention, the unattended cane implies that supervision was already present before the player noticed it.",
@@ -158,8 +147,7 @@
         "affordanceRisk": "medium",
         "shotRole": "micro",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "hand:Kaleidoscope": {
@@ -171,7 +159,6 @@
       "storyPhase": ["night-investigation", "intervention"],
       "placementAdvice": "Use once on a sightline toward the Ledger or Bell, preferably revealed after the anomaly.",
       "rationale": "It supports familiar-then-wrong perception without using the more literal All Seeing symbol too early.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A colorful viewing tube invites playful attention toward a carefully composed town sightline.",
         "counterMeaning": "Revealed after the second bell, it suggests that the town has been framing what the player is allowed to see.",
@@ -183,8 +170,7 @@
         "affordanceRisk": "high",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "hand:Pink Heart Wand": {
@@ -196,7 +182,6 @@
       "storyPhase": ["day-routine", "resolution"],
       "placementAdvice": "Test as a single ceremonial object near a reward or comply route, never as repeated path lighting.",
       "rationale": "It can make approval visibly sweet while leaving room for that sweetness to become coercive.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A pink heart wand makes public approval feel sweet, ceremonial, and worth earning.",
         "counterMeaning": "On the comply route, the same wand turns affection into an official reward for accepting the town's account.",
@@ -208,8 +193,7 @@
         "affordanceRisk": "high",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "hand:Star Wand": {
@@ -221,7 +205,6 @@
       "storyPhase": ["dusk", "resolution"],
       "placementAdvice": "Keep to one small Bell or ending accent and verify it does not read as an interactable weapon.",
       "rationale": "Its readable star silhouette can connect the cozy wish-bell surface to the town's scripted nighttime response.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A small star wand gives the dusk Bell the innocent read of a shared wish ritual.",
         "counterMeaning": "After the impossible second ring, its celebratory star becomes evidence that the nighttime response was staged in advance.",
@@ -233,8 +216,7 @@
         "affordanceRisk": "high",
         "shotRole": "micro",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "hand:Orb": {
@@ -246,7 +228,6 @@
       "storyPhase": ["night-investigation", "intervention"],
       "placementAdvice": "Reserve for a single post-anomaly appearance near the Bell or intervention sightline; hide it completely at arrival.",
       "rationale": "The exact catalog entry exists, but showing it before the second bell would announce the town's wrongness too bluntly.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A luminous orb can read as a protective night light watching over the plaza.",
         "counterMeaning": "Appearing only after the anomaly, it makes that protection indistinguishable from surveillance of the player's response.",
@@ -258,8 +239,7 @@
         "affordanceRisk": "high",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "hand:Rebirth": {
@@ -271,7 +251,6 @@
       "storyPhase": ["resolution"],
       "placementAdvice": "Consider only for a future Rewrite ending and keep it absent from the current comply/alter proof.",
       "rationale": "Its meaning is potentially useful but would widen the present two-outcome story before the core hook is validated.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A rebirth emblem promises renewal after a difficult choice.",
         "counterMeaning": "In a future Rewrite ending, that promise could reveal renewal as the town's permission to replace an inconvenient self.",
@@ -283,8 +262,7 @@
         "affordanceRisk": "high",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "hand:Flower Purple": {
@@ -296,7 +274,6 @@
       "storyPhase": ["night-investigation", "resolution"],
       "placementAdvice": "If tested, swap one meaningful Flower White placement after a durable story event; do not build another flower field.",
       "rationale": "A single color break could communicate changed memory, but more flowers would repeat the visual problem this curation is meant to solve.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "One purple flower reads as a tender memorial variation on the player's original white welcome.",
         "counterMeaning": "After the record changes, the color swap implies that Thornvale can revise even the gift that marked the player's arrival.",
@@ -308,8 +285,7 @@
         "affordanceRisk": "low",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Crown Up": {
@@ -321,7 +297,6 @@
       "storyPhase": ["arrival", "day-routine", "night-investigation", "intervention", "resolution"],
       "placementAdvice": "Use once as the Ledger crest and animate posture rather than repeating crowns across town.",
       "rationale": "It already gives the Ledger an institutional owner and can change posture without changing authoritative story state.",
-      "rightsStatus": "project-release-authorized",
       "designProfile": {
         "surfaceMeaning": "An upright gold crown makes the Community Ledger look cared for by a recognizable civic office.",
         "counterMeaning": "As its posture changes during correction, the crest reveals that the office is actively judging which memory remains official.",
@@ -333,8 +308,7 @@
         "affordanceRisk": "low",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "runtime-proven",
-        "rightsCoverage": "project-release-authorized-thornvale-only"
+        "technicalReadiness": "runtime-proven"
       }
     },
     "sprout:Friends Key": {
@@ -348,7 +322,6 @@
       "storyPhase": ["arrival", "resolution"],
       "placementAdvice": "Place one centered crest above the Welcome Gate; pair with hand-item Torches rather than more floral decoration.",
       "rationale": "It turns entry into membership granted by the town and is the clearest non-flower first-impression sprout.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A key crest above the Welcome Gate makes entry feel like admission to a community that recognizes the player.",
         "counterMeaning": "The fixed crest also makes belonging visibly conditional because the town, not the player, controls the threshold.",
@@ -360,8 +333,7 @@
         "affordanceRisk": "high",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "metadata-probed-rigid-candidate",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "metadata-probed-rigid-candidate"
       }
     },
     "sprout:Bloom": {
@@ -373,7 +345,6 @@
       "storyPhase": ["arrival", "day-routine"],
       "placementAdvice": "Use as one garden district or cottage crest above eye level, not as a planted flower substitute.",
       "rationale": "A sprout-scale bloom reads as identity and keeps botanical language distinct from hand-held Flower White gifts.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A high-mounted bloom identifies the garden district without adding another planted flower bed.",
         "counterMeaning": "Repeated as a district seal rather than a living plant, the bloom shows that even growth has an approved civic category.",
@@ -385,8 +356,7 @@
         "affordanceRisk": "low",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Blooming Tree": {
@@ -398,7 +368,6 @@
       "storyPhase": ["day-routine", "resolution"],
       "placementAdvice": "Test as a single high-mounted orchard or cottage-route emblem with clear sky behind its silhouette.",
       "rationale": "It can identify a destination without adding another full-size tree or generic signboard.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A blooming-tree crest gives the orchard route a generous promise of shade, fruit, and home.",
         "counterMeaning": "As an official route emblem, the tree reframes family growth and rootedness as a town-assigned destination.",
@@ -410,8 +379,7 @@
         "affordanceRisk": "low",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Good Night": {
@@ -423,7 +391,6 @@
       "storyPhase": ["dusk", "night-investigation"],
       "placementAdvice": "Mount near the Bell route and reveal through lighting at dusk, without obscuring the Bell itself.",
       "rationale": "The phrase-like identity can make a polite bedtime routine feel civic before it feels restrictive.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A Good Night crest makes the Bell route feel like the town gently tucking every household in at dusk.",
         "counterMeaning": "Once the Bell rule is known, the same bedtime emblem reads as a civic curfew delivered with perfect manners.",
@@ -435,8 +402,7 @@
         "affordanceRisk": "medium",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Resting Green Leaf": {
@@ -448,7 +414,6 @@
       "storyPhase": ["arrival", "day-routine", "resolution"],
       "placementAdvice": "Use on one cottage or bench canopy where its horizontal posture reads clearly against a light surface.",
       "rationale": "It is a quiet cozy identity marker that can make the comply route feel genuinely safe rather than merely rewarded.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A resting leaf above a cottage or bench promises a genuinely calm place to stop.",
         "counterMeaning": "On the comply route, its official placement makes rest feel like a comfort granted in exchange for agreement.",
@@ -460,8 +425,7 @@
         "affordanceRisk": "low",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Happy Cloud": {
@@ -473,7 +437,6 @@
       "storyPhase": ["arrival", "intervention"],
       "placementAdvice": "Use once over a civic welcome point and test a subtle posture or light change during intervention.",
       "rationale": "A cheerful cloud can remain pretty while becoming unsettling through repetition or perfectly timed correction.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A smiling cloud crest reassures new arrivals that the valley has prepared gentle weather for them.",
         "counterMeaning": "If it changes in exact synchrony with Lumen's correction, the reassurance reveals itself as a managed public expression.",
@@ -485,8 +448,7 @@
         "affordanceRisk": "low",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Totem": {
@@ -498,7 +460,6 @@
       "storyPhase": ["day-routine", "night-investigation"],
       "placementAdvice": "Reserve for one neighborhood threshold and keep enough negative space for its silhouette to read as a crest.",
       "rationale": "It could encode local identity without text, provided it does not imply a new interactable or supernatural system.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A stacked totem at one neighborhood threshold gives residents a shared landmark and local identity.",
         "counterMeaning": "After the anomaly, the guardian-like marker suggests that neighborhood identity also records who crosses its boundary.",
@@ -510,8 +471,7 @@
         "affordanceRisk": "medium",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Star Power": {
@@ -523,7 +483,6 @@
       "storyPhase": ["dusk", "night-investigation", "resolution"],
       "placementAdvice": "Test as one small Bell crest or ending marker; avoid combining it with Star Wand in the same shot.",
       "rationale": "It offers a readable nighttime identity cue without requiring a new light source or full landmark model.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A compact starburst crest gives the Bell a festive nighttime identity without adding another lamp.",
         "counterMeaning": "After the second ring, the fixed star makes the supposed surprise feel like a response the town had already scheduled.",
@@ -535,8 +494,7 @@
         "affordanceRisk": "medium",
         "shotRole": "micro",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Chef": {
@@ -548,7 +506,6 @@
       "storyPhase": ["day-routine"],
       "placementAdvice": "Use only above the bakery door or work counter as a role marker, scaled below the civic landmark crests.",
       "rationale": "It tests whether sprouts can identify ordinary town roles, not only magical or ominous institutions.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A small chef crest makes the bakery legible as a neighbor's everyday place of work.",
         "counterMeaning": "As an assigned role seal, it hints that even ordinary care work is an identity the town formally records.",
@@ -560,8 +517,7 @@
         "affordanceRisk": "low",
         "shotRole": "micro",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Blue Shell": {
@@ -573,7 +529,6 @@
       "storyPhase": ["day-routine", "resolution"],
       "placementAdvice": "Mount at the pond path junction rather than near the water surface, where it could be mistaken for forage.",
       "rationale": "It provides a non-floral district symbol and broadens the trait language beyond civic authority.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A blue shell crest marks the pond route with a calm symbol of water and shelter.",
         "counterMeaning": "Mounted at the junction instead of found by the water, the shell implies that even wandering outdoors follows town-approved categories.",
@@ -585,8 +540,7 @@
         "affordanceRisk": "medium",
         "shotRole": "micro",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:All Seeing": {
@@ -598,7 +552,6 @@
       "storyPhase": ["night-investigation", "intervention"],
       "placementAdvice": "Reserve for one post-anomaly civic sightline; never show it on the welcome screen or repeat it around town.",
       "rationale": "The exact catalog entry exists, but its literal surveillance meaning would spoil Thornvale's subtle social wrongness if introduced early.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "An eye crest can initially read as a civic promise that no neighbor will be overlooked.",
         "counterMeaning": "Revealed only after the anomaly, the same eye states too plainly that the town has been watching the player's private disagreement.",
@@ -610,8 +563,7 @@
         "affordanceRisk": "medium",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Mad Heart": {
@@ -623,7 +575,6 @@
       "storyPhase": ["intervention", "resolution"],
       "placementAdvice": "Consider only as a temporary state change on an established heart marker, not a permanent new landmark.",
       "rationale": "It could show kindness curdling into correction, but the current slice should first prove that through behavior and posture.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A heart crest appears to make communal approval visible and emotionally direct.",
         "counterMeaning": "When substituted during intervention, its agitated form turns affection into pressure to repair the relationship on Thornvale's terms.",
@@ -635,8 +586,7 @@
         "affordanceRisk": "medium",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Warp": {
@@ -648,7 +598,6 @@
       "storyPhase": ["resolution"],
       "placementAdvice": "Reserve for the altered route after the choice and verify it does not promise teleportation or a new mechanic.",
       "rationale": "Its silhouette may support the forgotten path, but its likely supernatural read risks widening the feature promise.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A portal-like crest can make the newly opened thorn path feel wondrous and intentionally revealed.",
         "counterMeaning": "On the alter route, it risks implying that escape is another destination authored by the town rather than a path outside its control.",
@@ -660,8 +609,7 @@
         "affordanceRisk": "high",
         "shotRole": "primary",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     },
     "sprout:Crown Down": {
@@ -673,7 +621,6 @@
       "storyPhase": ["intervention", "resolution"],
       "placementAdvice": "Evaluate only as a stateful alternative to Crown Up at the Ledger, never as a second simultaneous crown.",
       "rationale": "A literal crown reversal may communicate changed authority clearly, but posture animation should be exhausted before adding another binary.",
-      "rightsStatus": "project-use-review-required",
       "designProfile": {
         "surfaceMeaning": "A lowered crown can suggest that civic authority is listening humbly after the player's challenge.",
         "counterMeaning": "If it replaces Crown Up at resolution, the gesture may instead stage submission as another approved posture of the same unchanged office.",
@@ -685,8 +632,7 @@
         "affordanceRisk": "low",
         "shotRole": "support",
         "maximumPerShot": 1,
-        "technicalReadiness": "unprobed",
-        "rightsCoverage": "metadata-only-review-required"
+        "technicalReadiness": "unprobed"
       }
     }
   }

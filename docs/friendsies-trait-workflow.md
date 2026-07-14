@@ -1,14 +1,17 @@
 # fRiENDSiES environmental trait workflow
 
-This is the internal-evaluation path for turning a large character-trait catalog
-into a small, intentional Thornvale environment vocabulary. Catalog presence,
-an attractive preview, or a successful geometry probe is not permission to
-bundle, adapt, redistribute, or publish a trait.
+This is the design-and-engineering path for turning a large character-trait
+catalog into a small, intentional Thornvale environment vocabulary. Canonical
+fRiENDSiES assets and metadata already have standing project authorization under
+[ADR 0004](decisions/0004-friendsies-project-wide-authorization.md). Catalog
+presence, an attractive preview, or a successful geometry probe still does not
+prove that a trait is the right variant, story fit, technical shape, or runtime
+budget for Thornvale.
 
 The workflow is:
 
 ```text
-index -> atlas -> shortlist -> probe -> provenance -> bundle -> place -> QA
+index -> atlas -> shortlist -> probe -> source/integrity record -> bundle -> place -> QA
 ```
 
 The player-facing beat is the opening route from arrival through the Welcome
@@ -21,21 +24,23 @@ remains. The testable trait hypothesis is that fresh players can identify the
 Gate, Ledger, Bell, and Lumen's shift from guide to authority without being told
 to inspect the decoration.
 
-This workflow does not authorize a full-town replacement, a character builder,
-procedural trait scattering, new interactions, a third ending, or collection-
-wide metadata as an environmental-trait runtime source. Those remain outside
-the current core-hook gate. The separate shareable-player path can range-fetch
-one non-bundled token and stream its character components during development;
-that path is not Trait Echo approval and is declared as a strict-release-blocked
-external dependency in the asset manifest.
+This workflow does not expand the current milestone into a full-town
+replacement, character builder, procedural trait scattering, new interactions,
+a third ending, or collection-wide metadata as an environmental-trait runtime
+source. Those remain outside the core-hook gate for product and engineering
+reasons, not permission reasons. The shareable-player path may range-fetch one
+non-bundled token and stream its character components under the same standing
+authorization; its pin, origin, token range, fallback, and runtime role remain
+machine-checked integrity constraints.
 
 ## 1. Index the pinned catalog
 
 [`../assets-src/friendsies/trait-index.json`](../assets-src/friendsies/trait-index.json)
 is a source-side review artifact, not a runtime manifest. It is derived from the
 pinned fRiENDSiES metadata revision recorded in the index and preserves all
-seven collection trait types. The bounded environmental curation sidecar uses
-only `hand` and `sprout`. A trait is identified by the exact, case-sensitive key
+seven collection trait types. The bounded environmental curation sidecar
+currently emphasizes `hand` and `sprout`; `backpiece` is also a valid source for
+an authored Thornvale use. A trait is identified by the exact, case-sensitive key
 `${traitType}:${value}`.
 
 ```bash
@@ -67,27 +72,28 @@ port is occupied. The server exposes the generated index at
 probe ledger at `/trait-probes.json`. Its source lives under
 `tools/friendsies-trait-atlas/` and is not shipped by Vite.
 
-Use the atlas to compare silhouettes and names, not to approve rights or infer
-technical compatibility. Ask whether a trait supports a named landmark, story
-state, or wayfinding job. Reject visually interesting objects that have no
-specific opening-route responsibility.
+Use the atlas to compare silhouettes, names, variants, and possible story jobs;
+authorization is already settled. Do not infer technical compatibility from a
+preview. Ask whether a trait supports a named landmark, story state, action, or
+wayfinding job. Reject visually interesting objects that have no specific
+opening-route responsibility.
 
 ## 3. Curate a bounded shortlist
 
 [`../assets-src/friendsies/trait-curation.json`](../assets-src/friendsies/trait-curation.json)
 is the manually reasoned decision layer. Every entry includes semantic tags, an
-environment role, story phases, placement advice, rationale, and a rights
-status. The three exact active traits use `project-release-authorized`; every
-unapproved shortlist or hold remains `project-use-review-required`.
+environment role, story phases, placement advice, rationale, and a curation
+status. Rights are not adjudicated entry by entry; canonical collection material
+inherits the `friendsies-project` authorization family.
 
 Statuses mean:
 
-- `active`: already used in the build. Release scope still comes only from the
-  exact manifest family and provenance record; active status alone grants
-  nothing.
-- `shortlist`: worth technical and permission review for a named use.
-- `hold`: a catalog-confirmed reserve whose meaning, scope, timing, or rights do
-  not support intake yet.
+- `active`: already used in the build with a complete source and technical
+  contract.
+- `shortlist`: worth variant, story-fit, geometry, performance, and placement
+  review for a named use.
+- `hold`: a catalog-confirmed reserve whose meaning, scope, timing, or technical
+  shape does not support intake yet.
 
 Sprouts should communicate identity, office, or district. Hand items should
 communicate intent, action, ritual, or access. Prefer one meaningful object at a
@@ -137,26 +143,29 @@ only; no downloaded GLB is retained.
 | `unsupported` | The container lacks usable scene triangles or has incomplete geometry/skin metadata | Reject or define a separate, justified pipeline |
 
 A metadata-only `rigid-candidate` is not proof that a model is rigid, correctly
-oriented, well-pivoted, attractive in Thornvale, or safe to redistribute.
+oriented, well-pivoted, attractive in Thornvale, or ready for its intended
+runtime path.
 
-## 5. Record permission and provenance
+## 5. Apply standing authorization and record source integrity
 
 Before adding a new binary, identify the exact token evidence, trait type and
 value, selected variant URL, original filename, original SHA-256, retrieval
 date, creator or owning project, intended environmental adaptation, and the
-permission text that covers that use.
+exact transform and runtime role. Reference the shared `friendsies-project`
+family and ADR 0004; do not write a new per-trait permission grant.
 
-The exact active Flower White, Torch, and Crown Up runtime hashes and documented
-Trait Echo v1 arrangements are project-release-authorized for bundled Thornvale
-builds. That scope is not a general license. For every other candidate whose
-exact environmental-adaptation and publication authority is unrecorded, keep
-the candidate metadata-only. Do not add its URL to the Trait Echo/environment
-runtime configuration, preload it for the environment, request it from the
-Trait Echo system, copy it into `public/`, or relax the asset audit. A full token
-selected through the separately authorized remote-player path may independently
-stream the same binary as an integrated character component; that does not
-approve the candidate for environmental use, local bundling, raw copying,
-mirroring, standalone redistribution, or use outside Thornvale.
+That standing authorization covers canonical current and future fRiENDSiES
+revisions for integrated Thornvale characters, detached traits, hand items,
+sprouts, backpieces, tools, equipment, props, environments, UI, documentation,
+testing, promotional captures, streaming, local bundling or caching,
+optimization, transformation, and derivative runtime assets. It does not cover
+standalone packs, bulk raw collection mirrors or dumps, sublicensing, or reuse
+outside Thornvale.
+
+Exact catalog pins, approved origins, variant URLs, hashes, transforms, budgets,
+fallbacks, and QA remain required because they make the selected result secure,
+reproducible, bounded, and reversible. A changed revision or use may require
+technical review and updated records, but not another permission decision.
 
 When the evidence is sufficient, follow [`../assets-src/README.md`](../assets-src/README.md)
 and the live [`../assets-src/asset-manifest.json`](../assets-src/asset-manifest.json).
@@ -164,11 +173,11 @@ Create adjacent source and runtime provenance records using the repository's
 asset templates. The live manifest and audit own accepted statuses and byte
 budgets; this workflow does not duplicate them.
 
-## 6. Bundle only the approved selection
+## 6. Bundle only the selected, technically ready asset
 
-Bundle the one approved GLB under a stable, versioned `public/friendsies/` path.
+Bundle the selected GLB under a stable, versioned `public/friendsies/` path.
 Record final bytes and SHA-256 after the file is final. Add its exact manifest
-entry, runtime context, family permission state, release blocker when applicable,
+entry, runtime context, `friendsies-project` family reference, transform record,
 and adjacent provenance in the same change.
 
 Do not bundle the full metadata index, all same-named variants, or the complete
@@ -187,8 +196,8 @@ that. It is not release approval.
 
 ## 7. Place as authored story language
 
-Add declarative placement and story meaning only after the binary and rights
-record agree. Preserve gameplay anchors, collider shapes, interaction IDs,
+Add declarative placement and story meaning only after the binary and source-
+integrity record agree. Preserve gameplay anchors, collider shapes, interaction IDs,
 save fields, and authoritative story state. Visuals consume story state; they
 do not create it.
 
@@ -198,8 +207,8 @@ For the current opening-route vocabulary:
   never generic meadow filler.
 - `Torch` guides at arrival and the Gate, then becomes Bell ritual and authority.
 - `Crown Up` identifies the Ledger's civic office.
-- `Friends Key`, if approved, belongs as the Welcome Gate crest.
-- `Book Of Ocean`, if approved, belongs on the Ledger shelf.
+- `Friends Key`, if selected and technically ready, belongs as the Welcome Gate crest.
+- `Book Of Ocean`, if selected and technically ready, belongs on the Ledger shelf.
 - `All Seeing` and `Orb` remain absent from Trait Echo until an anomaly-only
   reveal is authored and validated.
 
@@ -227,5 +236,7 @@ requests, save/reset, and both endings. Record same-device frame time and fresh
 player observations before expanding beyond the opening route.
 
 For a release candidate, follow [`release/README.md`](release/README.md) and run
-the strict release audit against a fresh build. Never bypass an expected rights
-blocker to make that command pass.
+the strict release audit against a fresh build. Fix source, transform, budget,
+fallback, or QA failures rather than weakening their checks. A per-use
+permission blocker on canonical fRiENDSiES material is stale policy and should
+be migrated to the shared `friendsies-project` authorization.

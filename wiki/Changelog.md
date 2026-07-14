@@ -2,6 +2,51 @@
 
 ## Unreleased
 
+* Replaced fRiENDSiES per-file, per-token, and per-role release grants with the
+  standing project-wide authorization in ADR 0004. All present and future
+  canonical fRiENDSiES assets may be streamed, bundled, cached, transformed,
+  recombined, and used in any integrated Thornvale character, item, equipment,
+  prop, environment, UI, documentation, testing, or promotional role without a
+  new permission decision. The manifest now uses one `friendsies-project`
+  family; per-trait rights fields and runtime legal metadata were removed.
+  Catalog pins, exact canonical URL prefixes, hashes, transforms, budgets,
+  fallbacks, and QA remain enforced. Standalone packs, bulk raw mirrors,
+  sublicensing, and outside-project reuse remain excluded; animation inputs with
+  separate Mixamo rights remain independently governed.
+* Added the bounded Day One Proof between Steward Lumen's welcome and the
+  Community Ledger: gather wood, fish the pond, light a fire, cook and eat,
+  plant and water one seed bed, and brace a provisional forest-edge shelter.
+  Nourishment, working energy, a small saved inventory, camp/garden projection,
+  and recoverable pass-out with a clinic fee or debt now form one testable loop;
+  broader recipes, economy, crop growth, and freeform building remain deferred.
+* Added the development-only `story-actions-v1` conversion pilot: six
+  deterministic animation-only GLBs totaling 270,232 bytes provide four
+  semantic Lumen gestures plus dedicated planting and watering performances.
+  The converter strips wrapper translation, bakes only bounded rotation that
+  returns by the final frame, preserves the terminal pose on a 30 Hz grid, and
+  emits no character geometry or material payload. Normal motion time-scales the
+  garden clips into the authoritative action clock; reduced motion skips them,
+  and missing catalog/files fall back locally without moving progression
+  authority out of `GameSession`. Browser acceptance remains pending, and the
+  family stays release-blocked until its six exact derivatives receive bundled-
+  Thornvale publication authorization.
+* Moved the provisional camp into a distinct western forest-edge clearing,
+  spread the fire, seed bed, and shelter into a readable triangle, and extended
+  both the town approach and altered-story trail to the new entrance. Added
+  numeric regressions for cottage clearance, open working space, meadow-edge
+  margin, and route continuity. The action-weight pass now gives every accepted
+  Day One interaction a grounded three-to-four-second timeline with an exact
+  commit cue; invalid interactions remain immediate. The final visible-contact
+  browser pass is still open.
+* Replaced the town-wide peach dirt ribbon with a mixed route grammar. Arrival,
+  cottage, and ritual lanes now share one deterministic, warm-brick-biased
+  reclaimed-paver draw, while pond, forest, and meadow routes retain softer
+  clover wear, broken foot patches, shoulder dapples, and sparse stones. The
+  Bell now waits on the rear hill at the end of a longer paved procession; its
+  visible terrain, Rapier collider, camera surface, interaction, anomaly VFX,
+  asset pilot, and ritual torch share the elevated landmark contract. The
+  provisional camp still has no rendered dirt pad, and explicit thickness or
+  height tiers prevent every ground treatment from fighting with the meadow.
 * Limited fRiENDSiES head emission to explicit presentation opt-ins instead of
   applying a white `0.22` lift to every head. Streamed `Grey Cloud` and curated
   Steward Lumen `White Elephant` retain their reviewed soft-white treatment;
@@ -13,12 +58,10 @@
   to bundled `#6602` and `#8914` without flashing the emergency visual. A code-
   native emergency visual is reserved for total bundled decoder/local-family
   failure so the story can still boot.
-  The arbitrary-token path is declared as a project-release-authorized external
-  dependency. Published Thornvale builds may use only the pinned catalog,
-  token range `1..10000`, and `https://storage.googleapis.com` components to
-  assemble one selected in-game player avatar; raw copying, mirroring,
-  standalone packs, environmental reuse, sublicensing, unrelated origins, and
-  outside-project use remain excluded.
+  The arbitrary-token path remains a pinned external runtime dependency:
+  published Thornvale builds use the recorded catalog, token range `1..10000`,
+  exact canonical storage prefix, and bundled fallbacks. These are engineering
+  integrity controls under ADR 0004, not a player-avatar-only permission scope.
 * Replaced the audit's authored-or-CC0-only release rule with a scoped
   `project-release-authorized` path. The three exact fRiENDSiES animation
   derivatives may ship inside Thornvale builds while raw-source, standalone
@@ -56,20 +99,18 @@
   slab while a higher-priority objective is visible.
 * Expanded the pinned 10,000-token / 1,077-trait / 1,447-variant collection atlas
   with 27 individual casting profiles, surface/counter meanings, mount/phase/risk
-  filters, shot budgets, technical readiness, and rights coverage.
-* Kept Book Of Ocean, Friends Key, All Seeing, Orb, and every other unapproved
-  candidate outside Trait Echo/environmental requests and bundled release assets
-  pending individual permission, provenance, fit, performance, and rollback
-  review. A full-token player selection may stream a candidate only as a
-  character component under the separate bounded remote-player authorization;
-  that does not approve environmental adaptation or bundling.
-* Project-release-authorized the exact manifested local `#0001`, `#6602`, and
-  `#8914` files and documented Trait Echo v1 uses for bundled Thornvale builds.
-  Raw-source, standalone, collection-wide bundling, and outside-project
-  redistribution remain prohibited. A separate bounded authorization now
-  covers remote player selection across IDs `1..10000` without granting
-  environmental or redistribution rights. The strict asset release audit now
-  passes with all five fRiENDSiES families evaluated under their own scopes.
+  filters, shot budgets, and technical readiness. Per-trait rights coverage was
+  removed because canonical entries inherit ADR 0004.
+* Kept Book Of Ocean, Friends Key, All Seeing, Orb, and other candidates outside
+  Trait Echo/environmental requests and bundled release assets pending exact
+  variant, provenance, fit, performance, fallback, and rollback review—not
+  individual permission. Full-token player selection and local bundling share
+  the same standing project authorization.
+* Consolidated the formerly exact local `#0001`, `#6602`, `#8914`, Trait Echo,
+  and remote player grants into the single `friendsies-project` manifest family.
+  The strict asset release audit now treats source identity and runtime safety
+  as engineering gates while continuing to prohibit standalone, raw-mirror,
+  sublicense, and outside-project distribution.
 
 ## 0.3.0 - 2026-07-12
 

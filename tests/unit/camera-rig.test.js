@@ -10,6 +10,8 @@ import {
   Vector3,
 } from 'three';
 import { CameraRig } from '../../src/game/camera/CameraRig.js';
+import { TOWN_LAYOUT } from '../../src/config/town.js';
+import { sampleMoundHeight } from '../../src/utils/terrain-surface.js';
 import { createGroundDressing } from '../../src/visuals/CozyTownKit.js';
 
 function createRig() {
@@ -142,11 +144,48 @@ test('the main meadow blocks the camera while terrain details remain decorative'
   const surface = terrain.getObjectByName('cozy_terrain_surface');
   const patch = terrain.getObjectByName('cozy_terrain_patch');
   const hill = terrain.getObjectByName('cozy_terrain_hill');
+  const walkableBellHill = terrain.getObjectByName('cozy_walkable_bell_hill');
   const tufts = terrain.getObjectByName('particle_grass_tufts');
 
   assert.notEqual(terrain.userData.cameraCollision, false);
   assert.equal(surface?.userData.cameraCollision, true);
   assert.equal(patch?.userData.cameraCollision, false);
   assert.equal(hill?.userData.cameraCollision, false);
+  assert.equal(walkableBellHill?.userData.cameraCollision, true);
   assert.equal(tufts?.userData.cameraCollision, false);
+});
+
+test('the Bell hill keeps the camera above its visible surface at pitch extremes', () => {
+  const terrain = createGroundDressing({
+    registerBob() {},
+    registerSway() {},
+  }, TOWN_LAYOUT, { assetVariant: 'baseline' });
+  const hill = terrain.getObjectByName('cozy_walkable_bell_hill');
+  const scene = new Scene();
+  scene.add(terrain);
+  scene.updateMatrixWorld(true);
+
+  for (const pitch of [-0.5, 1.2]) {
+    const { camera, rig } = createRig();
+    rig.collisionEnabled = true;
+    rig.setTarget(new Vector3(
+      TOWN_LAYOUT.landmarks.bell.x,
+      TOWN_LAYOUT.landmarks.bell.baseY,
+      TOWN_LAYOUT.landmarks.bell.z,
+    ));
+    rig.pitch = pitch;
+    rig.setCollisionObjects([hill]);
+    rig.resetPosition();
+    rig.update(1 / 60, scene);
+
+    const surfaceY = Math.max(0, sampleMoundHeight(
+      TOWN_LAYOUT.terrain.bellHill,
+      camera.position.x,
+      camera.position.z,
+    ));
+    assert.ok(
+      camera.position.y - surfaceY >= 0.08,
+      `camera clearance ${camera.position.y - surfaceY} is unsafe at pitch ${pitch}`,
+    );
+  }
 });

@@ -1,26 +1,26 @@
 # fRiENDSiES #6602 source
 
-## Ownership and permission
+## Source and standing authorization
 
-- Manifest family ID: `friendsies-6602`
+- Manifest family ID: `friendsies-project`
 - Creator or owning project: fRiENDSiES
 - Intended status: `project-release-authorized`
 - Source item page: <https://www.frienemies.xyz/fren/6602>
 - Canonical metadata: <https://us-central1-devloper-eth.cloudfunctions.net/friendsies-v2a/metadata/6602.json>
 - Pinned trait metadata revision: <https://gist.githubusercontent.com/IntergalacticPizzaLord/a7b0eeac98041a483d715c8320ccf660/raw/ce7d37a94c33c63e2b50d5922e0711e72494c8dd/fRiENDSiES>
 - Retrieved: `2026-07-12`
-- Project authorization: the project owner explicitly authorized the seven
-  exact manifested runtime files derived from token `#6602` as Thornvale's
-  bundled default player for publication in Thornvale builds on `2026-07-12`.
+- Project authorization: ADR 0004 grants standing project-wide authorization
+  for all present and future canonical fRiENDSiES assets in any integrated
+  Thornvale role. The seven files below are the current engineering selection,
+  not a permission boundary.
 - Ownership check: `pizzalord.eth` resolved to `0x28af3356C6aaF449d20C59d2531941DDfB94d713`, and the collection profile listed token `#6602` for that address on `2026-07-12`.
 - Raw-source redistribution allowed: `false`; canonical inputs remain external.
-- Runtime distribution scope: integrated bundled Thornvale game builds only;
-  no standalone character pack, collection-wide bundling, or outside-project
-  reuse.
-- Separate remote scope: ADR 0003 authorizes bounded player-avatar streaming
-  under its own pinned catalog/range/origin contract; it does not broaden this
-  exact local-file authorization.
-- Release blocker: none for the exact manifested runtime files.
+- Runtime distribution scope: integrated Thornvale builds, tools,
+  documentation, testing, and Thornvale promotion; no standalone character or
+  asset pack, bulk raw collection mirror, sublicensing, or outside-project use.
+- Catalog pins, source URLs, token/variant identity, hashes, transforms, bytes,
+  budgets, fallbacks, and QA remain engineering integrity gates.
+- Release blocker: none on permission grounds for canonical fRiENDSiES assets.
 
 ## Canonical inputs
 

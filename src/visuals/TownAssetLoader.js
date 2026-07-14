@@ -58,7 +58,10 @@ function getPilotPlacements(layout) {
     },
     bell: {
       asset: roots.bell,
-      position: { ...layout.landmarks.bell, y: 0 },
+      position: {
+        ...layout.landmarks.bell,
+        y: layout.landmarks.bell.baseY || 0,
+      },
       requiredChild: 'TownBellSwing',
     },
   };

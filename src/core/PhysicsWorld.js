@@ -151,6 +151,32 @@ export class PhysicsWorld {
   }
 
   /**
+   * Create a fixed triangle-mesh surface. Intended for continuous authored
+   * terrain such as the Bell hill, not for decorative props or individual tiles.
+   */
+  createStaticTrimesh(
+    position,
+    vertices,
+    indices,
+    { friction = 0.95 } = {},
+  ) {
+    const { RAPIER } = this;
+    const bodyDesc = RAPIER.RigidBodyDesc.fixed()
+      .setTranslation(position.x, position.y, position.z);
+    const body = this.world.createRigidBody(bodyDesc);
+    const colliderDesc = RAPIER.ColliderDesc.trimesh(
+      vertices instanceof Float32Array ? vertices : new Float32Array(vertices),
+      indices instanceof Uint32Array ? indices : new Uint32Array(indices),
+    )
+      .setFriction(friction)
+      .setCollisionGroups(
+        this.makeCollisionGroups(this.GROUPS.GROUND, this.GROUPS.ALL),
+      );
+    const collider = this.world.createCollider(colliderDesc, body);
+    return { body, collider };
+  }
+
+  /**
    * Create a dynamic box
    */
   createDynamicBox(position, size = { x: 1, y: 1, z: 1 }, scene) {

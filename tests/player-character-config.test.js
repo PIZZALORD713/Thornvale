@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   FRIENDSIES_ALLOWED_REMOTE_COMPONENT_ORIGINS,
+  FRIENDSIES_ALLOWED_REMOTE_COMPONENT_URL_PREFIXES,
   FRIENDSIES_METADATA_CATALOG_BYTE_LENGTH,
   FRIENDSIES_METADATA_CATALOG_SHA256,
   FRIENDSIES_METADATA_CATALOG_URL,
@@ -37,12 +38,17 @@ test('remote player runtime policy matches the manifest dependency exactly', asy
     id: dependency.id,
     metadataCatalog: dependency.metadataCatalog,
     allowedAssetOrigins: dependency.allowedAssetOrigins,
+    allowedAssetUrlPrefixes: dependency.allowedAssetUrlPrefixes,
     tokenScope: dependency.tokenScope,
   });
   assert.equal(FRIENDSIES_METADATA_CATALOG_URL, dependency.metadataCatalog.url);
   assert.equal(FRIENDSIES_METADATA_CATALOG_BYTE_LENGTH, dependency.metadataCatalog.bytes);
   assert.equal(FRIENDSIES_METADATA_CATALOG_SHA256, dependency.metadataCatalog.sha256);
   assert.deepEqual(FRIENDSIES_ALLOWED_REMOTE_COMPONENT_ORIGINS, dependency.allowedAssetOrigins);
+  assert.deepEqual(
+    FRIENDSIES_ALLOWED_REMOTE_COMPONENT_URL_PREFIXES,
+    dependency.allowedAssetUrlPrefixes,
+  );
   assert.deepEqual(FRIENDSIES_TOKEN_RANGE, {
     minimum: dependency.tokenScope.minimum,
     maximum: dependency.tokenScope.maximum,
@@ -63,6 +69,9 @@ test('component URL policy separates curated local assets from allowed remote st
 
   for (const invalid of [
     'http://storage.googleapis.com/friendsies/body.glb',
+    'https://storage.googleapis.com/unrelated-bucket/assets/body.glb',
+    'https://storage.googleapis.com/friendsies-v2-assets-d8088d/not-assets/body.glb',
+    'https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/../private/body.glb',
     'https://storage.googleapis.com.evil.example/friendsies/body.glb',
     'https://storage.googleapis.com@evil.example/friendsies/body.glb',
     'https://evil.example/body.glb?next=https://storage.googleapis.com',

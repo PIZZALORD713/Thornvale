@@ -7,6 +7,7 @@ import {
   Color,
   DataTexture,
   Group,
+  Matrix4,
   Mesh,
   MeshStandardMaterial,
   Vector3,
@@ -162,8 +163,15 @@ test('v1 keeps seven strategically mounted placements in three trait families', 
   );
 
   for (const placement of placements) {
-    assert.equal(placement.position.length, 3);
-    assert.ok(placement.position.every(Number.isFinite), `${placement.id} has an invalid position`);
+    const hasPosition = placement.position?.length === 3
+      && placement.position.every(Number.isFinite);
+    const hasLandmarkAnchor = typeof placement.anchor?.landmark === 'string'
+      && placement.anchor.offset?.length === 3
+      && placement.anchor.offset.every(Number.isFinite);
+    assert.ok(
+      hasPosition || hasLandmarkAnchor,
+      `${placement.id} has neither a finite position nor a landmark anchor`,
+    );
     assert.ok(Number.isFinite(placement.height) && placement.height > 0);
     assert.ok(
       ['offering', 'sconce', 'crest'].includes(placement.socket),
@@ -477,6 +485,81 @@ test('the Ledger crown anchors to the surviving landmark instead of floating at 
   assert.ok(Math.abs(position[1] - 2.012) < 1e-12);
   assert.ok(Math.abs(position[2] - 3) < 1e-12);
   assert.equal(echoes.root.userData.traitEcho.ledgerCrownAnchored, true);
+
+  echoes.dispose();
+  ledgerMesh.geometry.dispose();
+  ledgerMesh.material.dispose();
+  for (const scene of sourceScenes) {
+    scene.children[0].geometry.dispose();
+    scene.children[0].material.dispose();
+  }
+});
+
+test('the ritual torch and guidance light follow the Bell landmark while Ledger anchoring remains intact', async () => {
+  const sourceScenes = [];
+  const echoes = await loadTraitEchoV1({
+    variant: TRAIT_ECHO_VARIANTS.V1,
+    reducedMotion: true,
+    sceneLoader: async () => {
+      const scene = createStaticTraitScene();
+      sourceScenes.push(scene);
+      return scene;
+    },
+  });
+  const townRoot = new Group();
+  const bell = new Group();
+  bell.position.set(3, 2.4, -36.5);
+  townRoot.add(bell, echoes.root);
+
+  const ledger = new Group();
+  const ledgerMesh = new Mesh(
+    new BoxGeometry(2, 2, 1),
+    new MeshStandardMaterial(),
+  );
+  ledgerMesh.position.set(-2, 1, 3);
+  ledger.add(ledgerMesh);
+  townRoot.add(ledger);
+
+  assert.equal(echoes.anchorToLandmarks({ ledger, bell }), true);
+  assert.deepEqual(
+    echoes.positionOverrides.get('bell-ritual-torch'),
+    [2.44, 3.88, -36.2],
+  );
+  assert.deepEqual(
+    echoes.positionOverrides.get('ledger-office-crown'),
+    [-2, 2.012, 3],
+  );
+  assert.equal(echoes.root.userData.traitEcho.bellTorchAnchored, true);
+  assert.equal(echoes.root.userData.traitEcho.ledgerCrownAnchored, true);
+
+  const torchRuntime = echoes.families.get('civic-torch');
+  const torchIndex = torchRuntime.config.placements.findIndex(
+    (placement) => placement.id === 'bell-ritual-torch',
+  );
+  const torchMatrix = new Matrix4();
+  const torchPosition = new Vector3();
+  const assertPosition = (actual, expected, label) => {
+    assert.ok(
+      actual.distanceTo(new Vector3(...expected)) <= 1e-5,
+      `${label} ${actual.toArray()} does not match ${expected}`,
+    );
+  };
+  torchRuntime.mesh.getMatrixAt(torchIndex, torchMatrix);
+  torchPosition.setFromMatrixPosition(torchMatrix);
+  assertPosition(torchPosition, [2.44, 3.88, -36.2], 'torch');
+  assertPosition(torchRuntime.light.position, [2.44, 4.72, -36.2], 'guidance light');
+
+  bell.position.set(-8, 1.25, 17);
+  assert.equal(echoes.anchorToLandmarks({ bell }), true);
+  torchRuntime.mesh.getMatrixAt(torchIndex, torchMatrix);
+  torchPosition.setFromMatrixPosition(torchMatrix);
+  assertPosition(torchPosition, [-8.56, 2.73, 17.3], 'moved torch');
+  assertPosition(torchRuntime.light.position, [-8.56, 3.57, 17.3], 'moved guidance light');
+  assert.deepEqual(
+    echoes.positionOverrides.get('ledger-office-crown'),
+    [-2, 2.012, 3],
+    'anchoring the Bell again must preserve the Ledger override',
+  );
 
   echoes.dispose();
   ledgerMesh.geometry.dispose();

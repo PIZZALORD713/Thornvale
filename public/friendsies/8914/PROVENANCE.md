@@ -1,19 +1,20 @@
 # Steward Lumen fRiENDSiES #8914 provenance
 
-## Permission and release scope
+## Standing authorization and release scope
 
+- Manifest family ID: `friendsies-project`
 - Manifest status: `project-release-authorized`
 - Release blocked: no
-- Authorization: the Thornvale project owner explicitly authorized the six
-  exact manifested runtime files below as Steward Lumen and the documented
-  Torch and Crown Up Trait Echo v1 uses for publication in Thornvale builds on
-  `2026-07-12`.
-- Runtime distribution: permitted only when integrated into bundled Thornvale
-  game builds as Steward Lumen or in the documented Trait Echo v1 arrangement.
+- Authorization: ADR 0004 grants standing project-wide authorization for
+  present and future canonical fRiENDSiES assets in any integrated Thornvale
+  role. Character, hand item, sprout, backpiece, equipment, prop, environment,
+  UI, transform, or delivery changes do not require separate approval.
+- Runtime distribution: permitted when integrated into Thornvale builds,
+  tools, documentation, testing, or Thornvale promotion.
 - Raw-source and standalone character or trait-pack redistribution: prohibited
   by this record; canonical source files remain external.
-- General reuse outside Thornvale or collection-wide bundling: not granted;
-  bounded remote in-game selection is authorized separately under ADR 0003.
+- Bulk raw collection mirrors, sublicensing, and reuse outside Thornvale are not
+  granted. Exact source URLs and hashes remain engineering evidence.
 
 These are the six traits referenced by the canonical fRiENDSiES metadata entry
 for token `#8914`. They are bundled so the first-run steward does not depend on
@@ -30,10 +31,10 @@ downloading the full collection index before the opening scene.
 
 Source host: `https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/`
 
-The project owner explicitly requested fRiENDSiES `#8914` as Thornvale's
-starting steward on 2026-07-11, then publication with the live Thornvale build
-on 2026-07-12. This project-specific authorization covers the bundled traits in
-Thornvale; it does not grant general redistribution rights outside Thornvale.
+The project owner requested fRiENDSiES `#8914` as Thornvale's starting steward
+on 2026-07-11, then publication with the live Thornvale build on 2026-07-12.
+Those dates explain this file's runtime history; ADR 0004 now supplies the
+standing Thornvale-wide authorization while excluding outside-project reuse.
 
 ## Trait Echo v1 environmental use
 
@@ -55,8 +56,7 @@ trait or binary. These arrangements are Thornvale-authored environmental
 adaptations, not canonical tokens or new fRiENDSiES traits. `?traits=off`
 removes the complete environmental treatment without changing the character.
 
-This authorization is hash-bound to the six runtime files above and the
-documented three-Torch/one-Crown Thornvale arrangement. It does not approve
-other `#8914` files, other traits, arbitrary token streaming, or standalone
-redistribution. The separate remote-player authorization in ADR 0003 does not
-broaden this local-file or environmental grant.
+The six hashes and three-Torch/one-Crown arrangement above document the current
+build, not the limit of permission. Other canonical fRiENDSiES traits and
+integrated Thornvale roles inherit ADR 0004 without another approval; they still
+need source, integrity, budget, fallback, and visual QA evidence before release.

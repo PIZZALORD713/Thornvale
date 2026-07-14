@@ -182,7 +182,7 @@ test('pilot roots fall back independently without moving surviving authored root
   ]);
   assert.deepEqual(landmarks.get('bell').position.toArray(), [
     TOWN_LAYOUT.landmarks.bell.x,
-    0,
+    TOWN_LAYOUT.landmarks.bell.baseY,
     TOWN_LAYOUT.landmarks.bell.z,
   ]);
 });
@@ -243,13 +243,17 @@ test('authored TownBell keeps idle and interaction-driven swing behavior', () =>
   );
 });
 
-test('the pilot preserves story coordinates, colliders, and interactable keys', () => {
+test('the pilot preserves arrival coordinates and the elevated Bell interaction contract', () => {
   assert.deepEqual(TOWN_LAYOUT.spawn, { x: 0, y: 2, z: 14 });
   assert.deepEqual(TOWN_LAYOUT.gate, { x: 0, y: 0, z: 11.7 });
-  assert.deepEqual(TOWN_LAYOUT.landmarks, {
-    ledger: { x: -2, y: 0.8, z: 3 },
-    bell: { x: 3, y: 0.5, z: -2 },
-  });
+  assert.deepEqual(TOWN_LAYOUT.landmarks.ledger, { x: -2, y: 0.8, z: 3 });
+  assert.equal(TOWN_LAYOUT.landmarks.bell.x, 3);
+  assert.equal(TOWN_LAYOUT.landmarks.bell.z, -36.5);
+  assert.ok(TOWN_LAYOUT.landmarks.bell.baseY >= 2);
+  assert.equal(
+    TOWN_LAYOUT.landmarks.bell.y,
+    TOWN_LAYOUT.landmarks.bell.baseY + 0.5,
+  );
   assert.deepEqual(TOWN_INTERACTION_CONTRACT, {
     ledger: { id: 'ledger', radius: 2 },
     bell: { id: 'bell', radius: 2 },

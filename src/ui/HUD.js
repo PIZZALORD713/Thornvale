@@ -3,6 +3,7 @@ export class HUD {
     this.elements = {};
     this.statusIdleTimer = null;
     this.overlayKeyboardHandler = null;
+    this.lastSurvivalAnnouncement = null;
   }
 
   init() {
@@ -12,6 +13,17 @@ export class HUD {
       dayNightBadge: document.getElementById('dayNightBadge'),
       phaseLabel: document.querySelector('#dayNightBadge .phase-label'),
       celestialIcon: document.querySelector('#dayNightBadge .celestial-icon'),
+      survival: document.getElementById('survivalStatus'),
+      nourishmentMeter: document.getElementById('nourishmentMeter'),
+      nourishmentFill: document.querySelector('#nourishmentMeter .survival-meter-fill'),
+      nourishmentLabel: document.getElementById('nourishmentLabel'),
+      energyMeter: document.getElementById('energyMeter'),
+      energyFill: document.querySelector('#energyMeter .survival-meter-fill'),
+      energyLabel: document.getElementById('energyLabel'),
+      survivalWood: document.getElementById('survivalWood'),
+      survivalFish: document.getElementById('survivalFish'),
+      survivalSeeds: document.getElementById('survivalSeeds'),
+      survivalAnnouncement: document.getElementById('survivalAnnouncement'),
       prompt: document.getElementById('interactionPrompt'),
       resumeLook: document.getElementById('resumeLookButton'),
       kindness: document.getElementById('kindnessCounter'),
@@ -30,6 +42,7 @@ export class HUD {
 
     this.hidePrompt();
     this.hideKindness();
+    this.setSurvivalState(null);
     this.setDebugVisible(false);
     this.setDayNight(this.elements.dayNightBadge?.dataset.mode || 'day', false);
     this.enableOverlayKeyboardAccess();
@@ -99,6 +112,82 @@ export class HUD {
     if (animate) {
       this.restartAnimation(this.elements.dayNightBadge, 'is-changing');
     }
+  }
+
+  /**
+   * Project the Day One director's presentation-ready survival state. The
+   * director owns gameplay thresholds and qualitative language; this layer
+   * only clamps values for a safe meter rendering and updates accessible text.
+   */
+  setSurvivalState(state) {
+    if (!this.elements.survival) return;
+
+    if (!state || typeof state !== 'object') {
+      this.elements.survival.classList.add('hidden');
+      this.elements.survival.setAttribute('aria-hidden', 'true');
+      this.lastSurvivalAnnouncement = null;
+      return;
+    }
+
+    this.elements.survival.classList.remove('hidden');
+    this.elements.survival.setAttribute('aria-hidden', 'false');
+
+    this.updateSurvivalMeter(
+      this.elements.nourishmentMeter,
+      this.elements.nourishmentFill,
+      this.elements.nourishmentLabel,
+      state.nourishment,
+    );
+    this.updateSurvivalMeter(
+      this.elements.energyMeter,
+      this.elements.energyFill,
+      this.elements.energyLabel,
+      state.energy,
+    );
+
+    const essentials = state.essentials ?? {};
+    this.setEssentialCount(this.elements.survivalWood, essentials.wood);
+    this.setEssentialCount(this.elements.survivalFish, essentials.fish);
+    this.setEssentialCount(this.elements.survivalSeeds, essentials.seeds);
+
+    const announcement = String(state.announcement ?? '').trim();
+    if (announcement && announcement !== this.lastSurvivalAnnouncement) {
+      if (this.elements.survivalAnnouncement) {
+        this.elements.survivalAnnouncement.textContent = announcement;
+      }
+      this.lastSurvivalAnnouncement = announcement;
+    }
+  }
+
+  updateSurvivalMeter(meterElement, fillElement, labelElement, meterState = {}) {
+    if (!meterElement) return;
+
+    const requestedMax = Number(meterState?.max);
+    const maximum = Number.isFinite(requestedMax) && requestedMax > 0 ? requestedMax : 100;
+    const requestedValue = Number(meterState?.value);
+    const unclampedValue = Number.isFinite(requestedValue) ? requestedValue : 0;
+    const value = Math.min(maximum, Math.max(0, unclampedValue));
+    const label = String(meterState?.label ?? '').trim() || '—';
+    const valueText = String(meterState?.valueText ?? '').trim()
+      || `${label}, ${value} of ${maximum}`;
+
+    meterElement.setAttribute('aria-valuemin', '0');
+    meterElement.setAttribute('aria-valuemax', String(maximum));
+    meterElement.setAttribute('aria-valuenow', String(value));
+    meterElement.setAttribute('aria-valuetext', valueText);
+
+    if (labelElement) labelElement.textContent = label;
+    if (fillElement) fillElement.style.width = `${(value / maximum) * 100}%`;
+  }
+
+  setEssentialCount(element, requestedValue) {
+    if (!element) return;
+
+    const numericValue = Number(requestedValue);
+    const count = Number.isFinite(numericValue)
+      ? Math.max(0, Math.trunc(numericValue))
+      : 0;
+    element.textContent = String(count);
   }
 
   showPrompt(text) {

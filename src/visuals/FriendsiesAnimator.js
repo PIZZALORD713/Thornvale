@@ -39,6 +39,9 @@ function footstepPhases(value) {
 function roleScore(role, clipName) {
   const name = normalizeName(clipName);
   if (!name) return 0;
+  // Authored story actions are semantic one-shots, not fallback locomotion or
+  // emote roles. They remain addressable explicitly through playOneShot(name).
+  if (name.startsWith('storyactionsv1')) return 0;
 
   if (role === 'idle') {
     if (name === 'idlefloat') return 120;
@@ -464,6 +467,29 @@ export class FriendsiesAnimator {
     this.airAction = null;
     this.airRole = null;
     this.locomotionState = this.oneShotRole;
+    return true;
+  }
+
+  cancelOneShot(roleOrName = null, options = {}) {
+    if (this.disposed || !this.oneShotAction) return false;
+
+    const action = this.oneShotAction;
+    if (roleOrName) {
+      const expected = this.getClip(roleOrName);
+      if (!expected || action.getClip() !== expected) return false;
+    }
+
+    const requestedResume = options?.returnTo || this.resumeRole || this.desiredGroundRole;
+    const resume = this.getClip(requestedResume)
+      ? requestedResume
+      : (this.roleClips.idle ? 'idle' : null);
+    const fadeDuration = safeDuration(options?.fadeDuration, this.oneShotFadeDuration);
+    if (resume && this._playLoop(resume, fadeDuration, action)) return true;
+
+    action.stop();
+    this.oneShotAction = null;
+    this.oneShotRole = null;
+    this.locomotionState = this.loopRole || this.desiredGroundRole || 'idle';
     return true;
   }
 

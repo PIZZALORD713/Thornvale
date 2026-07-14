@@ -7,6 +7,7 @@ import {
 } from '../src/game/GameSession.js';
 import { CoreHookDirector } from '../src/game/CoreHookDirector.js';
 import { CORE_HOOK_V03 } from '../src/content/core-hook-v03.js';
+import { STORY_ACTIONS_V1 } from '../src/content/story-actions-v1.js';
 
 class MemoryStorage {
   constructor() {
@@ -32,6 +33,13 @@ function createHarness({
   storage = new MemoryStorage(),
   ringAnomalyBell,
   sayHandler = null,
+  isDayOneComplete = () => true,
+  getDayOneObjective = () => ({
+    id: 'day-one-test-objective',
+    label: 'Your first afternoon',
+    text: 'Settle the provisional camp.',
+  }),
+  stewardActionHandler = null,
 } = {}) {
   const calls = [];
   let now = 1000;
@@ -83,6 +91,16 @@ function createHarness({
       calls.push(`actor:${role}`);
     },
   };
+  if (stewardActionHandler) {
+    stewardActor.playAction = (name) => {
+      calls.push(`action:${name}`);
+      return stewardActionHandler(name);
+    };
+    stewardActor.cancelAction = (name) => {
+      calls.push(`cancel-action:${name}`);
+      return true;
+    };
+  }
 
   const director = new CoreHookDirector({
     storyUI,
@@ -138,6 +156,8 @@ function createHarness({
         ? { x: 11.8, y: 0, z: 7 }
         : { x: 7, y: 0, z: 4.25 };
     },
+    isDayOneComplete,
+    getDayOneObjective,
     setStoryBlocking(value) {
       calls.push(`blocking:${value}`);
     },
@@ -159,6 +179,33 @@ function createHarness({
 
   return { calls, director, session, storage };
 }
+
+test('the Day One routine gates the Ledger and owns the objective until complete', async () => {
+  const dayOne = { complete: false };
+  const harness = createHarness({
+    isDayOneComplete: () => dayOne.complete,
+    getDayOneObjective: () => ({
+      id: 'day-one-gather-wood',
+      label: 'Your first afternoon',
+      text: 'Gather wood for the camp.',
+    }),
+  });
+
+  await harness.director.start();
+  await harness.director.interact(CORE_HOOK_V03.ids.steward);
+
+  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.ledger), false);
+  assert.ok(harness.calls.includes('objective:day-one-gather-wood'));
+
+  dayOne.complete = true;
+  await harness.director.refreshObjective();
+
+  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.ledger), true);
+  assert.equal(
+    harness.calls.at(-1),
+    `objective:${CORE_HOOK_V03.objectives.signLedger.id}`,
+  );
+});
 
 async function triggerDistanceAnomaly(director) {
   for (let index = 0; index < 5; index += 1) {
@@ -401,6 +448,49 @@ test('CoreHookDirector enforces the authored interaction order', async () => {
     assert.ok(index > previousIndex, `${event} should follow the previous authored beat`);
     previousIndex = index;
   }
+});
+
+test('Lumen performs all four semantic story actions in authored order', async () => {
+  const harness = createHarness({ stewardActionHandler: () => true });
+  await advanceToChoice(harness);
+  await harness.director.interact('steward-8914');
+
+  assert.deepEqual(
+    harness.calls.filter((entry) => entry.startsWith('action:')),
+    [
+      `action:${STORY_ACTIONS_V1.lumen.happyHandGesture}`,
+      `action:${STORY_ACTIONS_V1.lumen.acknowledging}`,
+      `action:${STORY_ACTIONS_V1.lumen.relievedSigh}`,
+      `action:${STORY_ACTIONS_V1.lumen.thoughtfulHeadShake}`,
+    ],
+  );
+
+  const welcomeAction = harness.calls.indexOf(
+    `action:${STORY_ACTIONS_V1.lumen.happyHandGesture}`,
+  );
+  const welcomeDialogue = harness.calls.indexOf('say:lumen-welcome');
+  const welcomeCancel = harness.calls.indexOf(
+    `cancel-action:${STORY_ACTIONS_V1.lumen.happyHandGesture}`,
+  );
+  const routineMove = harness.calls.indexOf('move:routine:false');
+  assert.ok(welcomeAction < welcomeDialogue, 'the welcome gesture starts while Lumen is stationary');
+  assert.ok(welcomeDialogue < welcomeCancel, 'dialogue keeps the gesture nonblocking');
+  assert.ok(welcomeCancel < routineMove, 'the one-shot ends before Lumen starts walking');
+});
+
+test('a missing or throwing Lumen action falls back without blocking story state', async () => {
+  const harness = createHarness({
+    stewardActionHandler() {
+      throw new Error('pilot clip unavailable');
+    },
+  });
+  await harness.director.start();
+  const result = await harness.director.interact('steward-8914');
+
+  assert.equal(result.handled, true);
+  assert.equal(harness.session.hasEvent(CORE_HOOK_V03.events.stewardMet), true);
+  assert.ok(harness.calls.includes('error:steward-action:pilot clip unavailable'));
+  assert.ok(harness.calls.includes('actor:joy'));
 });
 
 test('the ledger requires a visible name and persists it before Lumen responds', async () => {

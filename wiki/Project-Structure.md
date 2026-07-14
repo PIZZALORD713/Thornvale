@@ -75,11 +75,14 @@ provenance records remain adjacent to the assets:
 
 - [`public/animations/PROVENANCE.md`](../public/animations/PROVENANCE.md)
 - [`public/friendsies/0001/PROVENANCE.md`](../public/friendsies/0001/PROVENANCE.md)
+- [`public/friendsies/6602/PROVENANCE.md`](../public/friendsies/6602/PROVENANCE.md)
 - [`public/friendsies/8914/PROVENANCE.md`](../public/friendsies/8914/PROVENANCE.md)
 
 Do not move, rename, or replace those assets without updating the loader,
 provenance, and release verification together. A working source file is never a
-substitute for documented redistribution permission.
+substitute for source and transformation evidence. Canonical fRiENDSiES assets
+inherit the standing Thornvale authorization in ADR 0004; unrelated third-party
+material still needs its own documented redistribution terms.
 
 ## Incremental target
 

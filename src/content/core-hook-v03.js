@@ -1,3 +1,6 @@
+import { STORY_ACTIONS_V1 } from './story-actions-v1.js';
+import { TOWN_LAYOUT } from '../config/town.js';
+
 function deepFreeze(value) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
   Object.freeze(value);
@@ -23,9 +26,12 @@ export const CORE_HOOK_V03 = deepFreeze({
     name: 'Steward Lumen',
   },
 
+  gestures: STORY_ACTIONS_V1.lumen,
+
   events: {
     letterSeen: 'arrival-letter-seen',
     stewardMet: 'steward-lumen-met',
+    firstAfternoonComplete: 'first-afternoon-complete',
     ledgerSigned: 'community-ledger-signed',
     firstBellRung: 'dusk-bell-rung',
     anomalyBellRang: 'night-bell-rang-itself',
@@ -38,7 +44,11 @@ export const CORE_HOOK_V03 = deepFreeze({
   anchors: {
     interactables: {
       ledger: { x: -2, y: 0.8, z: 3 },
-      bell: { x: 3, y: 0.5, z: -2 },
+      bell: {
+        x: TOWN_LAYOUT.landmarks.bell.x,
+        y: TOWN_LAYOUT.landmarks.bell.y,
+        z: TOWN_LAYOUT.landmarks.bell.z,
+      },
     },
     steward: {
       welcome: { x: 1.6, y: 0, z: 9.4, facing: Math.PI },
@@ -82,24 +92,31 @@ export const CORE_HOOK_V03 = deepFreeze({
     },
     signLedger: {
       id: 'sign-ledger',
-      label: 'The first courtesy',
+      label: 'A town courtesy',
       text: 'Enter your name in the Community Ledger.',
-      title: 'The first courtesy',
+      title: 'A town courtesy',
       detail: 'Enter your name in the Community Ledger.',
+    },
+    firstAfternoon: {
+      id: 'settle-first-afternoon',
+      label: 'Your first afternoon',
+      text: 'Make the provisional forest-edge camp livable before dusk.',
+      title: 'Your first afternoon',
+      detail: 'Make the provisional forest-edge camp livable before dusk.',
     },
     ringBell: {
       id: 'ring-bell-at-dusk',
       label: 'The second courtesy',
-      text: 'When the lanterns bloom, ring the town bell once.',
+      text: 'Follow the warm pavers uphill and ring the town bell once.',
       title: 'The second courtesy',
-      detail: 'When the lanterns bloom, ring the town bell once.',
+      detail: 'When the lanterns bloom, follow the warm pavers uphill and ring once.',
     },
     leaveBell: {
       id: 'leave-bell',
-      label: 'Let Thornvale settle',
-      text: 'Walk beyond the plaza while your cottage learns your name.',
-      title: 'Let Thornvale settle',
-      detail: 'Walk beyond the plaza while your cottage learns your name.',
+      label: 'Descend while Thornvale settles',
+      text: 'Walk back down the Bell hill while Thornvale records your plot as Home.',
+      title: 'Descend while Thornvale settles',
+      detail: 'Walk back down the Bell hill while Thornvale records your plot as Home.',
     },
     inspectLedger: {
       id: 'inspect-ledger',
@@ -118,9 +135,9 @@ export const CORE_HOOK_V03 = deepFreeze({
     complyComplete: {
       id: 'comply-complete',
       label: 'Home, as recorded',
-      text: 'The cottage path is open. Thornvale remembers you as Home.',
+      text: 'Your forest-edge plot is recognized. Thornvale remembers you as Home.',
       title: 'Home, as recorded',
-      detail: 'The cottage path is open. Thornvale remembers you as Home.',
+      detail: 'Your forest-edge plot is recognized. Thornvale remembers you as Home.',
     },
     alterComplete: {
       id: 'alter-complete',
@@ -155,7 +172,9 @@ export const CORE_HOOK_V03 = deepFreeze({
       body: [
         'Oh, there you are. We kept your place warm.',
         "I’m Lumen, Thornvale’s steward. Nothing complicated is expected of a new neighbor.",
-        'Write your name in the Community Ledger. When the lanterns bloom, ring the bell once. Then your cottage will know you.',
+        'There is a provisional plot along the west clover path, where the meadow meets the old forest. We left a camp cot and seed bed for you.',
+        'Gather what you need, make yourself a meal, and settle the shelter. Then write your name in the Community Ledger.',
+        'When the lanterns bloom, follow the warm pavers to the hill and ring the bell once. Then Thornvale can record the plot as yours.',
         'Only once, and only at dusk. Routines keep everyone from worrying.',
       ],
     },
@@ -166,17 +185,15 @@ export const CORE_HOOK_V03 = deepFreeze({
       portrait: '8914',
       body: [
         'Lovely. The valley already writes you neatly.',
-        'The lanterns are waking. One ring, please.',
+        'The lanterns are waking. Follow the pavers uphill. One ring, please.',
       ],
     },
     firstBell: {
       id: 'lumen-first-bell',
-      speaker: 'Steward Lumen',
-      portraitTokenId: 8914,
-      portrait: '8914',
+      speaker: 'A ribbon tied to the Bell',
       body: [
         'Perfectly on time.',
-        'Your cottage path is open. Take a little walk while Thornvale settles.',
+        'Your plot is entered under your name. Walk back down while Thornvale settles.',
       ],
     },
     correction: {
@@ -274,7 +291,7 @@ export const CORE_HOOK_V03 = deepFreeze({
         tone: 'comply',
         eyebrow: 'HOME, AS RECORDED',
         title: 'Every window welcomes you at once.',
-        body: 'The cottage path opens in a wash of honeyed light. In the Ledger, your name quietly becomes Home.',
+        body: 'The forest-edge plot glows in honeyed light. In the Ledger, your name quietly becomes Home.',
         finalLine: 'Thornvale remembers you correctly.',
         detail: 'Thornvale remembers you correctly.',
       },
@@ -302,7 +319,7 @@ export const CORE_HOOK_V03 = deepFreeze({
   },
 
   status: {
-    anomaly: 'Somewhere behind you, the bell rings again.',
+    anomaly: 'From the hill behind you, the Bell rings again.',
     reset: 'The letter is sealed again. Thornvale is waiting.',
   },
 });

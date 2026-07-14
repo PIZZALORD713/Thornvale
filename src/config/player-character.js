@@ -7,6 +7,9 @@ export const FRIENDSIES_METADATA_CATALOG_SHA256 = '9f1c4e1cf8d848bd2ceaff7cde48c
 export const FRIENDSIES_ALLOWED_REMOTE_COMPONENT_ORIGINS = Object.freeze([
   'https://storage.googleapis.com',
 ]);
+export const FRIENDSIES_ALLOWED_REMOTE_COMPONENT_URL_PREFIXES = Object.freeze([
+  'https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/',
+]);
 export const FRIENDSIES_TOKEN_MIN = 1;
 export const FRIENDSIES_TOKEN_MAX = 10_000;
 export const FRIENDSIES_TOKEN_RANGE = Object.freeze({
@@ -22,6 +25,7 @@ export const FRIENDSIES_REMOTE_PLAYER_POLICY = deepFreeze({
     bytes: FRIENDSIES_METADATA_CATALOG_BYTE_LENGTH,
   },
   allowedAssetOrigins: [...FRIENDSIES_ALLOWED_REMOTE_COMPONENT_ORIGINS],
+  allowedAssetUrlPrefixes: [...FRIENDSIES_ALLOWED_REMOTE_COMPONENT_URL_PREFIXES],
   tokenScope: {
     type: 'inclusive-range',
     ...FRIENDSIES_TOKEN_RANGE,
@@ -32,6 +36,7 @@ const GENERATOR_HOSTS = new Set(['frienemies.xyz', 'www.frienemies.xyz']);
 const ALLOWED_REMOTE_COMPONENT_ORIGINS = new Set(
   FRIENDSIES_ALLOWED_REMOTE_COMPONENT_ORIGINS,
 );
+const ALLOWED_REMOTE_COMPONENT_URL_PREFIXES = FRIENDSIES_ALLOWED_REMOTE_COMPONENT_URL_PREFIXES;
 const QUERY_KEYS = Object.freeze(['friend', 'token']);
 const LOCAL_COMPONENT_BASE_URL = 'https://thornvale.invalid';
 
@@ -49,7 +54,8 @@ export function isAllowedFriendsiesRemoteComponentUrl(value) {
     const url = new URL(value);
     return !url.username
       && !url.password
-      && ALLOWED_REMOTE_COMPONENT_ORIGINS.has(url.origin);
+      && ALLOWED_REMOTE_COMPONENT_ORIGINS.has(url.origin)
+      && ALLOWED_REMOTE_COMPONENT_URL_PREFIXES.some((prefix) => url.href.startsWith(prefix));
   } catch {
     return false;
   }

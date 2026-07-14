@@ -1,5 +1,9 @@
 # fRiENDSiES URL selection — 2026-07-12
 
+> Historical authorization note: ADR 0004 superseded the narrow fRiENDSiES
+> permission scopes in this record on 2026-07-13. Preserve the QA evidence
+> below; canonical fRiENDSiES assets now share one standing Thornvale-wide grant.
+
 ## Scope
 
 Verify that a shareable Thornvale URL selects an exact fRiENDSiES player,

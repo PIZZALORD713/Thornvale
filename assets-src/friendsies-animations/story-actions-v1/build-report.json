@@ -1,0 +1,1117 @@
+{
+  "schemaVersion": "friendsies-motion-pack-build-result-v1",
+  "id": "story-actions-v1",
+  "converter": "scripts/convert-friendsies-animation.py",
+  "catalog": "assets-src/friendsies-animations/story-actions-v1/clips.json",
+  "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+  "toolchain": {
+    "nodeVersion": "v22.22.3",
+    "blenderVersion": "4.5.9 LTS",
+    "files": {
+      "catalog": {
+        "path": "assets-src/friendsies-animations/story-actions-v1/clips.json",
+        "sha256": "7b804fce1bc14901b957ee5f7eec195c877c7a04253be6efe2d39d654c43e267"
+      },
+      "rigProfile": {
+        "path": "assets-src/friendsies-animations/story-actions-v1/rig-profile.json",
+        "sha256": "5efae1606ec74c82a525c3ef3e4f7265a7880c9ed8c7374b5568bf76d619911f"
+      },
+      "orchestrator": {
+        "path": "scripts/build-story-actions-v1.mjs",
+        "sha256": "49fea73a8da9d1951d137d146c91509a4cd256e4667ba5953b04209db08cbc23"
+      },
+      "converter": {
+        "path": "scripts/convert-friendsies-animation.py",
+        "sha256": "ec0b10a7511af70883ddddf307f256318ef74d8cdacee32685ce9dd70c9ffd53"
+      }
+    }
+  },
+  "clips": [
+    {
+      "blenderVersion": "4.5.9 LTS",
+      "cleanReimport": {
+        "actions": [
+          "story-actions-v1-lumen-acknowledging"
+        ],
+        "objects": [
+          "ArmL",
+          "ArmR",
+          "AttachmentL",
+          "AttachmentR",
+          "Backpiece_Attachment",
+          "BiscepL",
+          "BiscepR",
+          "HandL",
+          "HandR",
+          "Head",
+          "Root",
+          "ShinL",
+          "ShinR",
+          "Spine1",
+          "Spine2",
+          "Spine3",
+          "ThighL",
+          "ThighR",
+          "ToeL",
+          "ToeR",
+          "friendsies-humanoid-v1"
+        ]
+      },
+      "clipName": "story-actions-v1-lumen-acknowledging",
+      "output": {
+        "animationChannels": 60,
+        "animationSamplers": 60,
+        "bytes": 33052,
+        "durationSeconds": 1.9333333333333333,
+        "filename": "lumen-acknowledging.glb",
+        "nodes": 21,
+        "sampleRate": 30,
+        "sha256": "e74157124a69e1ed4534c5b99308e2a414a9b60a38a69e8ca65782f43bcff82f",
+        "targetBones": [
+          "arml",
+          "armr",
+          "attachmentl",
+          "attachmentr",
+          "backpieceattachment",
+          "biscepl",
+          "biscepr",
+          "handl",
+          "handr",
+          "head",
+          "root",
+          "shinl",
+          "shinr",
+          "spine1",
+          "spine2",
+          "spine3",
+          "thighl",
+          "thighr",
+          "toel",
+          "toer"
+        ],
+        "url": "/animations/story-actions-v1/lumen-acknowledging.glb"
+      },
+      "schemaVersion": "friendsies-motion-build-result-v1",
+      "source": {
+        "action": "Character_Rig|mixamo.com|Layer0",
+        "bytes": 228241,
+        "durationSeconds": 1.9166666666666667,
+        "filename": "lumen-acknowledging.fbx",
+        "frameEnd": 116,
+        "frameStart": 1,
+        "sampleRate": 60,
+        "sha256": "ffc5c47a44565cb5796a2875d60ab468dab56b4687d0d1b925d2cbd06f1c8149",
+        "archive": "Gestures Pack Basic.zip",
+        "archiveSha256": "a02a546a2a5dae2eb0c68acafd6c77161f729aea58a3f8270f2ce03c6fef2a63",
+        "member": "acknowledging.fbx"
+      },
+      "transform": {
+        "endpointPolicy": "include-terminal-pose-with-one-grid-hold-when-needed",
+        "exportFrameEnd": 117,
+        "paddedFrames": 1,
+        "removedActionCurveSpans": {
+          "Scene|mixamo.com|Layer0": {
+            "location[0]": 0,
+            "location[1]": 0,
+            "location[2]": 0,
+            "rotation_euler[0]": 0,
+            "rotation_euler[1]": 0,
+            "rotation_euler[2]": 0,
+            "scale[0]": 0,
+            "scale[1]": 0,
+            "scale[2]": 0
+          },
+          "fRiENDSiES_8448|mixamo.com|Layer0": {
+            "location[0]": 0.0026346407539676875,
+            "location[1]": 0.0027581609319895506,
+            "location[2]": 0.0001307439524680376,
+            "rotation_euler[0]": 0.03646562620997429,
+            "rotation_euler[1]": 0.03145291842520237,
+            "rotation_euler[2]": 0.02441805601119995,
+            "scale[0]": 1.1920928955078125e-7,
+            "scale[1]": 1.1920928955078125e-7,
+            "scale[2]": 1.1920928955078125e-7
+          }
+        },
+        "removedActions": [
+          "Scene|mixamo.com|Layer0",
+          "fRiENDSiES_8448|mixamo.com|Layer0"
+        ],
+        "removedObjectCurvePaths": [
+          "location",
+          "rotation_euler",
+          "scale"
+        ],
+        "removedObjectCurveSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_euler[0]": 0,
+          "rotation_euler[1]": 0,
+          "rotation_euler[2]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "removedObjects": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ],
+        "retainedFcurves": 140,
+        "retainedStaticArmatureWorldMatrix": [
+          0.9943968653678894,
+          0.0914030447602272,
+          0.053105875849723816,
+          -0.0023187524639070034,
+          -0.09456273168325424,
+          0.9936856031417847,
+          0.06038887798786163,
+          -0.0040110088884830475,
+          -0.04725081846117973,
+          -0.06507235765457153,
+          0.99676114320755,
+          -0.0016986083937808871,
+          0,
+          0,
+          0,
+          1
+        ],
+        "rootComponentSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_quaternion[0]": 0,
+          "rotation_quaternion[1]": 0,
+          "rotation_quaternion[2]": 0,
+          "rotation_quaternion[3]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+        "rootRotationBake": {
+          "finalRotationRadians": 0,
+          "maximumRotationDegrees": 2.8815148709596903,
+          "maximumRotationRadians": 0.05029192194342613,
+          "policy": "strip-wrapper-translation-bake-bounded-root-rotation",
+          "sampleCount": 59,
+          "translationPolicy": "constant-canonical-root-location"
+        },
+        "runtimeBindingNote": "The GLB armature node preserves the source frame-one basis for clean re-import; Thornvale loads only AnimationClip tracks and binds them by canonical bone name.",
+        "sourceFrameEnd": 116,
+        "sourceParentChain": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ]
+      },
+      "id": "lumen.acknowledging",
+      "archive": "gestures-basic",
+      "deterministicRebuildSha256": "e74157124a69e1ed4534c5b99308e2a414a9b60a38a69e8ca65782f43bcff82f"
+    },
+    {
+      "blenderVersion": "4.5.9 LTS",
+      "cleanReimport": {
+        "actions": [
+          "story-actions-v1-lumen-happy-hand-gesture"
+        ],
+        "objects": [
+          "ArmL",
+          "ArmR",
+          "AttachmentL",
+          "AttachmentR",
+          "Backpiece_Attachment",
+          "BiscepL",
+          "BiscepR",
+          "HandL",
+          "HandR",
+          "Head",
+          "Root",
+          "ShinL",
+          "ShinR",
+          "Spine1",
+          "Spine2",
+          "Spine3",
+          "ThighL",
+          "ThighR",
+          "ToeL",
+          "ToeR",
+          "friendsies-humanoid-v1"
+        ]
+      },
+      "clipName": "story-actions-v1-lumen-happy-hand-gesture",
+      "output": {
+        "animationChannels": 60,
+        "animationSamplers": 60,
+        "bytes": 39868,
+        "durationSeconds": 2.933333333333333,
+        "filename": "lumen-happy-hand-gesture.glb",
+        "nodes": 21,
+        "sampleRate": 30,
+        "sha256": "f05dd225d6d425517ee8a52b89d0c4b604cefce1caaeecf257b57f276b8da6a4",
+        "targetBones": [
+          "arml",
+          "armr",
+          "attachmentl",
+          "attachmentr",
+          "backpieceattachment",
+          "biscepl",
+          "biscepr",
+          "handl",
+          "handr",
+          "head",
+          "root",
+          "shinl",
+          "shinr",
+          "spine1",
+          "spine2",
+          "spine3",
+          "thighl",
+          "thighr",
+          "toel",
+          "toer"
+        ],
+        "url": "/animations/story-actions-v1/lumen-happy-hand-gesture.glb"
+      },
+      "schemaVersion": "friendsies-motion-build-result-v1",
+      "source": {
+        "action": "Character_Rig|mixamo.com|Layer0",
+        "bytes": 253873,
+        "durationSeconds": 2.933333333333333,
+        "filename": "lumen-happy-hand-gesture.fbx",
+        "frameEnd": 177,
+        "frameStart": 1,
+        "sampleRate": 60,
+        "sha256": "b4a200bdf82cdc614bf866203da0a8b7d0982f4abc2c1e4c96b824fb9b0bed49",
+        "archive": "Gestures Pack Basic.zip",
+        "archiveSha256": "a02a546a2a5dae2eb0c68acafd6c77161f729aea58a3f8270f2ce03c6fef2a63",
+        "member": "happy hand gesture.fbx"
+      },
+      "transform": {
+        "endpointPolicy": "include-terminal-pose-with-one-grid-hold-when-needed",
+        "exportFrameEnd": 177,
+        "paddedFrames": 0,
+        "removedActionCurveSpans": {
+          "Scene|mixamo.com|Layer0": {
+            "location[0]": 0,
+            "location[1]": 0,
+            "location[2]": 0,
+            "rotation_euler[0]": 0,
+            "rotation_euler[1]": 0,
+            "rotation_euler[2]": 0,
+            "scale[0]": 0,
+            "scale[1]": 0,
+            "scale[2]": 0
+          },
+          "fRiENDSiES_8448|mixamo.com|Layer0": {
+            "location[0]": 0.002490588231012225,
+            "location[1]": 0.007080656476318836,
+            "location[2]": 0.0003671026788651943,
+            "rotation_euler[0]": 0.06589207053184509,
+            "rotation_euler[1]": 0.04765831679105759,
+            "rotation_euler[2]": 0.25756003707647324,
+            "scale[0]": 1.1920928955078125e-7,
+            "scale[1]": 1.1920928955078125e-7,
+            "scale[2]": 1.1920928955078125e-7
+          }
+        },
+        "removedActions": [
+          "Scene|mixamo.com|Layer0",
+          "fRiENDSiES_8448|mixamo.com|Layer0"
+        ],
+        "removedObjectCurvePaths": [
+          "location",
+          "rotation_euler",
+          "scale"
+        ],
+        "removedObjectCurveSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_euler[0]": 0,
+          "rotation_euler[1]": 0,
+          "rotation_euler[2]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "removedObjects": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ],
+        "retainedFcurves": 140,
+        "retainedStaticArmatureWorldMatrix": [
+          0.9944049715995789,
+          0.09124952554702759,
+          0.05321669206023216,
+          -0.0023290226235985756,
+          -0.09442251175642014,
+          0.9936912655830383,
+          0.060514405369758606,
+          -0.004020286723971367,
+          -0.04735904559493065,
+          -0.06520067900419235,
+          0.9967477321624756,
+          -0.0016975020989775658,
+          0,
+          0,
+          0,
+          1
+        ],
+        "rootComponentSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_quaternion[0]": 0,
+          "rotation_quaternion[1]": 0,
+          "rotation_quaternion[2]": 0,
+          "rotation_quaternion[3]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+        "rootRotationBake": {
+          "finalRotationRadians": 0,
+          "maximumRotationDegrees": 15.038756618310973,
+          "maximumRotationRadians": 0.2624758183956146,
+          "policy": "strip-wrapper-translation-bake-bounded-root-rotation",
+          "sampleCount": 89,
+          "translationPolicy": "constant-canonical-root-location"
+        },
+        "runtimeBindingNote": "The GLB armature node preserves the source frame-one basis for clean re-import; Thornvale loads only AnimationClip tracks and binds them by canonical bone name.",
+        "sourceFrameEnd": 177,
+        "sourceParentChain": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ]
+      },
+      "id": "lumen.happy-hand-gesture",
+      "archive": "gestures-basic",
+      "deterministicRebuildSha256": "f05dd225d6d425517ee8a52b89d0c4b604cefce1caaeecf257b57f276b8da6a4"
+    },
+    {
+      "blenderVersion": "4.5.9 LTS",
+      "cleanReimport": {
+        "actions": [
+          "story-actions-v1-lumen-thoughtful-head-shake"
+        ],
+        "objects": [
+          "ArmL",
+          "ArmR",
+          "AttachmentL",
+          "AttachmentR",
+          "Backpiece_Attachment",
+          "BiscepL",
+          "BiscepR",
+          "HandL",
+          "HandR",
+          "Head",
+          "Root",
+          "ShinL",
+          "ShinR",
+          "Spine1",
+          "Spine2",
+          "Spine3",
+          "ThighL",
+          "ThighR",
+          "ToeL",
+          "ToeR",
+          "friendsies-humanoid-v1"
+        ]
+      },
+      "clipName": "story-actions-v1-lumen-thoughtful-head-shake",
+      "output": {
+        "animationChannels": 60,
+        "animationSamplers": 60,
+        "bytes": 41028,
+        "durationSeconds": 3.066666666666667,
+        "filename": "lumen-thoughtful-head-shake.glb",
+        "nodes": 21,
+        "sampleRate": 30,
+        "sha256": "4e0b1baddc1bcd62b3417771ad84f0880945875820f2fedac581fbcd08247a9b",
+        "targetBones": [
+          "arml",
+          "armr",
+          "attachmentl",
+          "attachmentr",
+          "backpieceattachment",
+          "biscepl",
+          "biscepr",
+          "handl",
+          "handr",
+          "head",
+          "root",
+          "shinl",
+          "shinr",
+          "spine1",
+          "spine2",
+          "spine3",
+          "thighl",
+          "thighr",
+          "toel",
+          "toer"
+        ],
+        "url": "/animations/story-actions-v1/lumen-thoughtful-head-shake.glb"
+      },
+      "schemaVersion": "friendsies-motion-build-result-v1",
+      "source": {
+        "action": "Character_Rig|mixamo.com|Layer0",
+        "bytes": 259649,
+        "durationSeconds": 3.05,
+        "filename": "lumen-thoughtful-head-shake.fbx",
+        "frameEnd": 184,
+        "frameStart": 1,
+        "sampleRate": 60,
+        "sha256": "145c7d2304eda466ddf0e490cfca1e69f3140cb85a7bb08daec502c7edb94107",
+        "archive": "Gestures Pack Basic.zip",
+        "archiveSha256": "a02a546a2a5dae2eb0c68acafd6c77161f729aea58a3f8270f2ce03c6fef2a63",
+        "member": "thoughtful head shake.fbx"
+      },
+      "transform": {
+        "endpointPolicy": "include-terminal-pose-with-one-grid-hold-when-needed",
+        "exportFrameEnd": 185,
+        "paddedFrames": 1,
+        "removedActionCurveSpans": {
+          "Scene|mixamo.com|Layer0": {
+            "location[0]": 0,
+            "location[1]": 0,
+            "location[2]": 0,
+            "rotation_euler[0]": 0,
+            "rotation_euler[1]": 0,
+            "rotation_euler[2]": 0,
+            "scale[0]": 0,
+            "scale[1]": 0,
+            "scale[2]": 0
+          },
+          "fRiENDSiES_8448|mixamo.com|Layer0": {
+            "location[0]": 0.0019252696074545383,
+            "location[1]": 0.001381583046168089,
+            "location[2]": 0.00006476393900811672,
+            "rotation_euler[0]": 0.013497784733772278,
+            "rotation_euler[1]": 0.019010554999113083,
+            "rotation_euler[2]": 0.13587842136621475,
+            "scale[0]": 1.1920928955078125e-7,
+            "scale[1]": 1.1920928955078125e-7,
+            "scale[2]": 1.1920928955078125e-7
+          }
+        },
+        "removedActions": [
+          "Scene|mixamo.com|Layer0",
+          "fRiENDSiES_8448|mixamo.com|Layer0"
+        ],
+        "removedObjectCurvePaths": [
+          "location",
+          "rotation_euler",
+          "scale"
+        ],
+        "removedObjectCurveSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_euler[0]": 0,
+          "rotation_euler[1]": 0,
+          "rotation_euler[2]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "removedObjects": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ],
+        "retainedFcurves": 140,
+        "retainedStaticArmatureWorldMatrix": [
+          0.9944069981575012,
+          0.09124883264303207,
+          0.05318083614110947,
+          -0.0023266184143722057,
+          -0.09442421793937683,
+          0.9936850666999817,
+          0.06061437353491783,
+          -0.004028009250760078,
+          -0.04731401056051254,
+          -0.06529692560434341,
+          0.9967435002326965,
+          -0.0016975068720057607,
+          0,
+          0,
+          0,
+          1
+        ],
+        "rootComponentSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_quaternion[0]": 0,
+          "rotation_quaternion[1]": 0,
+          "rotation_quaternion[2]": 0,
+          "rotation_quaternion[3]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+        "rootRotationBake": {
+          "finalRotationRadians": 0,
+          "maximumRotationDegrees": 7.3415440888304495,
+          "maximumRotationRadians": 0.1281341165304184,
+          "policy": "strip-wrapper-translation-bake-bounded-root-rotation",
+          "sampleCount": 93,
+          "translationPolicy": "constant-canonical-root-location"
+        },
+        "runtimeBindingNote": "The GLB armature node preserves the source frame-one basis for clean re-import; Thornvale loads only AnimationClip tracks and binds them by canonical bone name.",
+        "sourceFrameEnd": 184,
+        "sourceParentChain": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ]
+      },
+      "id": "lumen.thoughtful-head-shake",
+      "archive": "gestures-basic",
+      "deterministicRebuildSha256": "4e0b1baddc1bcd62b3417771ad84f0880945875820f2fedac581fbcd08247a9b"
+    },
+    {
+      "blenderVersion": "4.5.9 LTS",
+      "cleanReimport": {
+        "actions": [
+          "story-actions-v1-lumen-relieved-sigh"
+        ],
+        "objects": [
+          "ArmL",
+          "ArmR",
+          "AttachmentL",
+          "AttachmentR",
+          "Backpiece_Attachment",
+          "BiscepL",
+          "BiscepR",
+          "HandL",
+          "HandR",
+          "Head",
+          "Root",
+          "ShinL",
+          "ShinR",
+          "Spine1",
+          "Spine2",
+          "Spine3",
+          "ThighL",
+          "ThighR",
+          "ToeL",
+          "ToeR",
+          "friendsies-humanoid-v1"
+        ]
+      },
+      "clipName": "story-actions-v1-lumen-relieved-sigh",
+      "output": {
+        "animationChannels": 60,
+        "animationSamplers": 60,
+        "bytes": 40252,
+        "durationSeconds": 3,
+        "filename": "lumen-relieved-sigh.glb",
+        "nodes": 21,
+        "sampleRate": 30,
+        "sha256": "a4a8a9f27d89de2d3acf74dcfb348c690ce8167389cb01536b820e34879bb35e",
+        "targetBones": [
+          "arml",
+          "armr",
+          "attachmentl",
+          "attachmentr",
+          "backpieceattachment",
+          "biscepl",
+          "biscepr",
+          "handl",
+          "handr",
+          "head",
+          "root",
+          "shinl",
+          "shinr",
+          "spine1",
+          "spine2",
+          "spine3",
+          "thighl",
+          "thighr",
+          "toel",
+          "toer"
+        ],
+        "url": "/animations/story-actions-v1/lumen-relieved-sigh.glb"
+      },
+      "schemaVersion": "friendsies-motion-build-result-v1",
+      "source": {
+        "action": "Character_Rig|mixamo.com|Layer0",
+        "bytes": 257425,
+        "durationSeconds": 3,
+        "filename": "lumen-relieved-sigh.fbx",
+        "frameEnd": 181,
+        "frameStart": 1,
+        "sampleRate": 60,
+        "sha256": "6b32d8d1714833d8564a38b1179e8441f8c18917812efdab79172cc6c1d0327c",
+        "archive": "Gestures Pack Basic.zip",
+        "archiveSha256": "a02a546a2a5dae2eb0c68acafd6c77161f729aea58a3f8270f2ce03c6fef2a63",
+        "member": "relieved sigh.fbx"
+      },
+      "transform": {
+        "endpointPolicy": "include-terminal-pose-with-one-grid-hold-when-needed",
+        "exportFrameEnd": 181,
+        "paddedFrames": 0,
+        "removedActionCurveSpans": {
+          "Scene|mixamo.com|Layer0": {
+            "location[0]": 0,
+            "location[1]": 0,
+            "location[2]": 0,
+            "rotation_euler[0]": 0,
+            "rotation_euler[1]": 0,
+            "rotation_euler[2]": 0,
+            "scale[0]": 0,
+            "scale[1]": 0,
+            "scale[2]": 0
+          },
+          "fRiENDSiES_8448|mixamo.com|Layer0": {
+            "location[0]": 0.0007386382203549147,
+            "location[1]": 0.005806093802675605,
+            "location[2]": 0.0008703327039256692,
+            "rotation_euler[0]": 0.08464941009879112,
+            "rotation_euler[1]": 0.009580839425325394,
+            "rotation_euler[2]": 0.0311744287610054,
+            "scale[0]": 1.1920928955078125e-7,
+            "scale[1]": 1.1920928955078125e-7,
+            "scale[2]": 1.1920928955078125e-7
+          }
+        },
+        "removedActions": [
+          "Scene|mixamo.com|Layer0",
+          "fRiENDSiES_8448|mixamo.com|Layer0"
+        ],
+        "removedObjectCurvePaths": [
+          "location",
+          "rotation_euler",
+          "scale"
+        ],
+        "removedObjectCurveSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_euler[0]": 0,
+          "rotation_euler[1]": 0,
+          "rotation_euler[2]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "removedObjects": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ],
+        "retainedFcurves": 140,
+        "retainedStaticArmatureWorldMatrix": [
+          0.9944127798080444,
+          0.09132131934165955,
+          0.05294978991150856,
+          -0.0023052366450428963,
+          -0.09447786957025528,
+          0.9936846494674683,
+          0.06053636223077774,
+          -0.0040222699753940105,
+          -0.047087136656045914,
+          -0.06520070880651474,
+          0.9967605471611023,
+          -0.0016980456421151757,
+          0,
+          0,
+          0,
+          1
+        ],
+        "rootComponentSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_quaternion[0]": 0,
+          "rotation_quaternion[1]": 0,
+          "rotation_quaternion[2]": 0,
+          "rotation_quaternion[3]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+        "rootRotationBake": {
+          "finalRotationRadians": 0,
+          "maximumRotationDegrees": 4.158474445023992,
+          "maximumRotationRadians": 0.07257907092571259,
+          "policy": "strip-wrapper-translation-bake-bounded-root-rotation",
+          "sampleCount": 91,
+          "translationPolicy": "constant-canonical-root-location"
+        },
+        "runtimeBindingNote": "The GLB armature node preserves the source frame-one basis for clean re-import; Thornvale loads only AnimationClip tracks and binds them by canonical bone name.",
+        "sourceFrameEnd": 181,
+        "sourceParentChain": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ]
+      },
+      "id": "lumen.relieved-sigh",
+      "archive": "gestures-basic",
+      "deterministicRebuildSha256": "a4a8a9f27d89de2d3acf74dcfb348c690ce8167389cb01536b820e34879bb35e"
+    },
+    {
+      "blenderVersion": "4.5.9 LTS",
+      "cleanReimport": {
+        "actions": [
+          "story-actions-v1-day-one-plant-seed"
+        ],
+        "objects": [
+          "ArmL",
+          "ArmR",
+          "AttachmentL",
+          "AttachmentR",
+          "Backpiece_Attachment",
+          "BiscepL",
+          "BiscepR",
+          "HandL",
+          "HandR",
+          "Head",
+          "Root",
+          "ShinL",
+          "ShinR",
+          "Spine1",
+          "Spine2",
+          "Spine3",
+          "ThighL",
+          "ThighR",
+          "ToeL",
+          "ToeR",
+          "friendsies-humanoid-v1"
+        ]
+      },
+      "clipName": "story-actions-v1-day-one-plant-seed",
+      "output": {
+        "animationChannels": 60,
+        "animationSamplers": 60,
+        "bytes": 57532,
+        "durationSeconds": 5.5,
+        "filename": "day-one-plant-seed.glb",
+        "nodes": 21,
+        "sampleRate": 30,
+        "sha256": "6d84a8572dda3d9eae698e0f6f5528cac02eba7fad27359652dfdd786d2cb82a",
+        "targetBones": [
+          "arml",
+          "armr",
+          "attachmentl",
+          "attachmentr",
+          "backpieceattachment",
+          "biscepl",
+          "biscepr",
+          "handl",
+          "handr",
+          "head",
+          "root",
+          "shinl",
+          "shinr",
+          "spine1",
+          "spine2",
+          "spine3",
+          "thighl",
+          "thighr",
+          "toel",
+          "toer"
+        ],
+        "url": "/animations/story-actions-v1/day-one-plant-seed.glb"
+      },
+      "schemaVersion": "friendsies-motion-build-result-v1",
+      "source": {
+        "action": "Character_Rig|mixamo.com|Layer0",
+        "bytes": 363761,
+        "durationSeconds": 5.483333333333333,
+        "filename": "day-one-plant-seed.fbx",
+        "frameEnd": 330,
+        "frameStart": 1,
+        "sampleRate": 60,
+        "sha256": "c5f7ba37645c69eb0e5a7535ba264127f7a201782b3e94ccf8dc4b2c64c0d46e",
+        "archive": "Farming Pack.zip",
+        "archiveSha256": "14acbae8b09c9034c35639f458c08de06ef7dc4ba9e0aec29f9dfae8c63461b3",
+        "member": "dig and plant seeds.fbx"
+      },
+      "transform": {
+        "endpointPolicy": "include-terminal-pose-with-one-grid-hold-when-needed",
+        "exportFrameEnd": 331,
+        "paddedFrames": 1,
+        "removedActionCurveSpans": {
+          "Scene|mixamo.com|Layer0": {
+            "location[0]": 0,
+            "location[1]": 0,
+            "location[2]": 0,
+            "rotation_euler[0]": 0,
+            "rotation_euler[1]": 0,
+            "rotation_euler[2]": 0,
+            "scale[0]": 0,
+            "scale[1]": 0,
+            "scale[2]": 0
+          },
+          "fRiENDSiES_8448|mixamo.com|Layer0": {
+            "location[0]": 0.004361256491392851,
+            "location[1]": 0.05447327718138695,
+            "location[2]": 0.027588040567934513,
+            "rotation_euler[0]": 0.9857587888836861,
+            "rotation_euler[1]": 0.05652163177728653,
+            "rotation_euler[2]": 0.1331072673201561,
+            "scale[0]": 1.1920928955078125e-7,
+            "scale[1]": 1.1920928955078125e-7,
+            "scale[2]": 1.1920928955078125e-7
+          }
+        },
+        "removedActions": [
+          "Scene|mixamo.com|Layer0",
+          "fRiENDSiES_8448|mixamo.com|Layer0"
+        ],
+        "removedObjectCurvePaths": [
+          "location",
+          "rotation_euler",
+          "scale"
+        ],
+        "removedObjectCurveSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_euler[0]": 0,
+          "rotation_euler[1]": 0,
+          "rotation_euler[2]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "removedObjects": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ],
+        "retainedFcurves": 140,
+        "retainedStaticArmatureWorldMatrix": [
+          0.9998267292976379,
+          -0.011650382541120052,
+          -0.014517439529299736,
+          0.0015477783745154738,
+          0.011575299315154552,
+          0.9999191761016846,
+          -0.005245385691523552,
+          0.015061180107295513,
+          0.014577378518879414,
+          0.005076433066278696,
+          0.999880850315094,
+          -0.03646039590239525,
+          0,
+          0,
+          0,
+          1
+        ],
+        "rootComponentSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_quaternion[0]": 0,
+          "rotation_quaternion[1]": 0,
+          "rotation_quaternion[2]": 0,
+          "rotation_quaternion[3]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+        "rootRotationBake": {
+          "finalRotationRadians": 0,
+          "maximumRotationDegrees": 55.75744674217162,
+          "maximumRotationRadians": 0.9731510281562805,
+          "policy": "strip-wrapper-translation-bake-bounded-root-rotation",
+          "sampleCount": 166,
+          "translationPolicy": "constant-canonical-root-location"
+        },
+        "runtimeBindingNote": "The GLB armature node preserves the source frame-one basis for clean re-import; Thornvale loads only AnimationClip tracks and binds them by canonical bone name.",
+        "sourceFrameEnd": 330,
+        "sourceParentChain": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ]
+      },
+      "id": "day-one.plant-seed",
+      "archive": "farming",
+      "deterministicRebuildSha256": "6d84a8572dda3d9eae698e0f6f5528cac02eba7fad27359652dfdd786d2cb82a"
+    },
+    {
+      "blenderVersion": "4.5.9 LTS",
+      "cleanReimport": {
+        "actions": [
+          "story-actions-v1-day-one-water-seed"
+        ],
+        "objects": [
+          "ArmL",
+          "ArmR",
+          "AttachmentL",
+          "AttachmentR",
+          "Backpiece_Attachment",
+          "BiscepL",
+          "BiscepR",
+          "HandL",
+          "HandR",
+          "Head",
+          "Root",
+          "ShinL",
+          "ShinR",
+          "Spine1",
+          "Spine2",
+          "Spine3",
+          "ThighL",
+          "ThighR",
+          "ToeL",
+          "ToeR",
+          "friendsies-humanoid-v1"
+        ]
+      },
+      "clipName": "story-actions-v1-day-one-water-seed",
+      "output": {
+        "animationChannels": 60,
+        "animationSamplers": 60,
+        "bytes": 58500,
+        "durationSeconds": 5.6,
+        "filename": "day-one-water-seed.glb",
+        "nodes": 21,
+        "sampleRate": 30,
+        "sha256": "493f4f22070f5316acf3398fd4a764bfdf12863103f058f6f342c7df773451d9",
+        "targetBones": [
+          "arml",
+          "armr",
+          "attachmentl",
+          "attachmentr",
+          "backpieceattachment",
+          "biscepl",
+          "biscepr",
+          "handl",
+          "handr",
+          "head",
+          "root",
+          "shinl",
+          "shinr",
+          "spine1",
+          "spine2",
+          "spine3",
+          "thighl",
+          "thighr",
+          "toel",
+          "toer"
+        ],
+        "url": "/animations/story-actions-v1/day-one-water-seed.glb"
+      },
+      "schemaVersion": "friendsies-motion-build-result-v1",
+      "source": {
+        "action": "Character_Rig|mixamo.com|Layer0",
+        "bytes": 368993,
+        "durationSeconds": 5.583333333333333,
+        "filename": "day-one-water-seed.fbx",
+        "frameEnd": 336,
+        "frameStart": 1,
+        "sampleRate": 60,
+        "sha256": "6bce580e09d4fd580e3f2a2fe309d99546f46146cbe3d62bf2d46662a896afc4",
+        "archive": "Farming Pack.zip",
+        "archiveSha256": "14acbae8b09c9034c35639f458c08de06ef7dc4ba9e0aec29f9dfae8c63461b3",
+        "member": "watering.fbx"
+      },
+      "transform": {
+        "endpointPolicy": "include-terminal-pose-with-one-grid-hold-when-needed",
+        "exportFrameEnd": 337,
+        "paddedFrames": 1,
+        "removedActionCurveSpans": {
+          "Scene|mixamo.com|Layer0": {
+            "location[0]": 0,
+            "location[1]": 0,
+            "location[2]": 0,
+            "rotation_euler[0]": 0,
+            "rotation_euler[1]": 0,
+            "rotation_euler[2]": 0,
+            "scale[0]": 0,
+            "scale[1]": 0,
+            "scale[2]": 0
+          },
+          "fRiENDSiES_8448|mixamo.com|Layer0": {
+            "location[0]": 0.007606994127854705,
+            "location[1]": 0.012668441515415907,
+            "location[2]": 0.002054366981610656,
+            "rotation_euler[0]": 0.2989490032196045,
+            "rotation_euler[1]": 0.11247513443231583,
+            "rotation_euler[2]": 0.48886479437351227,
+            "scale[0]": 1.1920928955078125e-7,
+            "scale[1]": 1.1920928955078125e-7,
+            "scale[2]": 1.1920928955078125e-7
+          }
+        },
+        "removedActions": [
+          "Scene|mixamo.com|Layer0",
+          "fRiENDSiES_8448|mixamo.com|Layer0"
+        ],
+        "removedObjectCurvePaths": [
+          "location",
+          "rotation_euler",
+          "scale"
+        ],
+        "removedObjectCurveSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_euler[0]": 0,
+          "rotation_euler[1]": 0,
+          "rotation_euler[2]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "removedObjects": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ],
+        "retainedFcurves": 140,
+        "retainedStaticArmatureWorldMatrix": [
+          0.9944124221801758,
+          0.0912572368979454,
+          0.05306646600365639,
+          -0.002319170394912362,
+          -0.09442108869552612,
+          0.993690550327301,
+          0.06052876263856888,
+          -0.004020660184323788,
+          -0.04720795899629593,
+          -0.06520114839076996,
+          0.9967547655105591,
+          -0.0017023896798491478,
+          0,
+          0,
+          0,
+          1
+        ],
+        "rootComponentSpans": {
+          "location[0]": 0,
+          "location[1]": 0,
+          "location[2]": 0,
+          "rotation_quaternion[0]": 0,
+          "rotation_quaternion[1]": 0,
+          "rotation_quaternion[2]": 0,
+          "rotation_quaternion[3]": 0,
+          "scale[0]": 0,
+          "scale[1]": 0,
+          "scale[2]": 0
+        },
+        "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+        "rootRotationBake": {
+          "finalRotationRadians": 0,
+          "maximumRotationDegrees": 29.158453227188783,
+          "maximumRotationRadians": 0.5089110136032104,
+          "policy": "strip-wrapper-translation-bake-bounded-root-rotation",
+          "sampleCount": 169,
+          "translationPolicy": "constant-canonical-root-location"
+        },
+        "runtimeBindingNote": "The GLB armature node preserves the source frame-one basis for clean re-import; Thornvale loads only AnimationClip tracks and binds them by canonical bone name.",
+        "sourceFrameEnd": 336,
+        "sourceParentChain": [
+          "Scene",
+          "fRiENDSiES_8448"
+        ]
+      },
+      "id": "day-one.water-seed",
+      "archive": "farming",
+      "deterministicRebuildSha256": "493f4f22070f5316acf3398fd4a764bfdf12863103f058f6f342c7df773451d9"
+    }
+  ]
+}

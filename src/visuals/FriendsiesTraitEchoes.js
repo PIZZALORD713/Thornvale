@@ -30,6 +30,17 @@ import { getCuratedFriendsiesTrait } from '../content/friendsies-cast.js';
 
 const scratchObject = new Object3D();
 const scratchSize = new Vector3();
+const unanchoredLandmarkPosition = Object.freeze([0, -1000, 0]);
+
+function resolvePlacementPosition(positionOverrides, placement) {
+  return positionOverrides.get(placement.id)
+    || placement.position
+    || unanchoredLandmarkPosition;
+}
+
+function isFinitePosition(position) {
+  return position?.length === 3 && position.every(Number.isFinite);
+}
 
 function readAttributeComponents(attribute, index) {
   return [
@@ -392,33 +403,53 @@ export class FriendsiesTraitEchoes {
     return this;
   }
 
-  anchorToLandmarks({ ledger = null } = {}) {
+  anchorToLandmarks({ ledger = null, bell = null } = {}) {
+    let anchored = false;
     const crownFamily = this.config.families.find((family) => family.id === 'civic-crown');
     const crownPlacement = crownFamily?.placements?.[0];
-    if (!ledger || !crownPlacement) return false;
-
-    ledger.updateWorldMatrix(true, true);
-    const bounds = new Box3().setFromObject(ledger, true);
-    const size = bounds.getSize(new Vector3());
-    if (
-      bounds.isEmpty()
-      || ![bounds.min.x, bounds.min.y, bounds.min.z,
-        bounds.max.x, bounds.max.y, bounds.max.z].every(Number.isFinite)
-      || !Number.isFinite(size.lengthSq())
-      || size.lengthSq() <= 0
-    ) {
-      return false;
+    if (ledger && crownPlacement) {
+      ledger.updateWorldMatrix(true, true);
+      const bounds = new Box3().setFromObject(ledger, true);
+      const size = bounds.getSize(new Vector3());
+      if (
+        !bounds.isEmpty()
+        && [bounds.min.x, bounds.min.y, bounds.min.z,
+          bounds.max.x, bounds.max.y, bounds.max.z].every(Number.isFinite)
+        && Number.isFinite(size.lengthSq())
+        && size.lengthSq() > 0
+      ) {
+        const center = bounds.getCenter(new Vector3());
+        this.positionOverrides.set(crownPlacement.id, [
+          center.x,
+          bounds.max.y + 0.012,
+          center.z,
+        ]);
+        this.root.userData.traitEcho.ledgerCrownAnchored = true;
+        anchored = true;
+      }
     }
 
-    const center = bounds.getCenter(new Vector3());
-    this.positionOverrides.set(crownPlacement.id, [
-      center.x,
-      bounds.max.y + 0.012,
-      center.z,
-    ]);
-    this.root.userData.traitEcho.ledgerCrownAnchored = true;
-    this.update(0, 0, { isNight: false, nightMix: 0 });
-    return true;
+    const torchFamily = this.config.families.find((family) => family.id === 'civic-torch');
+    const bellPlacement = torchFamily?.placements?.find(
+      (placement) => placement.anchor?.landmark === 'bell',
+    );
+    if (bell?.isObject3D && bellPlacement && isFinitePosition(bellPlacement.anchor.offset)) {
+      bell.updateWorldMatrix(true, false);
+      this.root.updateWorldMatrix(true, false);
+      const anchoredPosition = bell.localToWorld(
+        new Vector3().fromArray(bellPlacement.anchor.offset),
+      );
+      this.root.worldToLocal(anchoredPosition);
+      const position = anchoredPosition.toArray();
+      if (isFinitePosition(position)) {
+        this.positionOverrides.set(bellPlacement.id, position);
+        this.root.userData.traitEcho.bellTorchAnchored = true;
+        anchored = true;
+      }
+    }
+
+    if (anchored) this.update(0, 0, { isNight: false, nightMix: 0 });
+    return anchored;
   }
 
   _addFamily(family, trait, baked) {
@@ -462,10 +493,11 @@ export class FriendsiesTraitEchoes {
         runtime.light.name = 'trait_echo_bell_guidance_light';
         runtime.light.castShadow = false;
         runtime.light.userData.cameraCollision = false;
+        const position = resolvePlacementPosition(this.positionOverrides, bellPlacement);
         runtime.light.position.set(
-          bellPlacement.position[0],
-          bellPlacement.position[1] + bellPlacement.height * 0.84,
-          bellPlacement.position[2],
+          position[0],
+          position[1] + bellPlacement.height * 0.84,
+          position[2],
         );
         this.root.add(runtime.light);
       }
@@ -523,7 +555,7 @@ export class FriendsiesTraitEchoes {
     if (!this.mounts) return;
     const { mesh, placements } = this.mounts;
     placements.forEach(({ placement }, index) => {
-      const position = this.positionOverrides.get(placement.id) || placement.position;
+      const position = resolvePlacementPosition(this.positionOverrides, placement);
       scratchObject.position.fromArray(position);
       scratchObject.rotation.set(0, placement.yaw || 0, 0);
 
@@ -615,9 +647,8 @@ export class FriendsiesTraitEchoes {
           ritualPulse *= placement.pairRole === 'first' ? 0.94 : 1.01;
         }
 
-        scratchObject.position.fromArray(
-          this.positionOverrides.get(placement.id) || placement.position,
-        );
+        const position = resolvePlacementPosition(this.positionOverrides, placement);
+        scratchObject.position.fromArray(position);
         scratchObject.rotation.set(0, placement.yaw || 0, ambientSway + lean);
         if (familyId === 'civic-crown') scratchObject.rotation.z = this.current.crownTilt;
         scratchObject.scale.set(
@@ -644,6 +675,17 @@ export class FriendsiesTraitEchoes {
           0.04 + this.current.torchEmissive * (0.35 + nightMix * 0.65) * flicker,
         );
         if (runtime.light) {
+          const bellPlacement = config.placements.find(
+            (placement) => placement.anchor?.landmark === 'bell',
+          );
+          if (bellPlacement) {
+            const position = resolvePlacementPosition(this.positionOverrides, bellPlacement);
+            runtime.light.position.set(
+              position[0],
+              position[1] + bellPlacement.height * 0.84,
+              position[2],
+            );
+          }
           runtime.light.intensity = this.current.bellLight * nightMix * flicker;
         }
       } else if (familyId === 'civic-crown') {

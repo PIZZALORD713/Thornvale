@@ -8,7 +8,7 @@ import {
   Object3D,
   StaticDrawUsage,
 } from 'three';
-import { getBuildingBounds, TOWN_LAYOUT } from '../config/town.js';
+import { getBuildingBounds, TOWN_LAYOUT, TOWN_PATH_PROFILES } from '../config/town.js';
 
 export const GRASS_QUALITY_COUNTS = Object.freeze({
   low: 192,
@@ -223,8 +223,15 @@ export function isGrassPlacementAllowed(xValue, zValue, layout = TOWN_LAYOUT) {
   }
 
   for (const path of layout?.paths || []) {
-    const clearance = (Number(path.width) || 0) * 0.5 + 1.05;
+    const profile = TOWN_PATH_PROFILES[path.profile];
+    const grassMargin = Number(path.grassMargin ?? profile?.grassMargin);
+    const clearance = (Number(path.width) || 0) * 0.5
+      + (Number.isFinite(grassMargin) ? Math.max(0, grassMargin) : 0.35);
     if (pointNearPolyline(x, z, path.points, clearance)) return false;
+  }
+
+  for (const exclusion of layout?.grassExclusions || []) {
+    if (pointInCircle(x, z, exclusion, Number(exclusion.radius) || 0)) return false;
   }
 
   for (const points of Object.values(layout?.storyRoutes || {})) {
