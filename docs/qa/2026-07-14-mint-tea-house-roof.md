@@ -48,7 +48,13 @@ angles plus high and low pitch views; the main roof, canopy, end caps, eaves,
 undersides, and visible separation remained clean with no browser warnings or
 errors.
 
-The production URL still served the original 562,828-byte GLB with SHA-256
-`8ad8a1a4babd46e0221e98c60bdd20be1ed235a5d3c6d55c0246a7c84794afdc`
-when checked on 2026-07-14. Deploying the repaired asset is still required to
-remove the live regression.
+PR #16 merged to `main` as
+`b374456cdd84759b8abdf9114f47cd2b2add6844`. The main-branch CI run and Vercel
+production deployment both passed. A cache-busted fetch from
+`https://thornvale.vercel.app/town/cottages/thornvale-cottages.glb` returned the
+expected 564,844 bytes and SHA-256
+`af5afde73586fb7d4d72f6dff6b1d456e113cee1e4bda5e1c45f82497029326c`.
+The production welcome-gate view rendered the repaired roof cleanly, and a
+fresh direct-route browser smoke produced no warnings or errors. Because the
+deployed GLB is byte-identical to the asset used for the close-range orbit, the
+completed angle and pitch coverage applies to the live asset.
