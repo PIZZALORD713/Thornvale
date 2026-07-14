@@ -284,7 +284,7 @@ def add_cross_section_prism(
     center_y: float = 0.0,
     bevel: float = 0.065,
 ) -> bpy.types.Object:
-    """Extrude an X/Z cross-section through Y to make a solid storybook roof."""
+    """Extrude a simple, perimeter-ordered X/Z cross-section into a solid roof."""
     half_depth = depth * 0.5
     vertices = [
         (x, center_y - half_depth, base_z + z) for x, z in cross_section
@@ -293,12 +293,12 @@ def add_cross_section_prism(
     ]
     count = len(cross_section)
     faces: list[tuple[int, ...]] = [
-        tuple(range(count)),
-        tuple(range(count, count * 2))[::-1],
+        tuple(range(count))[::-1],
+        tuple(range(count, count * 2)),
     ]
     for index in range(count - 1):
-        faces.append((index, index + count, index + count + 1, index + 1))
-    faces.append((count - 1, count * 2 - 1, count, 0))
+        faces.append((index + 1, index + count + 1, index + count, index))
+    faces.append((0, count, count * 2 - 1, count - 1))
 
     mesh = bpy.data.meshes.new(name=f"{name}_Mesh")
     mesh.from_pydata(vertices, [], faces)
@@ -344,8 +344,10 @@ def add_curved_eave_roof(
     material: bpy.types.Material,
     *,
     center_y: float = 0.0,
+    bevel: float = 0.065,
 ) -> bpy.types.Object:
     curl = min(0.42, width * 0.09)
+    thickness = min(0.18, height * 0.30)
     return add_cross_section_prism(
         root,
         name,
@@ -355,12 +357,14 @@ def add_curved_eave_roof(
             (0.0, height),
             (width * 0.5 - curl, 0.0),
             (width * 0.5, 0.22),
+            (width * 0.5, -thickness),
+            (-width * 0.5, -thickness),
         ],
         depth,
         base_z,
         material,
         center_y=center_y,
-        bevel=0.065,
+        bevel=bevel,
     )
 
 
@@ -1000,10 +1004,11 @@ def build_tea_house(mats: dict[str, bpy.types.Material]) -> bpy.types.Object:
         f"{prefix}_VerandaCanopy",
         5.26,
         1.76,
-        2.46,
-        0.52,
+        2.425,
+        0.430,
         mats["MAT_Roof_Coral"],
         center_y=front_y - 0.73,
+        bevel=0.062,
     )
 
     # Side trellis, climbing leaves, and tea blossoms.
@@ -1239,18 +1244,22 @@ def merge_by_material(root: bpy.types.Object) -> None:
             offset = len(vertices)
             transform = obj.matrix_local.copy()
             vertices.extend(tuple(transform @ vertex.co) for vertex in obj.data.vertices)
-            for polygon in obj.data.polygons:
-                indices = [offset + index for index in polygon.vertices]
-                if len(indices) == 3:
-                    triangles.append(tuple(indices))
-                else:
-                    # Fixed fan triangulation is sufficient for the simple,
-                    # convex storybook primitives and authored roof profiles.
-                    triangles.extend(
-                        (indices[0], indices[index], indices[index + 1])
-                        for index in range(1, len(indices) - 1)
-                    )
+            # Blender's loop triangulation preserves polygon winding and handles
+            # the concave but simple curled-eave profile. A fixed fan can cross
+            # that silhouette and emit inverted triangles in the runtime GLB.
+            obj.data.calc_loop_triangles()
+            triangles.extend(
+                tuple(offset + index for index in loop_triangle.vertices)
+                for loop_triangle in obj.data.loop_triangles
+            )
 
+        # Stabilize face insertion before Blender derives smooth export normals.
+        # The post-export canonicalizer keeps index accessors stable, but it is
+        # too late to prevent order-dependent floating-point normal reduction.
+        triangles = sorted(
+            min((a, b, c), (b, c, a), (c, a, b))
+            for a, b, c in triangles
+        )
         merged_name = f"{root.name}__{safe_component(material_name)}"
         merged_mesh = bpy.data.meshes.new(name=f"{merged_name}_Mesh")
         merged_mesh.from_pydata(vertices, [], triangles)

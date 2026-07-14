@@ -30,6 +30,16 @@ converts to runtime `+Z`. One Blender unit equals one meter. Detail such as
 eaves, porches, signs, and trellises deliberately extends beyond the authored
 wall footprint.
 
+Roof cross-sections are closed solids with outward face winding. The tea-house
+curled eaves use a simple perimeter with a shallow underside below the wall cap;
+Blender loop triangulation handles the concave silhouette before the material
+meshes are merged. This prevents the crossed fan triangles and mixed cap winding
+that produced the former stretched/flickering roof planes. The veranda canopy
+keeps a modeled gap from the main roof while clearing the door lintel and
+remaining seated on its posts. Merged triangles are sorted before Blender derives
+smooth normals, then index-canonicalized after export, so clean processes produce
+the same runtime bytes.
+
 ## Rebuild
 
 From the repository root:

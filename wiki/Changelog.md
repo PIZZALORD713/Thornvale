@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+* Fixed malformed mint tea-house roof topology that produced stretched,
+  flickering planes near the pawn. Curled eaves now export as closed,
+  outward-wound solids with concave-safe triangulation and modeled separation
+  between the main roof and veranda canopy; deterministic geometry regressions
+  protect the runtime cottage asset.
 * Added ADR 0005's standing Thornvale animation authorization. All current and
   future animation sources and derivatives the project owner controls or may
   lawfully use may serve any integrated Thornvale role without another owner

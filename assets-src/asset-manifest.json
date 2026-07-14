@@ -571,13 +571,13 @@
       "kind": "environment-model",
       "family": "thornvale-cottages",
       "budgetGroups": ["active-town-glb"],
-      "bytes": 562828,
-      "sha256": "8ad8a1a4babd46e0221e98c60bdd20be1ed235a5d3c6d55c0246a7c84794afdc",
+      "bytes": 564844,
+      "sha256": "af5afde73586fb7d4d72f6dff6b1d456e113cee1e4bda5e1c45f82497029326c",
       "source": {
         "originalFilename": "thornvale-cottages.blend",
         "path": "assets-src/town-cottages/thornvale-cottages.blend",
-        "sha256": "58362a9e3955a4365eeeefa4f9a110ba076914828b797c4d4fb5710a5dd53fbe",
-        "transform": "Deterministic Blender 4.5.9 LTS glTF export with canonicalized triangle ordering."
+        "sha256": "9d047513ccaf7319dd12951b9770732f3f00614540a387ca702aa2685c2b1c1a",
+        "transform": "Deterministic Blender 4.5.9 LTS glTF export with outward roof winding, concave-safe loop triangulation, and pre/post-export canonical triangle ordering."
       }
     },
     {

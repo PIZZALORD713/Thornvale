@@ -11,8 +11,8 @@
 - Runtime front axis: `+Z`
 - Textures: none; all materials use named PBR factors and solid colors
 - Compression: uncompressed glTF geometry; ready for a later measured Draco pass
-- Export size: 562,828 bytes
-- Deterministic SHA-256: `8ad8a1a4babd46e0221e98c60bdd20be1ed235a5d3c6d55c0246a7c84794afdc`
+- Export size: 564,844 bytes
+- Deterministic SHA-256: `af5afde73586fb7d4d72f6dff6b1d456e113cee1e4bda5e1c45f82497029326c`
 
 The GLB has exactly four top-level roots, all exported at `(0, 0, 0)` with unit
 scale:
@@ -38,13 +38,13 @@ metadata.
 
 ## Validation record
 
-Clean Blender glTF re-import on 2026-07-12 confirmed:
+Clean Blender glTF re-import on 2026-07-14 confirmed:
 
 | Root | Meshes | Triangles | Vertices |
 | --- | ---: | ---: | ---: |
 | `Cottage_berry_bakery` | 12 | 8,780 | 4,568 |
 | `Cottage_lavender_library` | 9 | 6,760 | 3,506 |
-| `Cottage_mint_tea_house` | 12 | 7,588 | 3,922 |
+| `Cottage_mint_tea_house` | 12 | 7,700 | 3,978 |
 | `Cottage_rose_post_office` | 9 | 7,212 | 3,730 |
 
 All roots passed the 15-mesh-per-cottage budget and re-imported at origin with
@@ -58,6 +58,13 @@ The asset contains only project-authored procedural geometry and materials. If
 the source or exporter changes, regenerate the GLB, rerun the clean import
 validation, and update the counts above when they differ.
 
-The build script canonicalizes exported triangle ordering. Two clean, parallel
-Blender 4.5.9 LTS builds produced byte-identical GLBs with the SHA-256 recorded
-above.
+The build script canonicalizes triangle insertion before Blender derives smooth
+normals and canonicalizes exported index ordering afterward. Four clean,
+parallel Blender 4.5.9 LTS builds produced byte-identical GLBs with the SHA-256
+recorded above.
+
+The 2026-07-14 rebuild also verifies that both curled tea-house roofs use simple
+closed cross-sections and that every triangle on their four end-cap planes has
+consistent outward winding. The main roof and veranda canopy do not intersect,
+and the modeled canopy remains seated on its posts without entering the door
+lintel. The stable runtime URL and procedural cottage fallback remain unchanged.
