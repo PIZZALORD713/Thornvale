@@ -52,6 +52,8 @@ atlas, and breathing-grass evidence is recorded in
 [`2026-07-12-aesthetic-system-v1.md`](2026-07-12-aesthetic-system-v1.md).
 The fRiENDSiES deep-link and remote-fallback evidence is recorded in
 [`2026-07-12-friendsies-url-selection.md`](2026-07-12-friendsies-url-selection.md).
+The mint tea-house roof topology repair and release evidence is recorded in
+[`2026-07-14-mint-tea-house-roof.md`](2026-07-14-mint-tea-house-roof.md).
 Do not commit generated `dist/`, screenshots, traces, or `output/` artifacts by
 default. When evidence is needed for a release or regression, store a concise
 Markdown record here named `YYYY-MM-DD-short-topic.md` and link any deliberately

@@ -27,7 +27,7 @@ test('asset manifest covers runtime media and stays within pilot budgets', async
   assert.equal(report.runtimeAssetCount, 27);
   assert.equal(report.sourceAssetCount, 0);
   assert.equal(report.externalRuntimeDependencyCount, 1);
-  assert.equal(report.activeTownBytes, 970_068);
+  assert.equal(report.activeTownBytes, 972_084);
   assert.equal(report.pilotArrivalBytes, 326_584);
   assert.deepEqual(report.characterBytes, {
     '0001': 295_916,

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { BoxGeometry, Group, Mesh } from 'three';
+import { BoxGeometry, Group, Mesh, Vector3 } from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import {
   ASSET_VARIANTS,
@@ -21,6 +22,82 @@ async function readGlbDocument(path) {
   const jsonLength = buffer.readUInt32LE(12);
   assert.equal(buffer.readUInt32LE(16), 0x4e4f534a, `${path} has no JSON chunk`);
   return JSON.parse(buffer.subarray(20, 20 + jsonLength).toString('utf8').trim());
+}
+
+async function loadGlbScene(path) {
+  const buffer = await readFile(new URL(path, import.meta.url));
+  const arrayBuffer = buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength,
+  );
+  globalThis.ProgressEvent ??= class ProgressEvent {};
+  const gltf = await new GLTFLoader().parseAsync(arrayBuffer, '');
+  return gltf.scene;
+}
+
+function getAxisAlignedCapSigns(mesh, axis = 'z', epsilon = 1e-5) {
+  const positions = mesh.geometry.getAttribute('position');
+  const indices = mesh.geometry.getIndex();
+  assert.ok(positions && indices, `${mesh.name} requires indexed position geometry`);
+
+  const a = new Vector3();
+  const b = new Vector3();
+  const c = new Vector3();
+  const edgeA = new Vector3();
+  const edgeB = new Vector3();
+  const normal = new Vector3();
+  const groups = new Map();
+
+  for (let offset = 0; offset < indices.count; offset += 3) {
+    a.fromBufferAttribute(positions, indices.getX(offset));
+    b.fromBufferAttribute(positions, indices.getX(offset + 1));
+    c.fromBufferAttribute(positions, indices.getX(offset + 2));
+    const values = [a[axis], b[axis], c[axis]];
+    if (Math.max(...values) - Math.min(...values) > epsilon) continue;
+
+    normal.copy(edgeA.subVectors(b, a)).cross(edgeB.subVectors(c, a));
+    const sign = Math.sign(normal[axis]);
+    if (sign === 0) continue;
+    const plane = (values[0] + values[1] + values[2]) / 3;
+    const key = plane.toFixed(3);
+    const signs = groups.get(key) || [];
+    signs.push(sign);
+    groups.set(key, signs);
+  }
+  return groups;
+}
+
+function getSignedMeshVolume(mesh) {
+  const positions = mesh.geometry.getAttribute('position');
+  const indices = mesh.geometry.getIndex();
+  assert.ok(positions && indices, `${mesh.name} requires indexed position geometry`);
+
+  const a = new Vector3();
+  const b = new Vector3();
+  const c = new Vector3();
+  const cross = new Vector3();
+  let volume = 0;
+  for (let offset = 0; offset < indices.count; offset += 3) {
+    a.fromBufferAttribute(positions, indices.getX(offset));
+    b.fromBufferAttribute(positions, indices.getX(offset + 1));
+    c.fromBufferAttribute(positions, indices.getX(offset + 2));
+    volume += a.dot(cross.crossVectors(b, c)) / 6;
+  }
+  return volume;
+}
+
+function getPlaneVerticalBounds(mesh, plane, epsilon = 1e-5) {
+  const positions = mesh.geometry.getAttribute('position');
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (let index = 0; index < positions.count; index += 1) {
+    if (Math.abs(positions.getZ(index) - plane) > epsilon) continue;
+    const y = positions.getY(index);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+  assert.ok(Number.isFinite(minY) && Number.isFinite(maxY), `missing roof plane z=${plane}`);
+  return { minY, maxY };
 }
 
 function getAccessorCount(document, accessorIndex, label) {
@@ -101,6 +178,59 @@ test('the Blender cottage kit preserves every runtime placement root', async () 
     assert.ok(names.has(name), `missing authored cottage root ${name}`);
   }
   assert.equal(document.images?.length || 0, 0, 'cottage kit should remain texture-free');
+});
+
+test('the tea-house curled roof exports closed caps with outward winding', async () => {
+  const scene = await loadGlbScene('../public/town/cottages/thornvale-cottages.glb');
+  const roof = scene.getObjectByName('Cottage_mint_tea_house__Roof_Coral');
+  assert.ok(roof?.isMesh, 'missing the authored mint tea-house roof mesh');
+
+  const caps = getAxisAlignedCapSigns(roof);
+  for (const [plane, expectedSign] of [
+    ['-2.550', -1],
+    ['2.550', 1],
+    ['1.850', -1],
+    ['3.610', 1],
+  ]) {
+    const signs = caps.get(plane);
+    assert.ok(signs?.length >= 3, `missing triangulated roof cap at z=${plane}`);
+    assert.deepEqual(
+      [...new Set(signs)],
+      [expectedSign],
+      `every triangle on the roof cap at z=${plane} must face out of the solid`,
+    );
+  }
+
+  const mainUnderside = Math.min(
+    getPlaneVerticalBounds(roof, -2.55).minY,
+    getPlaneVerticalBounds(roof, 2.55).minY,
+  );
+  const canopyTop = Math.max(
+    getPlaneVerticalBounds(roof, 1.85).maxY,
+    getPlaneVerticalBounds(roof, 3.61).maxY,
+  );
+  assert.ok(
+    mainUnderside - canopyTop >= 0.02,
+    `main roof and veranda canopy need a visible gap; received ${(mainUnderside - canopyTop).toFixed(3)}m`,
+  );
+});
+
+test('every authored cottage roof exports as an outward-wound solid', async () => {
+  const scene = await loadGlbScene('../public/town/cottages/thornvale-cottages.glb');
+  const roofNames = [
+    'Cottage_berry_bakery__Roof_Blush',
+    'Cottage_lavender_library__Roof_Lavender',
+    'Cottage_mint_tea_house__Roof_Coral',
+    'Cottage_rose_post_office__Roof_Periwinkle',
+  ];
+  for (const name of roofNames) {
+    const roof = scene.getObjectByName(name);
+    assert.ok(roof?.isMesh, `missing authored roof mesh ${name}`);
+    assert.ok(
+      getSignedMeshVolume(roof) > 0.01,
+      `${name} must have positive signed volume from outward triangle winding`,
+    );
+  }
 });
 
 test('the Blender village kit preserves each reusable landmark root', async () => {
