@@ -89,8 +89,8 @@ are recorded in `assets-src/friendsies-animations/story-actions-v1/` and
 | `npm run animations:verify` | PASS | Six catalog, report, manifest, runtime, and toolchain contracts verified |
 | Focused Story Actions and story-state suites | PASS | 33/33 across Story Actions assets, action clock/presenter, Core Hook, and Day One |
 | `npm run assets:audit` | PASS | 27 runtime files / 4,482,517 B; Story Actions is six files / 270,232 B; no release-blocked family remains |
-| `npm run assets:release` | PASS | Standing animation authorization, upstream rights, provenance, fallbacks, QA evidence, hashes, budgets, and production dist all pass; `dist/` is 8,383,329 / 8,388,608 B |
-| `npm run check` | PASS | 212/212 tests, production Vite build, development asset audit, and the same 8,383,329-byte dist candidate |
+| `npm run assets:release` | PASS | Standing animation authorization, upstream rights, provenance, fallbacks, QA evidence, hashes, budgets, and production dist all pass; `dist/` is 8,383,699 / 8,388,608 B |
+| `npm run check` | PASS | 212/212 tests, production Vite build, development asset audit, and the same 8,383,699-byte dist candidate |
 
 ## Browser matrix — 2026-07-14 observations
 
@@ -128,7 +128,7 @@ permission blocker.
 ## Performance and player-learning gates
 
 - [x] Record final production `dist/` bytes and the Story Actions payload delta:
-      8,383,329 / 8,388,608 B total; 270,232 B for the six-clip family.
+      8,383,699 / 8,388,608 B total; 270,232 B for the six-clip family.
 - [ ] Compare median and p95 frame time on the same reference device before and
       after loading the six-clip family.
 - [x] Confirm the optional catalog and individual-file failures do not block

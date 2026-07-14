@@ -24,7 +24,7 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
 ## Implementation evidence — updated 2026-07-14
 
 - `npm run check` passed with 212/212 deterministic tests, a production Vite
-  build, the asset audit, and an 8,383,329 / 8,388,608 byte production bundle
+  build, the asset audit, and an 8,383,699 / 8,388,608 byte production bundle
   after the complete action-weight implementation.
 - Focused coverage proves the clean resource loop, zero-energy fire/cook/eat recovery, pass-out fee and debt branches, retained progress, save migration, Day One world projection, survival HUD accessibility, and the Day One-to-Ledger gate.
 - An independent code review found no progression, recovery, migration, or Ledger-unlock blockers.
