@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "friendsies-rig-profile-v1",
+  "id": "friendsies-humanoid-v1",
+  "description": "Canonical 20-bone fRiENDSiES humanoid contract used by the bundled Thornvale bodies and story-actions-v1.",
+  "rootBone": "Root",
+  "sourceArmature": "Character_Rig",
+  "sampleRate": 60,
+  "outputSampleRate": 30,
+  "bones": [
+    { "name": "Root", "parent": null },
+    { "name": "Spine1", "parent": "Root" },
+    { "name": "Spine2", "parent": "Spine1" },
+    { "name": "Spine3", "parent": "Spine2" },
+    { "name": "Head", "parent": "Spine3" },
+    { "name": "BiscepL", "parent": "Spine3" },
+    { "name": "ArmL", "parent": "BiscepL" },
+    { "name": "HandL", "parent": "ArmL" },
+    { "name": "AttachmentL", "parent": "HandL" },
+    { "name": "BiscepR", "parent": "Spine3" },
+    { "name": "ArmR", "parent": "BiscepR" },
+    { "name": "HandR", "parent": "ArmR" },
+    { "name": "AttachmentR", "parent": "HandR" },
+    { "name": "Backpiece_Attachment", "parent": "Spine2" },
+    { "name": "ThighL", "parent": "Root" },
+    { "name": "ShinL", "parent": "ThighL" },
+    { "name": "ToeL", "parent": "ShinL" },
+    { "name": "ThighR", "parent": "Root" },
+    { "name": "ShinR", "parent": "ThighR" },
+    { "name": "ToeR", "parent": "ShinR" }
+  ],
+  "aliases": {
+    "pelvis": "Root",
+    "hips": "Root",
+    "mixamorigHips": "Root"
+  }
+}

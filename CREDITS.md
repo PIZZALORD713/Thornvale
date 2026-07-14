@@ -17,14 +17,23 @@ record. Exact runtime hashes and budget classifications live in
 ## fRiENDSiES character traits
 
 The bundled default player `#6602`, Steward Lumen `#8914`, and the `#0001`
-Flower White Trait Echo source come from the fRiENDSiES collection. The project
-owner authorized the exact manifested runtime files and their documented
-Thornvale uses for publication in bundled Thornvale builds on 2026-07-12. They
-are `project-release-authorized`, not CC0, public-domain, or generally reusable
-assets. Raw-source, standalone character or trait-pack, collection-wide
-bundling, and general outside-project redistribution remain prohibited by this
-record. The separately authorized remote in-game selection path does not
-broaden these local grants.
+Flower White Trait Echo source come from the fRiENDSiES collection. On
+2026-07-13, the project owner established one standing `friendsies-project`
+authorization for canonical fRiENDSiES assets and metadata under the owner's
+control, including current and future canonical collection revisions, for any
+integrated Thornvale use.
+It is project authorization, not a claim that the collection is CC0,
+public-domain, or generally reusable outside Thornvale.
+
+The authorization covers local and remote avatars and NPCs, complete
+characters, detached traits, hand items, sprouts, backpieces, tools, equipment,
+props, environments, UI, documentation, testing, promotional captures,
+streaming, selected-file local bundling or caching, optimization,
+transformation, and derivative runtime assets. No new permission decision is
+required per token, trait, role, context, transform, delivery method, or
+canonical revision. Standalone asset or character packs, bulk raw collection
+mirroring or dumps, sublicensing, raw-source redistribution as a separate
+product, and reuse outside Thornvale remain excluded.
 
 Trait Echo v1 reuses three of those already bundled files as environmental
 story signals: `#0001` Flower White, plus `#8914` Torch and Crown Up. The seven
@@ -33,10 +42,9 @@ new or modified fRiENDSiES binary is added for the treatment. These
 Thornvale-authored arrangements are environmental adaptations, not canonical
 fRiENDSiES tokens or new collection traits.
 
-The exact `#0001` Flower White and `#8914` Torch and Crown Up runtime hashes and
-the documented seven-placement Trait Echo v1 arrangement are included in that
-Thornvale-only authorization. That exact-file grant does not extend to other
-collection traits and is separate from the remote-player authorization below.
+The current `#0001` Flower White and `#8914` Torch and Crown Up runtime hashes
+and the documented seven-placement Trait Echo v1 arrangement are present
+technical records under that shared authorization, not its outer boundary.
 
 - `public/friendsies/0001/PROVENANCE.md`
 - `public/friendsies/6602/PROVENANCE.md`
@@ -44,25 +52,22 @@ collection traits and is separate from the remote-player authorization below.
 
 The source-only trait index and local atlas reference the pinned collection
 metadata, remote preview URLs, and remote asset URLs for casting research. They
-do not copy the full collection into Thornvale or grant environmental runtime
-approval. `Book Of Ocean`, `Friends Key`, `All Seeing`, and `Orb` may be
-cataloged or curated there, but their assets are not bundled or loaded by Trait
-Echo v1.
+do not copy the full collection into Thornvale. `Book Of Ocean`, `Friends Key`,
+`All Seeing`, and `Orb` may be cataloged or curated there, but their assets are
+not bundled or loaded by Trait Echo v1 because they have not passed the current
+design and technical intake gate.
 
 ## fRiENDSiES remote player streaming
 
-On 2026-07-12, the Thornvale project owner separately authorized published
-Thornvale builds to fetch the revision-pinned fRiENDSiES catalog for token IDs
-`1..10000` and stream, render, and assemble one selected token's components
-from `https://storage.googleapis.com` as an integrated in-game player avatar.
-The family is `project-release-authorized` under the exact manifest contract in
-ADR 0003.
+The current loader fetches one selected token from a revision-pinned catalog,
+accepts token IDs `1..10000`, and loads component assets only from the approved
+`https://storage.googleapis.com` origin. Those limits remain source-integrity,
+security, payload, and fallback controls under the same `friendsies-project`
+authorization; they are not a separate player-only permission grant.
 
-This grant does not permit full-collection bundling, canonical or raw copying,
-mirroring, standalone asset or character packs, environmental reuse or
-adaptation, sublicensing, unrelated-origin delivery, or reuse outside
-Thornvale. It does not promote cataloged traits into Trait Echo or authorize
-their local bundling.
+See `docs/decisions/0004-friendsies-project-wide-authorization.md` for the
+active project authorization and its exclusions. Exact runtime hashes and
+dependency pins remain in `assets-src/asset-manifest.json`.
 
 ## fRiENDSiES animations
 

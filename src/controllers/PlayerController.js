@@ -42,6 +42,8 @@ export class PlayerController {
       sprinting: false,
     };
     this._jumpHeldLastUpdate = false;
+    this.actionLocked = false;
+    this.actionFacingYaw = null;
   }
 
   /**
@@ -65,7 +67,9 @@ export class PlayerController {
     }
 
     // --- Input -> Motor ---
-    const rawMoveInput = this.input.getMovementInput();
+    const rawMoveInput = this.actionLocked
+      ? { x: 0, z: 0 }
+      : this.input.getMovementInput();
     const moveInput = this._moveIntent;
     moveInput.x = -rawMoveInput.x; // Preserve the established camera-relative handedness.
     moveInput.z = rawMoveInput.z;
@@ -79,16 +83,19 @@ export class PlayerController {
     this.jumpCooldown = Math.max(0, this.jumpCooldown - safeDt);
     this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - safeDt);
 
-    const jumpHeld = Boolean(this.input.keys?.jump);
-    const jumpPressed = typeof this.input.consumeKeyPress === 'function'
+    const jumpHeld = !this.actionLocked && Boolean(this.input.keys?.jump);
+    const jumpPressed = !this.actionLocked && (typeof this.input.consumeKeyPress === 'function'
       ? this.input.consumeKeyPress('Space')
-      : (jumpHeld && !this._jumpHeldLastUpdate);
+      : (jumpHeld && !this._jumpHeldLastUpdate));
     this._jumpHeldLastUpdate = jumpHeld;
 
-    if (jumpPressed) {
+    if (this.actionLocked) {
+      this.input.consumeKeyPress?.('Space');
+      this.jumpBufferTimer = 0;
+    } else if (jumpPressed) {
       this.jumpBufferTimer = this.jumpBufferTime;
     }
-    this._consumeBufferedJump();
+    if (!this.actionLocked) this._consumeBufferedJump();
 
     const sprinting = Boolean(this.input.keys?.sprint)
       && (moveInput.x * moveInput.x + moveInput.z * moveInput.z > 0.001);
@@ -106,7 +113,9 @@ export class PlayerController {
 
     // --- Motor -> Visual ---
     const position = this.motor.getPosition();
-    const facingYaw = this.motor.getFacingYaw();
+    const facingYaw = this.actionLocked && Number.isFinite(this.actionFacingYaw)
+      ? this.actionFacingYaw
+      : this.motor.getFacingYaw();
 
     this.visualRig.update(dt, position, facingYaw);
 
@@ -151,6 +160,29 @@ export class PlayerController {
     // Sync visual position to motor
     const pos = this.motor.getPosition();
     this.visualRig.update(0, pos, this.visualRig.getFacing());
+  }
+
+  /** Lock travel and jumping for a bounded authored action while preserving mouse-look. */
+  setActionLocked(locked, options = {}) {
+    this.actionLocked = Boolean(locked);
+    this.actionFacingYaw = null;
+    if (this.actionLocked) {
+      const target = options?.context?.targetPosition ?? options?.targetPosition;
+      const position = this.motor?.getPosition?.();
+      const dx = Number(target?.x) - Number(position?.x);
+      const dz = Number(target?.z) - Number(position?.z);
+      if (Number.isFinite(dx) && Number.isFinite(dz) && Math.hypot(dx, dz) > 0.001) {
+        this.actionFacingYaw = Math.atan2(dx, dz);
+        this.visualRig?.setFacing?.(this.actionFacingYaw);
+      }
+    }
+    this.jumpBufferTimer = 0;
+    this.jumpCooldown = 0;
+    if (this.actionLocked && this.motor?.velocity) {
+      this.motor.velocity.x = 0;
+      this.motor.velocity.z = 0;
+    }
+    return this;
   }
 
   /**

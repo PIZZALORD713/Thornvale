@@ -122,6 +122,23 @@ export class StewardActor {
     return this.animator.playIdle();
   }
 
+  /** Play a semantic story action without making it progression authority. */
+  playAction(name, options = {}) {
+    if (!this.animator || !name) return false;
+    return this.animator.playOneShot(name, {
+      returnTo: this.motion ? 'walk' : 'idle',
+      ...options,
+    });
+  }
+
+  cancelAction(name = null, options = {}) {
+    if (!this.animator) return false;
+    return this.animator.cancelOneShot(name, {
+      returnTo: this.motion ? 'walk' : 'idle',
+      ...options,
+    });
+  }
+
   update(dt) {
     const safeDt = Math.min(Math.max(Number(dt) || 0, 0), 0.1);
     if (this.motion) {

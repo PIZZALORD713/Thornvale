@@ -31,16 +31,29 @@ import {
   BoxGeometry,
 } from 'three';
 import { ASSET_VARIANTS, normalizeAssetVariant } from '../config/assets.js';
-import { getBuildingBounds, TOWN_LAYOUT } from '../config/town.js';
-import { createBreathingGrass } from './BreathingGrass.js';
+import { getBuildingBounds, TOWN_LAYOUT, TOWN_PATH_PROFILES } from '../config/town.js';
+import { createMoundSurfaceGrid, sampleMoundHeight } from '../utils/terrain-surface.js';
+import { createBreathingGrass, isGrassPlacementAllowed } from './BreathingGrass.js';
 import { createDragonflyField } from './DragonflyField.js';
+import { createReclaimedPaverMesh } from './ReclaimedPaverPaths.js';
 
 export const TOWN_PALETTE = {
   grass: 0x87bd72,
   grassLight: 0x9dce81,
   grassDark: 0x679c62,
-  path: 0xffddb3,
-  pathEdge: 0xf2be91,
+  walkedGrass: 0x80ad72,
+  walkedGrassLight: 0xa2b67d,
+  walkedMoss: 0x83aa73,
+  walkedShoulderLight: 0xa0c283,
+  walkedVillage: 0x9caf76,
+  walkedGarden: 0x8ba970,
+  walkedWater: 0x829d7a,
+  walkedForest: 0x667f5d,
+  walkedMeadow: 0x83a470,
+  plazaStone: 0xded2b8,
+  plazaStoneEdge: 0xafa08b,
+  cottageEdging: 0xaa9b86,
+  pondBank: 0x829d6f,
   cream: 0xfff3dd,
   vanilla: 0xffe8b7,
   blush: 0xf5a9b8,
@@ -60,6 +73,75 @@ export const TOWN_PALETTE = {
   glow: 0xffd77d,
   white: 0xfffbf4,
 };
+
+export const WALKED_PATH_PROFILES = Object.freeze({
+  'village-lane': Object.freeze({
+    ...TOWN_PATH_PROFILES['village-lane'],
+    innerWidth: 0.58,
+    wearSpacing: 0.86,
+    wearLength: 0.72,
+    wearTone: TOWN_PALETTE.walkedVillage,
+    wearToneAlt: TOWN_PALETTE.walkedGrassLight,
+    shoulderSpacing: 2.55,
+    stoneSpacing: 3.8,
+    stoneScale: 0.82,
+  }),
+  'garden-lane': Object.freeze({
+    ...TOWN_PATH_PROFILES['garden-lane'],
+    innerWidth: 0.48,
+    wearSpacing: 0.9,
+    wearLength: 0.72,
+    wearTone: TOWN_PALETTE.walkedGarden,
+    wearToneAlt: TOWN_PALETTE.walkedMeadow,
+    shoulderSpacing: 2.1,
+    stoneSpacing: 5.4,
+    stoneScale: 0.7,
+  }),
+  'waterside-steps': Object.freeze({
+    ...TOWN_PATH_PROFILES['waterside-steps'],
+    innerWidth: 0.26,
+    wearSpacing: 1.1,
+    wearLength: 0.62,
+    wearTone: TOWN_PALETTE.walkedWater,
+    wearToneAlt: TOWN_PALETTE.walkedMoss,
+    shoulderSpacing: 1.8,
+    stoneSpacing: 1.55,
+    stoneScale: 1.18,
+  }),
+  'forest-footpath': Object.freeze({
+    ...TOWN_PATH_PROFILES['forest-footpath'],
+    innerWidth: 0.24,
+    wearSpacing: 0.98,
+    wearLength: 0.54,
+    wearTone: TOWN_PALETTE.walkedForest,
+    wearToneAlt: TOWN_PALETTE.walkedMoss,
+    shoulderSpacing: 1.55,
+    stoneSpacing: 0,
+    stoneScale: 0,
+  }),
+  'meadow-track': Object.freeze({
+    ...TOWN_PATH_PROFILES['meadow-track'],
+    innerWidth: 0.36,
+    wearSpacing: 1.22,
+    wearLength: 0.74,
+    wearTone: TOWN_PALETTE.walkedMeadow,
+    wearToneAlt: TOWN_PALETTE.walkedGarden,
+    shoulderSpacing: 2.25,
+    stoneSpacing: 6.2,
+    stoneScale: 0.66,
+  }),
+  'ritual-lane': Object.freeze({
+    ...TOWN_PATH_PROFILES['ritual-lane'],
+    innerWidth: 0.52,
+    wearSpacing: 0.86,
+    wearLength: 0.72,
+    wearTone: TOWN_PALETTE.walkedVillage,
+    wearToneAlt: TOWN_PALETTE.walkedGrassLight,
+    shoulderSpacing: 2.55,
+    stoneSpacing: 3.8,
+    stoneScale: 0.82,
+  }),
+});
 
 const shared = {
   materials: null,
@@ -83,6 +165,13 @@ function materials() {
     if (options.emissiveIntensity !== undefined) {
       config.emissiveIntensity = options.emissiveIntensity;
     }
+    if (options.polygonOffset !== undefined) config.polygonOffset = options.polygonOffset;
+    if (options.polygonOffsetFactor !== undefined) {
+      config.polygonOffsetFactor = options.polygonOffsetFactor;
+    }
+    if (options.polygonOffsetUnits !== undefined) {
+      config.polygonOffsetUnits = options.polygonOffsetUnits;
+    }
     return new MeshStandardMaterial(config);
   };
 
@@ -90,8 +179,28 @@ function materials() {
     grass: standard(TOWN_PALETTE.grass, { roughness: 1 }),
     grassLight: standard(TOWN_PALETTE.grassLight, { roughness: 1 }),
     grassDark: standard(TOWN_PALETTE.grassDark, { roughness: 1 }),
-    path: standard(TOWN_PALETTE.path, { roughness: 0.98 }),
-    pathEdge: standard(TOWN_PALETTE.pathEdge, { roughness: 0.95 }),
+    walkedGrass: standard(TOWN_PALETTE.walkedGrass, {
+      roughness: 1,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    }),
+    walkedGrassLight: standard(0xffffff, {
+      roughness: 1,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    }),
+    walkedMoss: standard(0xffffff, {
+      roughness: 1,
+      polygonOffset: true,
+      polygonOffsetFactor: -3,
+      polygonOffsetUnits: -3,
+    }),
+    plazaStone: standard(TOWN_PALETTE.plazaStone, { roughness: 0.98 }),
+    plazaStoneEdge: standard(TOWN_PALETTE.plazaStoneEdge, { roughness: 1 }),
+    cottageEdging: standard(TOWN_PALETTE.cottageEdging, { roughness: 1 }),
+    pondBank: standard(TOWN_PALETTE.pondBank, { roughness: 1 }),
     cream: standard(TOWN_PALETTE.cream),
     vanilla: standard(TOWN_PALETTE.vanilla),
     blush: standard(TOWN_PALETTE.blush),
@@ -153,6 +262,15 @@ function seededRandom(seed = 713) {
   };
 }
 
+function hashString(value) {
+  let hash = 2166136261;
+  for (const character of String(value)) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 function pointInsideBounds(x, z, bounds) {
   return x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ;
 }
@@ -161,6 +279,10 @@ function pointNearBuilding(x, z, layout, margin = 0) {
   return layout.buildings.some((building) => (
     pointInsideBounds(x, z, getBuildingBounds(building, margin))
   ));
+}
+
+function sampleTownGroundHeight(layout, x, z) {
+  return Math.max(0, sampleMoundHeight(layout?.terrain?.bellHill, x, z));
 }
 
 function makeMesh(geo, material, {
@@ -222,22 +344,35 @@ export function createGroundDressing(
   }
 
   const hillGeo = new SphereGeometry(1, 20, 12);
-  const hillData = [
-    [-35, -15, 10, 4.2, 8],
-    [35, -12, 11, 4.6, 9],
-    [-32, 26, 10, 4.1, 8],
-    [33, 27, 12, 5, 9],
-    [3, -38, 15, 5.2, 9],
-  ];
+  const hillData = layout.terrain?.decorativeHills || [];
   for (let i = 0; i < hillData.length; i += 1) {
-    const [x, z, sx, sy, sz] = hillData[i];
+    const { x, y, z, scaleX, scaleY, scaleZ } = hillData[i];
     const hill = makeMesh(hillGeo, i % 2 ? mat.grassDark : mat.grassLight, {
       cast: false,
       name: 'cozy_terrain_hill',
     });
-    hill.scale.set(sx, sy, sz);
-    hill.position.set(x, -2.8, z);
+    hill.scale.set(scaleX, scaleY, scaleZ);
+    hill.position.set(x, y, z);
     root.add(hill);
+  }
+
+  const bellHill = layout.terrain?.bellHill;
+  if (bellHill) {
+    const surface = createMoundSurfaceGrid(bellHill);
+    const bellHillGeometry = new BufferGeometry();
+    bellHillGeometry.setAttribute('position', new Float32BufferAttribute(surface.vertices, 3));
+    bellHillGeometry.setIndex([...surface.indices]);
+    bellHillGeometry.computeVertexNormals();
+    bellHillGeometry.computeBoundingBox();
+    bellHillGeometry.computeBoundingSphere();
+    const walkableHill = makeMesh(bellHillGeometry, mat.grassDark, {
+      cast: false,
+      name: 'cozy_walkable_bell_hill',
+    });
+    walkableHill.userData.cameraCollision = true;
+    walkableHill.userData.terrainId = bellHill.id;
+    walkableHill.userData.walkable = true;
+    root.add(walkableHill);
   }
 
   const selectedAssetVariant = normalizeAssetVariant(assetVariant);
@@ -260,7 +395,7 @@ export function createGroundDressing(
       const radius = 12 + random() * (layout.meadowRadius - 4);
       const x = Math.cos(angle) * radius;
       const z = Math.sin(angle) * radius;
-      if (pointNearBuilding(x, z, layout, 1.4)) continue;
+      if (!isGrassPlacementAllowed(x, z, layout)) continue;
       grassTufts.push(new Vector3(x, 0.17, z));
     }
     const tuftMesh = decorate(new InstancedMesh(tuftGeometry, mat.leafDark, grassTufts.length));
@@ -284,21 +419,64 @@ export function createGroundDressing(
   return root;
 }
 
-function createRibbonGeometry(points, width) {
-  const curve = new CatmullRomCurve3(points.map(([x, z]) => new Vector3(x, 0, z)), false, 'centripetal');
-  const samples = curve.getPoints(Math.max(18, points.length * 10));
+function createPathCurve(points) {
+  return new CatmullRomCurve3(
+    points.map((point) => (
+      point.length >= 3
+        ? new Vector3(point[0], point[1], point[2])
+        : new Vector3(point[0], 0, point[1])
+    )),
+    false,
+    'centripetal',
+  );
+}
+
+function resolveWalkedPathProfile(route) {
+  return WALKED_PATH_PROFILES[route.profile] || WALKED_PATH_PROFILES['garden-lane'];
+}
+
+function createRibbonShape(points, width, {
+  seed = 713,
+  jitterRatio = 0.07,
+  maximumJitter = 0.14,
+} = {}) {
+  const curve = createPathCurve(points);
+  const length = Math.max(0.001, curve.getLength());
+  const samples = curve.getSpacedPoints(Math.max(18, Math.ceil(length / 0.45)));
   const left = [];
   const right = [];
+  const phaseA = (seed % 4096) * 0.0137;
+  const phaseB = ((seed >>> 12) % 4096) * 0.0173;
+  const jitter = Math.min(width * jitterRatio, maximumJitter);
 
   for (let i = 0; i < samples.length; i += 1) {
     const previous = samples[Math.max(0, i - 1)];
     const next = samples[Math.min(samples.length - 1, i + 1)];
     const tangent = new Vector2(next.x - previous.x, next.z - previous.z).normalize();
     const normal = new Vector2(-tangent.y, tangent.x);
-    const edgeNoise = Math.sin(i * 1.83) * 0.055 + Math.sin(i * 0.51) * 0.035;
-    const halfWidth = width * 0.5 + edgeNoise;
-    left.push(new Vector2(samples[i].x + normal.x * halfWidth, -(samples[i].z + normal.y * halfWidth)));
-    right.push(new Vector2(samples[i].x - normal.x * halfWidth, -(samples[i].z - normal.y * halfWidth)));
+    const progress = i / Math.max(1, samples.length - 1);
+    const distance = progress * length;
+    // Junctions keep their authored widths while the route shoulders loosen
+    // into independent organic edges away from each endpoint.
+    const taper = Math.min(1, distance / 0.6, (length - distance) / 0.6);
+    const leftNoise = (
+      Math.sin(distance * 2.31 + phaseA)
+      + Math.sin(distance * 0.79 + phaseB) * 0.48
+    ) * (jitter / 1.48) * taper;
+    const rightNoise = (
+      Math.sin(distance * 1.97 + phaseB + 1.7)
+      + Math.sin(distance * 0.61 + phaseA + 0.8) * 0.44
+    ) * (jitter / 1.44) * taper;
+    const leftWidth = Math.max(width * 0.34, width * 0.5 + leftNoise);
+    const rightWidth = Math.max(width * 0.34, width * 0.5 + rightNoise);
+    left.push(new Vector2(
+      samples[i].x + normal.x * leftWidth,
+      -(samples[i].z + normal.y * leftWidth),
+    ));
+    right.push(new Vector2(
+      samples[i].x - normal.x * rightWidth,
+      -(samples[i].z - normal.y * rightWidth),
+    ));
   }
 
   const shape = new Shape();
@@ -306,9 +484,109 @@ function createRibbonGeometry(points, width) {
   left.slice(1).forEach((point) => shape.lineTo(point.x, point.y));
   right.reverse().forEach((point) => shape.lineTo(point.x, point.y));
   shape.closePath();
-  const geo = new ShapeGeometry(shape);
+  return shape;
+}
+
+function createCombinedPathGeometry(routes) {
+  const shapes = routes.map((route) => {
+    return createRibbonShape(route.points, route.width, {
+      seed: hashString(`${route.id}:outer`),
+      jitterRatio: 0.07,
+      maximumJitter: 0.14,
+    });
+  });
+  const geo = new ShapeGeometry(shapes);
   geo.rotateX(-Math.PI / 2);
   return geo;
+}
+
+function walkedPathDetails(routes, layout) {
+  const wear = [];
+  const shoulders = [];
+  const stones = [];
+  const plazaClearance = (Number(layout.plaza?.radius) || 0) + 0.3;
+  const meadowLimit = Math.max(0, (Number(layout.meadowRadius) || 0) - 1);
+  const acceptsDetail = (point) => (
+    Math.hypot(point.x - layout.plaza.x, point.z - layout.plaza.z) > plazaClearance
+    && Math.hypot(point.x, point.z) < meadowLimit
+  );
+
+  for (const route of routes) {
+    const profile = resolveWalkedPathProfile(route);
+    const curve = createPathCurve(route.points);
+    const length = Math.max(0.001, curve.getLength());
+    const random = seededRandom(hashString(`walked-details:${route.id}`));
+    const outerWidth = route.width;
+
+    for (
+      let distance = 0.28 + random() * 0.34;
+      distance < length - 0.24 && wear.length < 256;
+      distance += profile.wearSpacing * (0.82 + random() * 0.34)
+    ) {
+      const t = distance / length;
+      const point = curve.getPointAt(t);
+      if (!acceptsDetail(point)) continue;
+      const tangent = curve.getTangentAt(t).normalize();
+      const normalX = -tangent.z;
+      const normalZ = tangent.x;
+      const lateral = (random() - 0.5) * route.width * profile.innerWidth * 0.28;
+      wear.push({
+        x: point.x + normalX * lateral,
+        z: point.z + normalZ * lateral,
+        yaw: Math.atan2(tangent.z, tangent.x),
+        scaleX: profile.wearLength * (0.72 + random() * 0.4) * 0.5,
+        scaleZ: route.width * profile.innerWidth * (0.7 + random() * 0.36) * 0.5,
+        tone: random() < 0.58 ? profile.wearTone : profile.wearToneAlt,
+      });
+    }
+
+    for (
+      let distance = 0.65 + random() * 0.65;
+      distance < length - 0.55 && shoulders.length < 128;
+      distance += profile.shoulderSpacing * (0.78 + random() * 0.46)
+    ) {
+      const t = distance / length;
+      const point = curve.getPointAt(t);
+      if (!acceptsDetail(point)) continue;
+      const tangent = curve.getTangentAt(t).normalize();
+      const normalX = -tangent.z;
+      const normalZ = tangent.x;
+      const side = random() < 0.5 ? -1 : 1;
+      const shoulderOffset = side * outerWidth * (0.4 + random() * 0.13);
+      shoulders.push({
+        x: point.x + normalX * shoulderOffset + tangent.x * (random() - 0.5) * 0.18,
+        z: point.z + normalZ * shoulderOffset + tangent.z * (random() - 0.5) * 0.18,
+        yaw: Math.atan2(tangent.x, tangent.z),
+        scaleX: 0.16 + random() * 0.2,
+        scaleZ: 0.06 + random() * 0.07,
+        tone: random() < 0.54 ? TOWN_PALETTE.walkedMoss : TOWN_PALETTE.walkedShoulderLight,
+      });
+    }
+
+    if (profile.stoneSpacing <= 0) continue;
+    for (
+      let distance = profile.stoneSpacing * (0.55 + random() * 0.35);
+      distance < length - 0.65 && stones.length < 128;
+      distance += profile.stoneSpacing * (0.84 + random() * 0.36)
+    ) {
+      const t = distance / length;
+      const point = curve.getPointAt(t);
+      if (!acceptsDetail(point)) continue;
+      const tangent = curve.getTangentAt(t).normalize();
+      const normalX = -tangent.z;
+      const normalZ = tangent.x;
+      const lateral = (random() - 0.5) * route.width * profile.innerWidth * 0.72;
+      const scale = profile.stoneScale * (0.78 + random() * 0.36);
+      stones.push({
+        x: point.x + normalX * lateral,
+        z: point.z + normalZ * lateral,
+        yaw: random() * Math.PI,
+        scale,
+      });
+    }
+  }
+
+  return { wear, shoulders, stones };
 }
 
 export function createPathsAndPlaza(layout = TOWN_LAYOUT) {
@@ -316,40 +594,104 @@ export function createPathsAndPlaza(layout = TOWN_LAYOUT) {
   const root = decorate(new Group());
   root.name = 'cozy_paths_and_plaza';
 
-  const routes = layout.paths;
+  const routes = layout.paths || [];
+  const softRoutes = routes.filter((route) => (
+    TOWN_PATH_PROFILES[route.profile]?.family !== 'reclaimed-pavers'
+  ));
+  const routeIds = softRoutes.map(({ id }) => id);
+  const routeProfiles = Object.fromEntries(softRoutes.map(({ id, profile }) => [id, profile]));
 
-  for (const route of routes) {
-    const edge = makeMesh(createRibbonGeometry(route.points, route.width + 0.3), mat.pathEdge, {
-      cast: false,
-      name: 'cozy_path_edge',
-    });
-    edge.position.y = 0.033;
-    root.add(edge);
+  root.add(createReclaimedPaverMesh(layout));
 
-    const path = makeMesh(createRibbonGeometry(route.points, route.width), mat.path, {
-      cast: false,
-      name: 'cozy_path',
-    });
-    path.position.y = 0.042;
-    root.add(path);
-  }
+  const outer = makeMesh(createCombinedPathGeometry(softRoutes), mat.walkedGrass, {
+    cast: false,
+    name: 'walked_meadow_outer',
+  });
+  outer.position.y = 0.034;
+  outer.renderOrder = 1;
+  outer.userData.pathLayer = 'outer';
+  outer.userData.routeIds = [...routeIds];
+  outer.userData.routeProfiles = routeProfiles;
+  root.add(outer);
 
-  const plazaEdge = makeMesh(new CircleGeometry(5.05, 48), mat.pathEdge, {
+  const details = walkedPathDetails(softRoutes, layout);
+  const wearGeometry = new CircleGeometry(1, 9);
+  const inner = decorate(new InstancedMesh(wearGeometry, mat.walkedGrassLight, details.wear.length));
+  inner.name = 'walked_meadow_inner';
+  inner.userData.pathLayer = 'inner';
+  inner.userData.routeIds = [...routeIds];
+  inner.userData.routeProfiles = routeProfiles;
+  const detailDummy = new Object3D();
+  const detailColor = new Color();
+  details.wear.forEach((detail, index) => {
+    detailDummy.position.set(detail.x, 0.043, detail.z);
+    detailDummy.rotation.set(-Math.PI / 2, 0, 0);
+    detailDummy.rotateZ(detail.yaw);
+    detailDummy.scale.set(detail.scaleX, detail.scaleZ, 1);
+    detailDummy.updateMatrix();
+    inner.setMatrixAt(index, detailDummy.matrix);
+    inner.setColorAt(index, detailColor.setHex(detail.tone));
+  });
+  inner.instanceMatrix.needsUpdate = true;
+  if (inner.instanceColor) inner.instanceColor.needsUpdate = true;
+  inner.renderOrder = 2;
+  root.add(inner);
+
+  const shoulderGeometry = new CircleGeometry(1, 7);
+  const shoulders = decorate(new InstancedMesh(
+    shoulderGeometry,
+    mat.walkedMoss,
+    details.shoulders.length,
+  ));
+  shoulders.name = 'walked_meadow_shoulders';
+  shoulders.userData.pathLayer = 'shoulders';
+  shoulders.userData.routeIds = [...routeIds];
+  details.shoulders.forEach((detail, index) => {
+    detailDummy.position.set(detail.x, 0.051, detail.z);
+    detailDummy.rotation.set(-Math.PI / 2, 0, 0);
+    detailDummy.rotateZ(detail.yaw);
+    detailDummy.scale.set(detail.scaleX, detail.scaleZ, 1);
+    detailDummy.updateMatrix();
+    shoulders.setMatrixAt(index, detailDummy.matrix);
+    shoulders.setColorAt(index, detailColor.setHex(detail.tone));
+  });
+  shoulders.instanceMatrix.needsUpdate = true;
+  if (shoulders.instanceColor) shoulders.instanceColor.needsUpdate = true;
+  shoulders.renderOrder = 3;
+  root.add(shoulders);
+
+  const stoneGeometry = new IcosahedronGeometry(0.11, 1);
+  const stones = decorate(new InstancedMesh(stoneGeometry, mat.stone, details.stones.length));
+  stones.name = 'walked_meadow_stones';
+  stones.userData.pathLayer = 'stones';
+  stones.userData.routeIds = [...routeIds];
+  details.stones.forEach((detail, index) => {
+    detailDummy.position.set(detail.x, 0.09, detail.z);
+    detailDummy.rotation.set(0, detail.yaw, 0);
+    detailDummy.scale.set(detail.scale * 1.2, detail.scale * 0.32, detail.scale * 0.82);
+    detailDummy.updateMatrix();
+    stones.setMatrixAt(index, detailDummy.matrix);
+  });
+  stones.instanceMatrix.needsUpdate = true;
+  stones.renderOrder = 4;
+  root.add(stones);
+
+  const plazaEdge = makeMesh(new CircleGeometry(5.05, 48), mat.plazaStoneEdge, {
     cast: false,
     name: 'cozy_plaza_edge',
   });
   plazaEdge.rotation.x = -Math.PI / 2;
-  plazaEdge.scale.z = 0.88;
-  plazaEdge.position.set(layout.plaza.x, 0.034, layout.plaza.z);
+  plazaEdge.scale.z = layout.plaza.scaleZ || 0.88;
+  plazaEdge.position.set(layout.plaza.x, 0.058, layout.plaza.z);
   root.add(plazaEdge);
 
-  const plaza = makeMesh(new CircleGeometry(4.72, 48), mat.path, {
+  const plaza = makeMesh(new CircleGeometry(4.72, 48), mat.plazaStone, {
     cast: false,
     name: 'cozy_plaza',
   });
   plaza.rotation.x = -Math.PI / 2;
-  plaza.scale.z = 0.88;
-  plaza.position.set(layout.plaza.x, 0.044, layout.plaza.z);
+  plaza.scale.z = layout.plaza.scaleZ || 0.88;
+  plaza.position.set(layout.plaza.x, 0.066, layout.plaza.z);
   root.add(plaza);
 
   const heart = new Shape();
@@ -365,13 +707,13 @@ export function createPathsAndPlaza(layout = TOWN_LAYOUT) {
   heartMesh.rotation.x = -Math.PI / 2;
   heartMesh.rotation.z = Math.PI;
   heartMesh.scale.setScalar(0.68);
-  heartMesh.position.set(layout.plaza.x, 0.056, layout.plaza.z);
+  heartMesh.position.set(layout.plaza.x, 0.074, layout.plaza.z);
   root.add(heartMesh);
 
   const pebbleGeo = new IcosahedronGeometry(0.11, 1);
   const pebbleCount = 34;
   const pebbles = decorate(new InstancedMesh(pebbleGeo, mat.stoneLight, pebbleCount));
-  pebbles.name = 'particle_path_pebbles';
+  pebbles.name = 'cozy_plaza_pebbles';
   const dummy = new Object3D();
   for (let i = 0; i < pebbleCount; i += 1) {
     const angle = (i / pebbleCount) * Math.PI * 2;
@@ -613,7 +955,7 @@ export function createCottagePlot(data, index, animator) {
   plot.position.y = 0.024;
   root.add(plot);
 
-  const edging = makeMesh(new RingGeometry(0.945, 1, 44), mat.pathEdge, {
+  const edging = makeMesh(new RingGeometry(0.945, 1, 44), mat.cottageEdging, {
     cast: false,
     name: 'cozy_cottage_plot_edge',
   });
@@ -1124,7 +1466,7 @@ function createFlowerInstances(animator, layout, { includeRouteClusters = true }
   return root;
 }
 
-function createMushroomInstances() {
+function createMushroomInstances(layout) {
   const mat = materials();
   const geo = geometry();
   const root = decorate(new Group());
@@ -1135,7 +1477,9 @@ function createMushroomInstances() {
     [22.2, -11.6], [23.1, -11.9], [22.8, -10.8],
     [-20.7, 21.7], [-21.5, 22.2], [-20.3, 22.8],
     [28.6, 14.6], [29.2, 15.3], [28.1, 15.5],
-    [2.9, -22.2], [3.7, -22.6], [4.2, -21.8],
+    // Keep the hill cluster as a trail-side reward instead of planting it in
+    // the middle of the Bell procession lane.
+    [6.0, -22.2], [6.8, -22.6], [7.2, -21.8],
   ];
   const stems = decorate(new InstancedMesh(geo.mushroomStem, mat.cream, positions.length));
   stems.name = 'particle_mushroom_stems';
@@ -1150,11 +1494,12 @@ function createMushroomInstances() {
 
   positions.forEach(([x, z], index) => {
     const scale = 0.72 + random() * 0.55;
-    dummy.position.set(x, 0.11 * scale, z);
+    const groundY = sampleTownGroundHeight(layout, x, z);
+    dummy.position.set(x, groundY + 0.11 * scale, z);
     dummy.scale.setScalar(scale);
     dummy.updateMatrix();
     stems.setMatrixAt(index, dummy.matrix);
-    dummy.position.y = 0.2 * scale;
+    dummy.position.y = groundY + 0.2 * scale;
     dummy.rotation.y = random() * Math.PI;
     dummy.updateMatrix();
     caps.setMatrixAt(index, dummy.matrix);
@@ -1184,7 +1529,7 @@ function createRockInstances(layout) {
   const dummy = new Object3D();
   positions.forEach(([x, z], index) => {
     const scale = 0.45 + random() * 0.8;
-    dummy.position.set(x, 0.15 * scale, z);
+    dummy.position.set(x, sampleTownGroundHeight(layout, x, z) + 0.15 * scale, z);
     dummy.scale.set(scale * 1.25, scale * 0.7, scale);
     dummy.rotation.set(random() * 0.4, random() * Math.PI, random() * 0.25);
     dummy.updateMatrix();
@@ -1211,12 +1556,17 @@ export function createNature(
   ];
   treeData.forEach(([x, z, scale], index) => {
     if (pointNearBuilding(x, z, layout, 1.8)) return;
-    root.add(createTree(new Vector3(x, 0, z), scale, index, animator));
+    root.add(createTree(
+      new Vector3(x, sampleTownGroundHeight(layout, x, z), z),
+      scale,
+      index,
+      animator,
+    ));
   });
   root.add(createFlowerInstances(animator, layout, {
     includeRouteClusters: includeRouteWildflowers,
   }));
-  root.add(createMushroomInstances());
+  root.add(createMushroomInstances(layout));
   root.add(createRockInstances(layout));
   return root;
 }
@@ -1240,7 +1590,7 @@ export function createPond(animator, layout = TOWN_LAYOUT) {
   root.name = 'cozy_pond';
   root.position.set(layout.pond.x, layout.pond.y, layout.pond.z);
 
-  const bank = makeMesh(new CircleGeometry(4.15, 48), mat.pathEdge, {
+  const bank = makeMesh(new CircleGeometry(4.15, 48), mat.pondBank, {
     cast: false,
     name: 'cozy_pond_bank',
   });
@@ -1542,7 +1892,7 @@ export function createBellLandmark(animator, layout = TOWN_LAYOUT) {
   root.name = 'cozy_town_bell';
   root.position.set(
     layout.landmarks.bell.x,
-    0,
+    layout.landmarks.bell.baseY || 0,
     layout.landmarks.bell.z,
   );
 

@@ -3,6 +3,11 @@
 - Status: Accepted
 - Date: 2026-07-12
 
+> The narrow exact-file and exact-use fRiENDSiES scope is superseded by
+> [ADR 0004](0004-friendsies-project-wide-authorization.md). This record is
+> retained as history; its generic release-status model and independent
+> `friendsies-animations` contract remain active.
+
 ## Context
 
 The asset audit originally treated only project-authored and verified CC0

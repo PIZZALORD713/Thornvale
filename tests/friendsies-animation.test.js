@@ -195,6 +195,47 @@ test('physical locomotion resumes idle after landing without movement', () => {
   animator.dispose();
 });
 
+test('arbitrary semantic one-shots play by name, cancel cleanly, resume idle, and fail safely', () => {
+  const animator = makeAnimator();
+  const actionClip = positionClip('story-actions-v1-lumen-acknowledging', 2);
+  animator.addClips([actionClip]);
+
+  assert.equal(animator.playOneShot('story-actions-v1-lumen-acknowledging', {
+    timeScale: 2,
+    returnTo: 'idle',
+  }), true);
+  assert.equal(animator.oneShotAction.getEffectiveTimeScale(), 2);
+  assert.equal(animator.cancelOneShot('story-actions-v1-lumen-relieved-sigh'), false);
+  assert.equal(animator.cancelOneShot('story-actions-v1-lumen-acknowledging'), true);
+  assert.equal(animator.isPlayingOneShot, false);
+  assert.equal(animator.loopRole, 'idle');
+
+  assert.equal(animator.playOneShot('story-actions-v1-lumen-acknowledging', {
+    timeScale: 2,
+    returnTo: 'idle',
+  }), true);
+  assert.equal(animator.playOneShot('missing-story-action'), false);
+  for (let frame = 0; frame < 11; frame += 1) animator.update(0.1);
+  assert.equal(animator.isPlayingOneShot, false);
+  assert.equal(animator.loopRole, 'idle');
+  animator.dispose();
+});
+
+test('story-actions-v1 clips are explicit one-shots and never inferred as generic roles', () => {
+  const semanticName = 'story-actions-v1-happy-walk-jump-fall-land-dance-idle';
+  const animator = makeAnimator({
+    clips: [positionClip(semanticName, 1)],
+    autoPlay: false,
+  });
+
+  for (const role of ['idle', 'walk', 'jump', 'fall', 'land', 'joy', 'dance']) {
+    assert.equal(animator.getClip(role), null, `${role} must not infer a semantic story clip`);
+  }
+  assert.equal(animator.playOneShot(semanticName), true);
+  assert.equal(animator.cancelOneShot(semanticName), true);
+  animator.dispose();
+});
+
 test('PlayerAnimator keeps procedural cadence in sync through sprint and exposes air phases', () => {
   const visual = new Object3D();
   const animator = new PlayerAnimator({ visual }, {

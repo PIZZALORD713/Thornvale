@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Core Hook Proof v0.3 implemented; fresh-player validation pending |
+| Status | Core Hook Proof v0.3 and bounded Day One systems implemented; playfeel refinement and validation pending |
 | Prepared | 2026-07-11 |
 | Baseline | `main` at `114a5faf5c0784715315744730b9c7b375b2473e` |
 | Target | A polished 20–30 minute single-player browser demo |
@@ -13,18 +13,32 @@
 
 ## 0. Build status — Core Hook Proof v0.3
 
-The first Milestone 1 implementation is now playable end to end. This is a proof build, not an exit-gate claim: the five required fresh-player sessions and learning review still remain.
+The first Milestone 1 implementation is now playable end to end. This is a proof build, not an exit-gate claim: the five required fresh-player sessions and learning review still remain. On 2026-07-13, the next proof was deliberately expanded into one complete first day so the cozy actions can earn the later social-horror turn instead of functioning as disconnected feature promises.
 
 - fRiENDSiES `#8914` is the starting steward, Steward Lumen, with white head emission restored and capsule-relative foot alignment.
 - The letter → welcome → Ledger → dusk bell → supernatural second bell → false record → correction → comply/alter sequence is complete.
+- The approved Day One Proof inserts a provisional forest-edge camp and one bounded survival loop between the welcome and the Ledger: gather six wood, catch and cook one fish, eat, plant and water one seed bed, and patch the shelter.
+- Nourishment and energy make food useful. Running out of working energy causes a recoverable pass-out, a clinic fee or debt, and a return to camp without deleting progress or inventory.
 - Story time replaces the player-facing day/night toggle; `N` is available only after enabling debug mode.
 - Neighborliness, relationship, rules, events, choice, phase, and ending persist in a versioned local save with reset and corrupt-save recovery.
 - Both outcomes change the route treatment, steward response, relationship, Neighborliness score, objective, and ending card.
 - fRiENDSiES idle, walk, joy-jump, and rumba clips are bound through the collection's canonical skeleton. Runtime derivatives and provenance are recorded under `public/animations/`.
-- Shareable fRiENDSiES player links may select IDs `1..10000` through the revision-pinned catalog and stream the selected token's components only from `https://storage.googleapis.com`. This project-scoped authorization is limited to integrated in-game player avatars in published Thornvale builds; it does not permit collection bundling, raw copying, mirroring, environmental adaptation, sublicensing, or outside-project reuse.
+- ADR 0004 grants standing project-wide authorization for present and future canonical fRiENDSiES assets in any integrated Thornvale role—including player/NPC assembly, hand items, sprouts, backpieces, equipment, props, environment, UI, and promotion—without per-token, per-role, per-context, per-transform, or per-revision approval. Shareable player links still use the pinned IDs `1..10000` catalog and exact canonical asset prefix as integrity/security controls; standalone packs, bulk raw mirrors, sublicensing, and outside-project reuse remain excluded.
 - Automated state tests cover strict ordering, both anomaly triggers, anomaly idempotency across reload, both endings, save restoration, reset, and corrupt-save recovery.
 
-The immediate next gate is observational: run five clean first-play sessions, capture completion time and help requests, then tune wayfinding, pacing, and copy before adding another villager or system.
+The immediate next gate is the bounded [Day One Action Weight](Day-One-Action-Weight.md) pass, followed by observational proof: complete the loop from a clean save, recover from an intentional pass-out, then run five clean first-play sessions. Capture completion time, help requests, optional activity, comprehension of food and energy, whether the actions feel grounded rather than tedious, and whether the Bell turn still lands before adding another day, villager, or broad system.
+
+### Approved scope extension — Day One Proof
+
+This is a thin authored exception to the original cozy-system non-goals, not authorization for a general survival or farming game. The proof includes only the resource and home actions needed to test one satisfying day:
+
+- One reusable wood source, one deterministic pond fishing spot, one cooking fire, one seed bed, and one fixed shelter repair.
+- A small explicit inventory containing only wood, raw/cooked fish, and seeds.
+- Nourishment, working energy, retained progress on pass-out, and a clinic fee or debt.
+- A provisional camp at the edge of town near the forbidden forest. The permanent Thornvale home remains a later source of upgrades, customization, story pressure, and variable play.
+- One three-to-four-second anticipation, effort, contact, and recovery sequence for every successful Day One action. Movement pauses for the committed beat, camera look remains available, and saved state changes exactly once at the visible contact cue.
+
+The proof does **not** include crop growth across days, seasons, weather simulation, recipes, shops, a simulated doctor visit, freeform building, a broad economy, procedural resource placement, or forbidden-forest exploration. Those require evidence from the one-day test before entering the first three-day plan.
 
 ## 1. Executive decision
 
@@ -32,7 +46,7 @@ Thornvale already has enough engine foundation to test its premise. The current 
 
 Plan 2.0 therefore makes the next release a **single-player core-hook proof**, not multiplayer. The next playable build must let a player experience one wholesome routine, discover one unspoken rule, witness one anomaly, face one polite intervention, and make one obey-or-resist choice with a visible consequence.
 
-Multiplayer, broad crafting systems, and procedural content stay behind validation gates. They should not compete with the first complete Thornvale experience.
+Multiplayer, broad crafting systems, and procedural content stay behind validation gates. The Day One Proof is the smallest authored survival-and-home loop required to test the first complete Thornvale experience; it is not a release of those broader systems from their gates.
 
 ## 2. Review of the current plan
 
@@ -87,7 +101,7 @@ Multiplayer, broad crafting systems, and procedural content stay behind validati
 
 ### Selected slice premise
 
-The player arrives with a letter in their own handwriting that they do not remember writing. A town steward welcomes them, offers the cottage, and asks for two harmless courtesies: enter their name in the Community Ledger and ring the Town Bell at dusk.
+The player arrives with a letter in their own handwriting that they do not remember writing. A town steward welcomes them and points them to a provisional plot where the meadow meets the forbidden forest. The player gathers enough to eat, tend one seed bed, and patch the shelter before completing two harmless courtesies: enter their name in the Community Ledger and ring the Town Bell at dusk. A permanent Thornvale home is something the player will be granted later, not something they begin with.
 
 The ledger later records an action the player has not taken. At night, the bell rings by itself. The steward returns with a kind correction. The player can comply with the town's version of events or alter the record. That choice changes the next route, the town's response, and the slice ending.
 
@@ -118,12 +132,13 @@ The first implementation should keep state small and explicit:
 - `choices`: durable choice flags such as `ledger_record = comply | alter`
 - `eventsSeen`: idempotency flags for dialogue, anomalies, and interventions
 - `ending`: assimilate, escape, or unset
+- `dayOne`: nourishment, energy, coins/debt, small inventory, garden/camp state, activity totals, pass-outs, and completion
 
 The score is not a morality meter. High Neighborliness grants warmth and access but increases scrutiny; low Neighborliness reveals resistance paths but increases interventions.
 
 ### Explicit non-goals for the demo
 
-- Fishing, farming, gardening, decorating, inventory, economy, and broad crafting
+- Fishing, farming, gardening, decorating, inventory, economy, and broad crafting beyond the bounded Day One Proof above
 - Open-world expansion or procedural town generation
 - General-purpose NPC simulation
 - Procedural anomaly selection before three authored anomalies are fun
@@ -204,14 +219,15 @@ Estimates are sequencing aids, not commitments. Re-estimate after Milestone 0 on
 #### Player flow
 
 1. Arrive with the unexplained letter.
-2. Meet the steward and receive access to the cottage.
-3. Complete the Ledger and Bell routine.
-4. Learn one rule indirectly.
-5. Advance into night through story state, not a player-facing toggle.
-6. Witness the ledger or bell anomaly.
-7. Receive an escalating polite intervention.
-8. Comply or resist.
-9. See a changed route, response, and short resolution.
+2. Meet the steward and learn where the provisional forest-edge plot was kept for you.
+3. Gather wood, catch and cook a fish, eat, plant and water one seed bed, and patch the shelter in any safe order.
+4. Complete the Ledger and Bell routine.
+5. Learn one rule indirectly.
+6. Advance into night through story state, not a player-facing toggle.
+7. Witness the ledger or bell anomaly.
+8. Receive an escalating polite intervention.
+9. Comply or resist.
+10. See a changed route, response, and short resolution.
 
 #### Systems
 
@@ -224,6 +240,7 @@ Estimates are sequencing aids, not commitments. Re-estimate after Milestone 0 on
 - Local save, reset, and versioned schema
 - Dialogue, choice, subtitle, and objective UI
 - Debug controls separated from player-facing controls
+- One versioned Day One activity slice with nourishment, energy, small inventory, camp/garden state, and recoverable pass-out
 
 #### Exit gate
 
@@ -231,6 +248,7 @@ Estimates are sequencing aids, not commitments. Re-estimate after Milestone 0 on
 - At least four testers finish without help.
 - The core choice changes at least three downstream outputs.
 - No progression blocker, unhandled error, or asset dependency prevents completion.
+- A clean save can finish every Day One activity and reach the Bell; an intentional pass-out returns to camp with prior progress intact and cannot create a resource soft lock.
 - The team can state what it learned and what changes before expanding content.
 
 ### Milestone 2 — Narrative Vertical Slice
@@ -342,6 +360,7 @@ Avoid turning these names into a framework project. A module should exist only w
 | THV-010 | Implement the polite intervention chain | Response escalates based on rule and Neighborliness state. |
 | THV-011 | Implement obey/resist consequence and short resolution | Choice changes route, NPC response, and ending flag. |
 | THV-012 | Run five observed hook-proof playtests | Completion and theme-comprehension metrics are recorded. |
+| THV-013 | Prove one complete first-day survival and camp loop | A clean save and a pass-out recovery route both reach the existing Bell sequence without guidance or soft lock. |
 
 ### P1 — Build the vertical slice
 
@@ -383,7 +402,7 @@ Avoid turning these names into a framework project. A module should exist only w
 | Documentation drifts again | The current README and wiki disagree on roadmap and implementation. | One canonical plan, named document owner, and doc check in milestone closeout. |
 | Save changes strand playtesters | Narrative flags will evolve quickly during testing. | Version, validate, migrate, and expose a safe reset path from the first save. |
 | Multiplayer creates safety and operating obligations | Chat, rooms, moderation, privacy, and hosting are product scope, not just netcode. | Require the four-part Friends Mode gate before implementation. |
-| Asset ownership is unclear | A public demo needs permission for every avatar, model, texture, font, and sound. | Maintain an asset manifest and block release on unresolved provenance. |
+| Asset ownership is unclear | A public demo needs permission for every unrelated third-party avatar, model, texture, font, and sound. | Apply the standing fRiENDSiES grant from ADR 0004; maintain an asset manifest and block only unresolved third-party rights or missing engineering lineage. |
 
 ## 9. Operating model
 

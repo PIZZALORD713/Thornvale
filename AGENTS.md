@@ -62,10 +62,17 @@
 
 - Follow `assets-src/README.md`: editable sources live in `assets-src/`, runtime
   files live in `public/`, and runtime URLs are deployment contracts.
-- Record creator/source, permission, acquisition, transforms, and export settings
-  in `SOURCE.md`, adjacent `PROVENANCE.md`, and `assets-src/asset-manifest.json`.
+- Record creator/source, the applicable authorization or license, acquisition,
+  transforms, and export settings in `SOURCE.md`, adjacent `PROVENANCE.md`, and
+  `assets-src/asset-manifest.json`.
 - Do not admit unknown-license binaries or infer redistribution rights from public
   availability or repository ownership.
+- Treat canonical fRiENDSiES assets and metadata as covered by the standing
+  `friendsies-project` Thornvale authorization in ADR 0004. Do not reopen
+  permission review per token, asset, trait, role, context, transform, delivery
+  method, or catalog revision. Continue to verify exact sources, hashes, pins,
+  origins, transforms, budgets, fallbacks, and QA as engineering integrity gates.
+  The separate `friendsies-animations` family keeps its own Mixamo provenance.
 - Run `npm run assets:audit` after asset changes. For a release candidate, build
   and run `npm run assets:release`; do not bypass an expected permission blocker.
 - Preserve procedural or previous-version fallbacks for experimental asset pilots.

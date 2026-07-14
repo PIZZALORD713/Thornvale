@@ -58,13 +58,24 @@ Load only the section for the media being changed. Apply the core workflow in `S
 
 ## fRiENDSiES characters and Trait Echoes
 
+- Use the standing `friendsies-project` authorization in ADR 0004 for canonical
+  fRiENDSiES assets and metadata. Do not reopen permission review for a new
+  token, trait, role, context, transform, delivery method, or canonical catalog
+  revision.
 - Identify the token number, exact trait name, canonical metadata record, canonical source filename or URL, and hashes.
 - Keep the curated cast local and bounded. Do not fetch the full collection index to resolve a known local character.
 - Record whether the binary is unchanged, transformed, animation-only, or reused in memory as an environmental arrangement.
-- Keep project-specific owner authorization separate from general redistribution and adaptation rights.
-- While formal terms remain unrecorded, use the audit's explicit development exception with `releaseBlocked: true`; do not call it release-ready.
-- Keep proposed traits without exact approval in data-only backlog entries. Give them no runtime URL and assert that no request occurs.
+- Treat catalog pins, allowed origins, exact selected-file URLs, hashes,
+  transforms, budgets, and fallbacks as source-integrity and engineering gates,
+  not repeated permission gates.
+- Keep proposed traits without a ready design and technical contract in data-only
+  backlog entries. Give them no runtime URL and assert that no request occurs.
 - For environmental Trait Echoes, record source token and trait, placement count, story meaning, instancing strategy, displayed geometry, new runtime bytes, and reduced-motion projection.
 - Preserve `?traits=off` as rollback and test it independently with each `?assets` mode.
 - Verify story-state projection without changing authoritative state, saves, interactions, or endings.
+- Do not use this authorization for standalone asset or character packs, bulk
+  raw collection mirroring or dumps, sublicensing, raw-source redistribution as
+  a separate product, or reuse outside ThornVale.
+- Keep `friendsies-animations` on its separate Mixamo and repository provenance
+  contract.
 - Use `public/friendsies/8914/PROVENANCE.md`, `src/content/friendsies-cast.js`, and the Trait Echo QA record as current patterns.

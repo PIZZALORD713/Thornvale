@@ -50,6 +50,7 @@ export class CharacterMotor {
     this.groundProbePenetration = 0.05;
     this.groundRenderSharpness = 20.0;
     this.groundRenderMaxSpeed = 1.6;
+    this.groundRenderMaxLag = 0.025;
     this.maxDeltaTime = 0.075;
 
     // State
@@ -283,10 +284,12 @@ export class CharacterMotor {
     if (!this.rawGrounded) {
       // Airborne displacement must accumulate between render and fixed steps.
       movement.y += this.velocity.y * safeDt;
-    } else if (!preserveGroundedY) {
-      // Ground probes are solved from the collider's physical pose, not added
-      // to tiny unapplied skin corrections. Larger pending Y targets (landing,
-      // step snap, vertical platform) are preserved until Rapier applies them.
+    } else {
+      // Preserve any collision-corrected Y that Rapier has not applied yet,
+      // but keep extending the grounded probe on every render update. Without
+      // this addition, a 120 Hz descent can advance horizontally while reusing
+      // only the previous frame's small vertical correction; the slope then
+      // falls away before the next fixed 60 Hz body step and raw contact drops.
       movement.y += this.groundStickSpeed * safeDt;
     }
 
@@ -393,26 +396,41 @@ export class CharacterMotor {
         this._renderPosition.y = this._targetPosition.y;
         this._groundYSampleCount = 0;
         this._groundYSampleIndex = 0;
-      } else if (hasValidGroundContact) {
-        this._groundYSamples[this._groundYSampleIndex] = this._targetPosition.y;
-        this._groundYSampleIndex = (this._groundYSampleIndex + 1) % 5;
-        this._groundYSampleCount = Math.min(5, this._groundYSampleCount + 1);
-        if (this._groundYSampleCount === 5) {
-          this._groundYSorted.set(this._groundYSamples);
-          for (let index = 1; index < this._groundYSorted.length; index += 1) {
-            const value = this._groundYSorted[index];
-            let insertAt = index - 1;
-            while (insertAt >= 0 && this._groundYSorted[insertAt] > value) {
-              this._groundYSorted[insertAt + 1] = this._groundYSorted[insertAt];
-              insertAt -= 1;
+      } else {
+        if (hasValidGroundContact) {
+          this._groundYSamples[this._groundYSampleIndex] = this._targetPosition.y;
+          this._groundYSampleIndex = (this._groundYSampleIndex + 1) % 5;
+          this._groundYSampleCount = Math.min(5, this._groundYSampleCount + 1);
+          if (this._groundYSampleCount === 5) {
+            this._groundYSorted.set(this._groundYSamples);
+            for (let index = 1; index < this._groundYSorted.length; index += 1) {
+              const value = this._groundYSorted[index];
+              let insertAt = index - 1;
+              while (insertAt >= 0 && this._groundYSorted[insertAt] > value) {
+                this._groundYSorted[insertAt + 1] = this._groundYSorted[insertAt];
+                insertAt -= 1;
+              }
+              this._groundYSorted[insertAt + 1] = value;
             }
-            this._groundYSorted[insertAt + 1] = value;
+            const filteredY = this._groundYSorted[2];
+            const deltaY = filteredY - this._renderPosition.y;
+            const dampedStep = deltaY * (1 - Math.exp(-this.groundRenderSharpness * safeDt));
+            const maxStep = this.groundRenderMaxSpeed * safeDt;
+            this._renderPosition.y += Math.max(-maxStep, Math.min(maxStep, dampedStep));
           }
-          const filteredY = this._groundYSorted[2];
-          const deltaY = filteredY - this._renderPosition.y;
-          const dampedStep = deltaY * (1 - Math.exp(-this.groundRenderSharpness * safeDt));
-          const maxStep = this.groundRenderMaxSpeed * safeDt;
-          this._renderPosition.y += Math.max(-maxStep, Math.min(maxStep, dampedStep));
+        }
+
+        // Median damping removes KCC skin noise, but it must not leave the
+        // visible feet far behind a continuously changing physical surface.
+        // Keep a small bounded lag even during a probe-stabilized contact gap.
+        const physicalLag = this._targetPosition.y - this._renderPosition.y;
+        if (Math.abs(physicalLag) > this.groundRenderMaxLag) {
+          const excessLag = Math.abs(physicalLag) - this.groundRenderMaxLag;
+          const catchupStep = Math.min(
+            excessLag,
+            this.groundRenderMaxSpeed * safeDt,
+          );
+          this._renderPosition.y += Math.sign(physicalLag) * catchupStep;
         }
       }
     }

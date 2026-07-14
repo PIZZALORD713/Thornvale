@@ -4,6 +4,11 @@ import assert from 'node:assert/strict';
 import { CharacterMotor } from '../src/physics/CharacterMotor.js';
 import { PlayerController } from '../src/controllers/PlayerController.js';
 import { PhysicsWorld } from '../src/core/PhysicsWorld.js';
+import { TOWN_LAYOUT } from '../src/config/town.js';
+import {
+  createMoundSurfaceGrid,
+  sampleMoundHeight,
+} from '../src/utils/terrain-surface.js';
 
 class FakeBody {
   constructor() {
@@ -274,6 +279,67 @@ test('controller selects sprint speed without mutating InputManager movement out
   assert.equal(captured.intent.sprinting, true);
 });
 
+test('a bounded action lock suppresses travel and jump while preserving mouse-look', () => {
+  let captured = null;
+  let jumpCalls = 0;
+  const look = [];
+  const visualFacing = [];
+  let spacePressed = true;
+  const input = {
+    keys: { jump: true, sprint: true },
+    consumeMouseDelta: () => ({ x: 0.25, y: -0.1 }),
+    consumeKeyPress: (code) => {
+      if (code !== 'Space' || !spacePressed) return false;
+      spacePressed = false;
+      return true;
+    },
+    getMovementInput: () => ({ x: 1, z: -1 }),
+  };
+  const motor = {
+    walkSpeed: 4.2,
+    sprintSpeed: 5.6,
+    collider: {},
+    isGrounded: true,
+    velocity: { x: 3, y: 0, z: -2 },
+    canJump: () => true,
+    jump: () => { jumpCalls += 1; return true; },
+    setPlatformVelocity() {},
+    update(_dt, movement, _yaw, intent) {
+      captured = { movement: { ...movement }, intent: { ...intent } };
+    },
+    getPosition: () => ({ x: 0, y: 0, z: 0 }),
+    getFacingYaw: () => null,
+  };
+  const player = new PlayerController(input, motor, {
+    applyInput: (x, y) => look.push([x, y]),
+    getYaw: () => 0,
+    setTarget() {},
+  }, {
+    setFacing: (yaw) => visualFacing.push(['set', yaw]),
+    update: (_dt, _position, yaw) => visualFacing.push(['update', yaw]),
+  });
+
+  player.setActionLocked(true, {
+    context: { targetPosition: { x: 2, y: 0, z: 0 } },
+  }).update(1 / 60);
+  assert.deepEqual(look, [[0.25, -0.1]]);
+  assert.ok(captured.movement.x === 0);
+  assert.ok(captured.movement.z === 0);
+  assert.equal(captured.intent.jumpHeld, false);
+  assert.equal(captured.intent.sprinting, false);
+  assert.equal(jumpCalls, 0);
+  assert.ok(motor.velocity.x === 0);
+  assert.ok(motor.velocity.z === 0);
+  assert.ok(Math.abs(visualFacing[0][1] - (Math.PI / 2)) < 0.0001);
+  assert.ok(Math.abs(visualFacing[1][1] - (Math.PI / 2)) < 0.0001);
+
+  input.keys.jump = false;
+  input.keys.sprint = false;
+  player.setActionLocked(false).update(1 / 60);
+  assert.deepEqual(captured.movement, { x: -1, z: -1 });
+  assert.equal(jumpCalls, 0, 'the press consumed during the lock must not buffer a jump');
+});
+
 test('real Rapier walk and jump stay vertically stable at 120 Hz', async () => {
   const physics = new PhysicsWorld();
   await physics.init();
@@ -344,5 +410,123 @@ test('real Rapier walk and jump stay vertically stable at 120 Hz', async () => {
     assert.equal(motor.isGrounded, true);
   } finally {
     physics.world?.free();
+  }
+});
+
+test('fixed-60 physics stays grounded over the Bell hill at 120 Hz render', async () => {
+  const runRoundTrip = async ({ targetSpeed, sprinting }) => {
+    const physics = new PhysicsWorld();
+    await physics.init();
+    physics.createGround(55);
+
+    const hill = TOWN_LAYOUT.terrain.bellHill;
+    const surface = createMoundSurfaceGrid(hill);
+    physics.createStaticTrimesh(
+      { x: 0, y: 0, z: 0 },
+      surface.vertices,
+      surface.indices,
+      { friction: 0.95 },
+    );
+
+    const startZ = -18;
+    const motor = new CharacterMotor(physics);
+    const footOffset = motor.halfHeight + motor.radius;
+    motor.init({
+      x: hill.x,
+      y: Math.max(0, sampleMoundHeight(hill, hill.x, startZ))
+        + footOffset,
+      z: startZ,
+    });
+    const renderDt = 1 / 120;
+    let phase = 'outbound';
+    let pauseFrames = 0;
+    let completed = false;
+    let transitionCount = 0;
+    let rawGroundGapCount = 0;
+    let maximumPhysicsFootError = 0;
+    let maximumRenderFootError = 0;
+
+    try {
+      for (let frame = 0; frame < 2200; frame += 1) {
+        const before = motor.getPosition();
+        if (phase === 'outbound' && before.z <= TOWN_LAYOUT.landmarks.bell.z + 0.45) {
+          phase = 'pause';
+          pauseFrames = 60;
+        } else if (phase === 'pause') {
+          pauseFrames -= 1;
+          if (pauseFrames <= 0) phase = 'return';
+        }
+
+        // Mirrors production: PhysicsWorld advances its fixed 60 Hz accumulator
+        // before CharacterMotor consumes the 120 Hz render delta.
+        physics.step(renderDt);
+        motor.update(renderDt, {
+          x: 0,
+          z: phase === 'outbound' ? 1 : (phase === 'return' ? -1 : 0),
+        }, 0, {
+          targetSpeed,
+          sprinting,
+          jumpHeld: false,
+        });
+
+        if (frame >= 90 && phase !== 'pause') {
+          if (motor.justLeftGround || motor.justLanded) transitionCount += 1;
+          if (!motor.rawGrounded) rawGroundGapCount += 1;
+
+          const renderPosition = motor.getPosition();
+          const renderTerrainY = Math.max(
+            0,
+            sampleMoundHeight(hill, renderPosition.x, renderPosition.z),
+          );
+          maximumRenderFootError = Math.max(
+            maximumRenderFootError,
+            Math.abs(renderPosition.y - footOffset - renderTerrainY),
+          );
+
+          const physicsPosition = motor.getPhysicsPosition();
+          const physicsTerrainY = Math.max(
+            0,
+            sampleMoundHeight(hill, physicsPosition.x, physicsPosition.z),
+          );
+          maximumPhysicsFootError = Math.max(
+            maximumPhysicsFootError,
+            Math.abs(physicsPosition.y - footOffset - physicsTerrainY),
+          );
+        }
+
+        if (phase === 'return' && motor.getPosition().z >= startZ) {
+          completed = true;
+          break;
+        }
+      }
+
+      return {
+        completed,
+        finalGrounded: motor.isGrounded,
+        maximumPhysicsFootError,
+        maximumRenderFootError,
+        rawGroundGapCount,
+        transitionCount,
+      };
+    } finally {
+      physics.world?.free();
+    }
+  };
+
+  const walk = await runRoundTrip({ targetSpeed: 4.2, sprinting: false });
+  const sprint = await runRoundTrip({ targetSpeed: 5.6, sprinting: true });
+
+  for (const [label, result] of Object.entries({ walk, sprint })) {
+    assert.equal(result.completed, true, `${label} did not complete the hill round trip`);
+    assert.equal(result.transitionCount, 0, `${label} manufactured an airborne/landing event`);
+    assert.ok(
+      result.maximumPhysicsFootError <= 0.03,
+      `${label} physics foot error ${result.maximumPhysicsFootError}`,
+    );
+    assert.ok(
+      result.maximumRenderFootError <= 0.05,
+      `${label} render foot error ${result.maximumRenderFootError}`,
+    );
+    assert.equal(result.finalGrounded, true, `${label} ended off the ground`);
   }
 });

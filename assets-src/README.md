@@ -52,9 +52,11 @@ outside `public/`, so the 2.7 MB developer index is not copied into the game.
 
 Regenerate it with `npm run friendsies:index`, browse it with
 `npm run friendsies:atlas`, and inspect shortlisted GLBs one at a time with
-`npm run friendsies:probe`. Indexing or probing is research, not approval:
-runtime promotion still requires curation, provenance, rights, performance,
-placement, and visual QA.
+`npm run friendsies:probe`. Canonical fRiENDSiES material has standing project
+authorization under ADR 0004, so indexing and probing are design and technical
+research rather than permission review. Runtime promotion still requires exact
+variant selection, source and hash records, documented transforms, performance,
+fallback, placement, and visual QA.
 
 See the [folder guide](friendsies/README.md) for the index, curation, and probe
 artifacts as one workflow.

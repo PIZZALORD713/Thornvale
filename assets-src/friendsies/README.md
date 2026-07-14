@@ -18,5 +18,7 @@ npm run friendsies:probe -- --type hand --value "Book Of Ocean"
 
 Follow the [environmental trait workflow](../../docs/friendsies-trait-workflow.md)
 before promoting any candidate. Index presence, a successful probe, or an
-attractive preview does not establish permission to bundle, adapt, redistribute,
-or publish an asset.
+attractive preview does not establish design fit or technical readiness.
+Canonical fRiENDSiES material already inherits the standing
+`friendsies-project` authorization in ADR 0004; exact source identity, variant,
+hash, transform, budget, fallback, and QA evidence still gate runtime promotion.

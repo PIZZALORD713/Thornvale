@@ -206,8 +206,9 @@ reload or future in-page remount cannot retain the new GPU resources.
 
 Presentation variants must not move interaction IDs, story anchors, colliders,
 route destinations, or save fields. No new collection binary is permitted
-until its exact variant completes permission, provenance, fit, budget, and
-rollback review.
+until its exact variant completes source-integrity, fit, budget, fallback, and
+rollback review. Canonical fRiENDSiES material inherits ADR 0004 and never
+requires a new permission decision for a role, placement, or transform.
 
 ## Validation matrix
 
@@ -227,16 +228,14 @@ Neighborliness may leak into the default journey.
 
 ## Release boundary
 
-The exact manifested local `#0001`, `#6602`, and `#8914` files and documented
-Trait Echo v1 arrangements are project-release-authorized for integrated
-bundled Thornvale builds. The authorization is hash-bound and does not permit
-raw-source, standalone asset-pack, collection-wide, unmanifested-trait, or
-general outside-project redistribution.
+ADR 0004 supplies one standing project-wide authorization for present and
+future canonical fRiENDSiES assets in every integrated Thornvale role, including
+characters, hand items, sprouts, backpieces, props, environments, UI, and local
+or streamed delivery. Token, variant, hash, role, context, transform, catalog
+revision, and delivery changes do not reopen permission.
 
-Shareable arbitrary-token player links are a separate external runtime
-dependency and receive no authority from the local-file grants. Their own
-project-scoped authorization permits published Thornvale builds to fetch the
-pinned catalog for IDs `1..10000` and stream one selected in-game player from
-the recorded component origin. It does not authorize environmental reuse,
-local collection bundling, raw copying, mirroring, standalone packs,
-sublicensing, unrelated-origin delivery, or outside-project use.
+The pinned `1..10000` catalog, exact component prefix, local hashes, transforms,
+budgets, fallbacks, and QA remain engineering release gates. Standalone asset
+packs, bulk raw collection mirrors or dumps, sublicensing, and outside-Thornvale
+reuse remain excluded. `friendsies-animations` stays separately governed where
+Mixamo supplies upstream motion rights.

@@ -1,3 +1,6 @@
+import { DAY_ONE_V01 } from '../content/day-one-v01.js';
+import { sampleMoundHeight } from '../utils/terrain-surface.js';
+
 function deepFreeze(value) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
   Object.freeze(value);
@@ -77,50 +80,207 @@ const libraryDoor = doorApproach(buildingById['lavender-library']);
 const teaHouseDoor = doorApproach(buildingById['mint-tea-house']);
 const postOfficeDoor = doorApproach(buildingById['rose-post-office']);
 
+export const TOWN_PATH_PROFILES = deepFreeze({
+  'village-lane': {
+    family: 'reclaimed-pavers',
+    grassMargin: 0.2,
+    paverWidth: 0.44,
+    paverLength: 0.68,
+    paverJoint: 0.055,
+    edgeOmission: 0.11,
+  },
+  'garden-lane': {
+    family: 'reclaimed-pavers',
+    grassMargin: 0.18,
+    paverWidth: 0.42,
+    paverLength: 0.64,
+    paverJoint: 0.055,
+    edgeOmission: 0.15,
+  },
+  'ritual-lane': {
+    family: 'reclaimed-pavers',
+    grassMargin: 0.22,
+    paverWidth: 0.44,
+    paverLength: 0.68,
+    paverJoint: 0.05,
+    edgeOmission: 0.08,
+  },
+  'waterside-steps': {
+    family: 'soft-track',
+    grassMargin: 0.28,
+  },
+  'forest-footpath': {
+    family: 'soft-track',
+    grassMargin: 0.3,
+  },
+  'meadow-track': {
+    family: 'soft-track',
+    grassMargin: 0.32,
+  },
+});
+
+const bellHill = {
+  id: 'bell-hill',
+  x: 3,
+  z: -37,
+  baseY: -0.03,
+  radiusX: 14.5,
+  radiusZ: 18,
+  height: 2.43,
+  plateauRadius: 0.2,
+  segmentsX: 40,
+  segmentsZ: 48,
+  walkable: true,
+};
+const bellBaseY = sampleMoundHeight(bellHill, 3, -36.5);
+const bellLandmark = {
+  x: 3,
+  y: bellBaseY + 0.5,
+  z: -36.5,
+  baseY: bellBaseY,
+};
+const hillRoutePoint = (x, z) => [x, Math.max(0, sampleMoundHeight(bellHill, x, z)), z];
+
 export const TOWN_LAYOUT = deepFreeze({
   meadowRadius: 38,
   spawn: { x: 0, y: 2, z: 14 },
-  plaza: { x: 0, y: 0.8, z: 0.8, radius: 5.05 },
+  plaza: { x: 0, y: 0.8, z: 0.8, radius: 5.05, scaleZ: 0.88 },
   gate: { x: 0, y: 0, z: 11.7 },
   pond: { x: 20, y: 0, z: 4 },
+  terrain: {
+    bellHill,
+    decorativeHills: [
+      { x: -35, y: -2.8, z: -15, scaleX: 10, scaleY: 4.2, scaleZ: 8 },
+      { x: 35, y: -2.8, z: -12, scaleX: 11, scaleY: 4.6, scaleZ: 9 },
+      { x: -32, y: -2.8, z: 26, scaleX: 10, scaleY: 4.1, scaleZ: 8 },
+      { x: 33, y: -2.8, z: 27, scaleX: 12, scaleY: 5, scaleZ: 9 },
+    ],
+  },
+  // Day One authored anchors are shared by presentation and the authoritative
+  // director so a visible station can never drift away from its interaction.
+  dayOne: DAY_ONE_V01.anchors,
+  // These small masks protect individual props from decorative grass without
+  // drawing a campsite floor. They intentionally leave meadow between the
+  // stations so the provisional plot feels borrowed from the forest edge.
+  grassExclusions: [
+    {
+      id: 'day-one-camp-sign',
+      site: 'camp',
+      x: DAY_ONE_V01.anchors.camp.x + 0.7,
+      z: DAY_ONE_V01.anchors.camp.z - 1.22,
+      radius: 0.9,
+    },
+    {
+      id: 'day-one-campfire',
+      site: 'campfire',
+      x: DAY_ONE_V01.anchors.campfire.x,
+      z: DAY_ONE_V01.anchors.campfire.z,
+      radius: 1.35,
+    },
+    {
+      id: 'day-one-garden',
+      site: 'garden',
+      x: DAY_ONE_V01.anchors.garden.x,
+      z: DAY_ONE_V01.anchors.garden.z,
+      radius: 1.8,
+    },
+    {
+      id: 'day-one-shelter',
+      site: 'shelter',
+      x: DAY_ONE_V01.anchors.shelter.x,
+      z: DAY_ONE_V01.anchors.shelter.z,
+      radius: 2.35,
+    },
+    {
+      id: 'day-one-woodlot',
+      site: 'woodlot',
+      x: DAY_ONE_V01.anchors.woodlot.x,
+      z: DAY_ONE_V01.anchors.woodlot.z,
+      radius: 1.65,
+    },
+    {
+      id: 'day-one-recovery',
+      site: 'campRecovery',
+      x: DAY_ONE_V01.anchors.campRecovery.x,
+      z: DAY_ONE_V01.anchors.campRecovery.z,
+      radius: 0.85,
+    },
+  ],
   landmarks: {
     ledger: { x: -2, y: 0.8, z: 3 },
-    bell: { x: 3, y: 0.5, z: -2 },
+    bell: bellLandmark,
   },
   buildings,
   paths: [
     {
       id: 'arrival',
-      width: 2.35,
+      profile: 'village-lane',
+      width: 2.25,
       points: [[0, 16], [0.4, 12], [-0.7, 7.5], [0, 2.2]],
     },
     {
       id: 'berry-bakery',
-      width: 1.8,
+      profile: 'garden-lane',
+      width: 1.6,
       points: [[0.5, 0.5], [3.8, -1.8], [8.6, -4.8], [bakeryDoor.x, bakeryDoor.z]],
     },
     {
       id: 'lavender-library',
-      width: 1.8,
+      profile: 'garden-lane',
+      width: 1.6,
       points: [[-0.6, 0.7], [-4.2, -0.6], [-9.2, -2.8], [libraryDoor.x, libraryDoor.z]],
     },
     {
       id: 'mint-tea-house',
-      width: 1.7,
+      profile: 'garden-lane',
+      width: 1.55,
       points: [[0.2, 1.8], [3.3, 4.3], [8.2, 6.9], [teaHouseDoor.x, teaHouseDoor.z]],
     },
     {
       id: 'rose-post-office',
-      width: 1.7,
+      profile: 'garden-lane',
+      width: 1.55,
       points: [[-0.5, 2.1], [-3.5, 5.2], [-8.6, 7.8], [postOfficeDoor.x, postOfficeDoor.z]],
     },
     {
       id: 'pond',
-      width: 1.35,
+      profile: 'waterside-steps',
+      width: 1.1,
       points: [[4, 1.2], [8.5, 0.9], [13, 2.2], [16.4, 4]],
     },
     {
+      id: 'forest-edge-camp',
+      profile: 'forest-footpath',
+      width: 1,
+      points: [
+        [postOfficeDoor.x, postOfficeDoor.z],
+        [-18, 8.7],
+        [-19.8, 6],
+        [-22.8, 3.7],
+        [-25.8, 3.6],
+        [-28, 4],
+        [-29.3, 3.8],
+      ],
+    },
+    {
+      id: 'bell-hill-ritual',
+      profile: 'ritual-lane',
+      width: 2,
+      points: [
+        hillRoutePoint(0.9, -3.7),
+        hillRoutePoint(3.2, -7.3),
+        hillRoutePoint(4.1, -13),
+        hillRoutePoint(2.8, -20),
+        hillRoutePoint(2.7, -24.8),
+        hillRoutePoint(2.9, -27.8),
+        hillRoutePoint(3, -30.6),
+        hillRoutePoint(3, -33.4),
+        hillRoutePoint(bellLandmark.x, bellLandmark.z),
+      ],
+    },
+    {
       id: 'north-garden-walk',
+      profile: 'meadow-track',
       width: 1.15,
       points: [
         [postOfficeDoor.x, postOfficeDoor.z],
@@ -132,6 +292,7 @@ export const TOWN_LAYOUT = deepFreeze({
     },
     {
       id: 'south-orchard-walk',
+      profile: 'meadow-track',
       width: 1.15,
       points: [
         [libraryDoor.x, libraryDoor.z],
@@ -140,6 +301,18 @@ export const TOWN_LAYOUT = deepFreeze({
         [8.3, -12.2],
         [bakeryDoor.x, bakeryDoor.z],
       ],
+    },
+  ],
+  pathAprons: [
+    {
+      id: 'bell-hill-apron',
+      profile: 'ritual-lane',
+      x: bellLandmark.x,
+      y: bellLandmark.baseY,
+      z: bellLandmark.z,
+      width: 4.2,
+      depth: 3.1,
+      rotationY: 0,
     },
   ],
   storyRoutes: {
@@ -156,7 +329,8 @@ export const TOWN_LAYOUT = deepFreeze({
       [-8.2, 0.16, 4.8],
       [-12.2, 0.16, 6.2],
       [-17.5, 0.16, 5.2],
-      [-21, 0.16, 7.2],
+      [-21.6, 0.16, 4.4],
+      [-25.8, 0.16, 3.6],
     ],
   },
   authoredProps: {

@@ -216,12 +216,6 @@ function enrichTrait(trait) {
     trait.notes,
     trait.rationale,
   ]);
-  const rightsStatus = readableValue(firstValue(
-    curation.rightsStatus,
-    curation.rights_status,
-    trait.rightsStatus,
-    trait.rights_status,
-  ));
   const designProfile = normalizeDesignProfile(firstValue(
     curation.designProfile,
     curation.design_profile,
@@ -242,7 +236,6 @@ function enrichTrait(trait) {
     trait.value,
     environmentFit,
     curationStatus,
-    rightsStatus,
     semanticNotes,
     curationNotes,
     ...Object.values(designProfile),
@@ -260,7 +253,6 @@ function enrichTrait(trait) {
     curation,
     environmentFit,
     curationStatus,
-    rightsStatus,
     semanticNotes,
     curationNotes,
     designProfile,
@@ -603,7 +595,6 @@ function renderDetail(trait) {
   const badges = createElement('div', 'badge-row');
   if (trait.environmentFit) badges.append(createBadge(`Fit: ${trait.environmentFit}`, 'fit'));
   if (trait.curationStatus) badges.append(createBadge(trait.curationStatus, 'status'));
-  if (trait.rightsStatus) badges.append(createBadge(`Rights: ${trait.rightsStatus}`));
   if (trait.designProfile.mountType) {
     badges.append(createCastingBadge(trait.designProfile.mountType, 'Mount', 'mount'));
   }
@@ -671,7 +662,7 @@ function createCastingProfileSection(trait) {
     section.append(createElement(
       'p',
       'profile-empty',
-      'No schema-v2 casting profile is recorded for this collection trait.',
+      'No schema-v3 casting profile is recorded for this collection trait.',
     ));
     return section;
   }
@@ -696,7 +687,6 @@ function createCastingProfileSection(trait) {
     ['Shot role', profile.shotRole],
     ['Maximum per shot', profile.maximumPerShot],
     ['Technical readiness', profile.technicalReadiness],
-    ['Rights coverage', profile.rightsCoverage],
   ];
   for (const [label, value] of definitions) {
     facts.append(createProfileFact(label, value));
@@ -1025,7 +1015,6 @@ function normalizeDesignProfile(value) {
       profile.technicalReadiness,
       profile.technical_readiness,
     )),
-    rightsCoverage: cleanText(firstValue(profile.rightsCoverage, profile.rights_coverage)),
   };
 }
 

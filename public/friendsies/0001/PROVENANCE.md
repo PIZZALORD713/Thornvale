@@ -5,19 +5,22 @@ Trait Echo v1. Token `#6602` replaced `#0001` as Thornvale's default player on
 2026-07-12, so the superseded body, face, head, and shoe files were removed
 from runtime rather than carried in every deployment.
 
-## Permission and release scope
+## Standing authorization and release scope
 
+- Manifest family ID: `friendsies-project`
 - Manifest status: `project-release-authorized`
 - Release blocked: no
-- Authorization: the Thornvale project owner explicitly authorized the exact
-  manifested Flower White runtime file and its documented Trait Echo v1
-  environmental use for publication in Thornvale builds on `2026-07-12`.
-- Runtime distribution: permitted only when integrated into bundled Thornvale
-  game builds, including the documented Trait Echo v1 arrangement.
+- Authorization: ADR 0004 grants standing project-wide authorization for
+  present and future canonical fRiENDSiES assets in any integrated Thornvale
+  role. Token, trait, variant, runtime context, transform, and delivery model do
+  not require separate approval.
+- Runtime distribution: permitted when integrated into Thornvale builds,
+  tools, documentation, testing, or Thornvale promotion.
 - Raw-source and standalone asset-pack redistribution: prohibited by this
   record; canonical source files remain external.
-- General reuse outside Thornvale or collection-wide bundling: not granted;
-  bounded remote in-game selection is authorized separately under ADR 0003.
+- Bulk raw collection mirrors, sublicensing, and reuse outside Thornvale are not
+  granted. Catalog pins, exact source URLs, hashes, transforms, and budgets are
+  engineering integrity records, not permission boundaries.
 
 | Runtime file | Trait | Source asset | SHA-256 |
 | --- | --- | --- | --- |
@@ -25,9 +28,10 @@ from runtime rather than carried in every deployment.
 
 Source host: `https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/`
 
-The project owner explicitly requested fRiENDSiES characters and token `#0001`
-on 2026-07-11, then strategic environmental use of Flower White on 2026-07-12.
-The current runtime use is limited to that environmental trait.
+The project owner requested fRiENDSiES characters and token `#0001` on
+2026-07-11, then strategic environmental use of Flower White on 2026-07-12.
+Those dates explain this file's current runtime history; they do not narrow the
+standing authorization in ADR 0004.
 
 ## Trait Echo v1 environmental use
 
@@ -49,8 +53,7 @@ not a fRiENDSiES asset. This arrangement is a Thornvale-authored environmental
 adaptation, not a canonical token or a new fRiENDSiES trait. `?traits=off`
 removes the environmental treatment without changing the `#6602` player.
 
-This authorization covers only the exact runtime hash above and the documented
-three-instance Thornvale arrangement. It does not approve other `#0001` files,
-other traits, arbitrary token streaming, or standalone redistribution. The
-separate remote-player authorization in ADR 0003 does not broaden this local-
-file or environmental grant.
+The exact hash and three-instance arrangement above document the current build,
+not the limit of permission. Other canonical fRiENDSiES traits and integrated
+Thornvale roles inherit ADR 0004 without a new approval; they still require
+source, integrity, budget, fallback, and visual QA evidence before release.

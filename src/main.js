@@ -39,6 +39,7 @@ import {
   projectStoryPresentation,
 } from './visuals/AestheticPresentation.js';
 import { KawaiiSky } from './visuals/KawaiiSky.js';
+import { EnvironmentLighting } from './visuals/EnvironmentLighting.js';
 import { PostProcessing } from './visuals/PostProcessing.js';
 import { KawaiiVFX } from './visuals/KawaiiVFX.js';
 import { PlayerAnimator } from './visuals/PlayerAnimator.js';
@@ -48,9 +49,13 @@ import { StoryUI } from './ui/StoryUI.js';
 import { DayNightSystem } from './game/DayNightSystem.js';
 import { GameSession } from './game/GameSession.js';
 import { CoreHookDirector } from './game/CoreHookDirector.js';
+import { DayOneDirector } from './game/DayOneDirector.js';
+import { DayOneActionController } from './game/DayOneActionController.js';
 import { InteractableSystem } from './game/InteractableSystem.js';
 import { buildTown } from './game/TownBuilder.js';
 import { CORE_HOOK_V03 } from './content/core-hook-v03.js';
+import { DAY_ONE_V01 } from './content/day-one-v01.js';
+import { DayOneActionPresenter } from './visuals/DayOneActionPresenter.js';
 import { disposeTownPresentation } from './app/disposeTownPresentation.js';
 import { recoverMissingCharacterVisuals } from './app/recoverMissingCharacterVisuals.js';
 import {
@@ -74,6 +79,11 @@ let hud;
 let storyUI;
 let gameSession;
 let coreHookDirector;
+let dayOneDirector;
+let dayOneActionController;
+let dayOneActionPresenter;
+let dayOneActionUnsubscribe;
+let dayOneWorld;
 let storyWorld;
 let stewardActor;
 let dayNightSystem;
@@ -85,6 +95,7 @@ let breathingGrass;
 let traitEchoes;
 let traitEchoUnsubscribe;
 let sky;
+let environmentLighting;
 let postProcessing;
 let vfx;
 let soundscape;
@@ -151,6 +162,7 @@ async function init() {
   document.getElementById('app')?.appendChild(renderer.domElement);
   clock = new Clock();
 
+  environmentLighting = new EnvironmentLighting(scene, renderer).init();
   dayNightSystem = new DayNightSystem(scene).init();
   sky = new KawaiiSky(scene).init();
   hud.setDayNight('DAY');
@@ -201,6 +213,7 @@ async function init() {
   traitEchoes = town.traitEchoes || null;
   ambientLife = town.ambientLife || null;
   breathingGrass = town.breathingGrass || null;
+  dayOneWorld = town.dayOneWorld || null;
   const spawnPoint = town.spawnPoint || new Vector3(0, 2, 14);
   playerSpawnPoint = spawnPoint.clone();
   worldAnimator = town.worldAnimator || (town.updateWorld
@@ -252,6 +265,14 @@ async function init() {
     motionScale: reducedMotion ? 0.35 : 1,
     reducedMotion,
   });
+  dayOneActionController = new DayOneActionController({ control: playerController });
+  dayOneActionPresenter = new DayOneActionPresenter({
+    getAnimator: () => playerFriendsiesAnimator,
+    reducedMotion,
+  });
+  dayOneActionUnsubscribe = dayOneActionController.subscribe((event) => {
+    dayOneActionPresenter?.handle?.(event);
+  });
 
   const stewardAnchor = CORE_HOOK_V03.anchors.steward.welcome;
   stewardActor = new StewardActor(scene, null, {
@@ -263,9 +284,16 @@ async function init() {
   if (storyEnabled) {
     gameSession = new GameSession({ storageKey: CORE_HOOK_V03.storageKey });
     if (params.get('story') === 'reset' || params.get('reset') === '1') gameSession.reset();
-    applyAestheticPresentationState(gameSession.snapshot(), { animate: false });
+    dayOneDirector = new DayOneDirector({
+      session: gameSession,
+      content: DAY_ONE_V01,
+      actionController: dayOneActionController,
+      onPassOut: recoverPlayerAtCamp,
+    });
+
+    projectSessionState(gameSession.snapshot(), { animate: false });
     traitEchoUnsubscribe = gameSession.subscribe((snapshot) => {
-      applyAestheticPresentationState(snapshot);
+      projectSessionState(snapshot);
     });
 
     const stewardInteractable = {
@@ -290,6 +318,8 @@ async function init() {
       setRoute: applyStoryRoute,
       getRouteDestination: (choice) => storyWorld?.getDestination(choice),
       resetPlayer: resetPlayerToArrival,
+      isDayOneComplete: () => dayOneDirector?.isComplete() ?? false,
+      getDayOneObjective: () => dayOneDirector?.currentObjective() || null,
       setStoryBlocking: handleStoryBlocking,
       onError: (error) => {
         console.error('[CoreHookDirector]', error);
@@ -323,6 +353,7 @@ async function init() {
     scene,
     camera,
     renderer,
+    environmentLighting,
     dayNightSystem,
     vfx,
     visualRig,
@@ -332,6 +363,9 @@ async function init() {
     storyUI,
     gameSession,
     coreHookDirector,
+    dayOneDirector,
+    dayOneActionController,
+    dayOneWorld,
     storyWorld,
     worldAnimator,
     assetVariant,
@@ -342,6 +376,32 @@ async function init() {
     playerFriendsiesSelection,
     hud,
   };
+}
+
+function projectSessionState(snapshot, options = {}) {
+  const presentation = applyAestheticPresentationState(snapshot, options);
+  applyDayOnePresentationState(snapshot);
+  return presentation;
+}
+
+function applyDayOnePresentationState(snapshot) {
+  try {
+    dayOneWorld?.setState?.(snapshot);
+  } catch (error) {
+    console.warn('[DayOneWorld] Snapshot projection failed.', error);
+  }
+
+  try {
+    const survival = dayOneDirector?.stateForHud?.(snapshot) || null;
+    hud?.setSurvivalState?.(survival?.active ? survival : null);
+    document.documentElement.dataset.dayOne = survival?.complete
+      ? 'complete'
+      : survival?.active
+        ? 'active'
+        : 'inactive';
+  } catch (error) {
+    console.warn('[DayOneDirector] HUD projection failed.', error);
+  }
 }
 
 function applyAestheticPresentationState(snapshot, { animate = true } = {}) {
@@ -388,14 +448,39 @@ function registerStoryInteractions(interactables) {
   interactableSystem = new InteractableSystem(hud);
 
   for (const interactable of interactables) {
+    const isDayOneInteraction = dayOneDirector?.handles?.(interactable.id) ?? false;
+    const director = isDayOneInteraction ? dayOneDirector : coreHookDirector;
     interactable.enabled = () => (
       (interactable.id !== CORE_HOOK_V03.ids.steward || stewardCastReady)
-      && (coreHookDirector?.isInteractableEnabled(interactable.id) ?? false)
+      && (director?.isInteractableEnabled(interactable.id) ?? false)
     );
-    interactable.prompt = () => coreHookDirector?.promptFor(interactable.id) || 'Listen closely';
-    interactable.onInteract = () => coreHookDirector?.interact(interactable.id);
+    interactable.prompt = () => director?.promptFor(interactable.id) || 'Listen closely';
+    interactable.onInteract = async () => {
+      const dayOneBefore = isDayOneInteraction ? gameSession?.dayOne : null;
+      const authoredAction = isDayOneInteraction
+        ? dayOneDirector?.actionFor?.(interactable.id, gameSession?.snapshot?.())
+        : null;
+      const result = await director?.interact(interactable.id, {
+        targetPosition: interactable.position,
+      });
+      if (isDayOneInteraction) {
+        const dayOneAfter = gameSession?.dayOne;
+        const changed = JSON.stringify(dayOneBefore) !== JSON.stringify(dayOneAfter);
+        const passedOut = (dayOneAfter?.passedOutCount || 0) > (dayOneBefore?.passedOutCount || 0);
+        if (changed && !passedOut && !authoredAction && typeof result === 'string' && result.trim()) {
+          celebrateInteraction(interactable.position, dayOneFeedbackKind(interactable.id));
+        }
+        await coreHookDirector?.refreshObjective?.();
+      }
+      return result;
+    };
     interactableSystem.register(interactable);
   }
+}
+
+function dayOneFeedbackKind(id) {
+  if (id === DAY_ONE_V01.ids.fishingSpot || id === DAY_ONE_V01.ids.garden) return 'magic';
+  return 'kindness';
 }
 
 function registerLegacyInteractions(interactables) {
@@ -455,6 +540,15 @@ function resetPlayerToArrival() {
   playerController.teleport(playerSpawnPoint);
   configureCameraRig(cameraRig);
   cameraRig.resetPosition();
+}
+
+function recoverPlayerAtCamp() {
+  const anchor = DAY_ONE_V01.anchors.campRecovery;
+  if (playerController && anchor) {
+    playerController.teleport(new Vector3(anchor.x, anchor.y, anchor.z));
+  }
+  postProcessing?.pulse?.(0.38);
+  soundscape?.playInteraction?.('magic');
 }
 
 function ringAnomalyBell() {
@@ -776,6 +870,7 @@ function animate() {
   const dt = Math.min(clock?.getDelta?.() || 0.016, 0.075);
 
   dayNightSystem?.update(dt);
+  environmentLighting?.update(dayNightSystem?.mix || 0);
   sky?.update(dt, dayNightSystem?.mix || 0);
 
   if (inputManager) handleGlobalInput();
@@ -819,7 +914,9 @@ function animate() {
   }
 
   coreHookDirector?.update(dt, characterMotor?.getPosition?.());
+  dayOneActionController?.update?.(dt);
   storyWorld?.update(dt);
+  dayOneWorld?.update?.(dt);
 
   if (interactableSystem && characterMotor) {
     interactableSystem.update(characterMotor.getPosition(), inputManager);
@@ -992,7 +1089,15 @@ function dispose() {
   }
   traitEchoUnsubscribe?.();
   traitEchoUnsubscribe = null;
+  dayOneActionUnsubscribe?.();
+  dayOneActionUnsubscribe = null;
+  dayOneActionPresenter?.dispose?.();
+  dayOneActionPresenter = null;
+  dayOneActionController?.dispose?.();
+  dayOneActionController = null;
   coreHookDirector?.dispose();
+  dayOneDirector?.dispose();
+  dayOneWorld?.dispose();
   ({
     ambientLife,
     traitEchoes,
@@ -1009,6 +1114,10 @@ function dispose() {
     window.thornvale.traitEchoes = traitEchoes;
     window.thornvale.breathingGrass = breathingGrass;
     window.thornvale.worldAnimator = worldAnimator;
+    window.thornvale.dayOneDirector = null;
+    window.thornvale.dayOneWorld = null;
+    window.thornvale.dayOneActionController = null;
+    window.thornvale.environmentLighting = null;
   }
   gameSession?.dispose();
   storyUI?.dispose();
@@ -1023,6 +1132,8 @@ function dispose() {
   vfx?.dispose();
   playerAnimator?.dispose();
   sky?.dispose();
+  environmentLighting?.dispose();
+  environmentLighting = null;
   void soundscape?.dispose();
 }
 

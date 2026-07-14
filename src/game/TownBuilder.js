@@ -34,7 +34,9 @@ import {
   loadAuthoredVillageProps,
 } from '../visuals/TownAssetLoader.js';
 import { loadTraitEchoV1 } from '../visuals/FriendsiesTraitEchoes.js';
+import { createDayOneWorld } from '../visuals/DayOneWorld.js';
 import { WorldAnimator } from '../visuals/WorldAnimator.js';
+import { createMoundSurfaceGrid } from '../utils/terrain-surface.js';
 
 const cameraProxyMaterial = new MeshBasicMaterial({
   color: 0x000000,
@@ -110,6 +112,17 @@ export function addCottagePhysics(physicsWorld, building) {
       null,
     );
   }
+}
+
+export function addWalkableTerrainPhysics(physicsWorld, hill = TOWN_LAYOUT.terrain?.bellHill) {
+  if (!hill?.walkable) return null;
+  const surface = createMoundSurfaceGrid(hill);
+  return physicsWorld.createStaticTrimesh(
+    { x: 0, y: 0, z: 0 },
+    surface.vertices,
+    surface.indices,
+    { friction: 0.95 },
+  );
 }
 
 function rotatedLocalX(placement, localX) {
@@ -218,6 +231,7 @@ export async function buildTown(physicsWorld, scene, {
   });
   const breathingGrass = terrainDressing.breathingGrass;
   townRoot.add(terrainDressing);
+  addWalkableTerrainPhysics(physicsWorld);
   townRoot.add(createPathsAndPlaza(TOWN_LAYOUT));
   buildingData.forEach((building, index) => {
     townRoot.add(createCottagePlot(building, index, worldAnimator));
@@ -331,6 +345,13 @@ export async function buildTown(physicsWorld, scene, {
   townRoot.add(createPond(worldAnimator, TOWN_LAYOUT));
   townRoot.add(createPlazaFurniture(worldAnimator, TOWN_LAYOUT));
 
+  const dayOneWorld = createDayOneWorld({
+    layout: TOWN_LAYOUT,
+    reducedMotion,
+  });
+  townRoot.add(dayOneWorld.root);
+  interactables.push(...dayOneWorld.interactables);
+
   const ledger = authoredPilotLandmarks.get('ledger')
     || createLedgerLandmark(worldAnimator, TOWN_LAYOUT);
   const authoredBell = authoredPilotLandmarks.get('bell');
@@ -363,7 +384,7 @@ export async function buildTown(physicsWorld, scene, {
   physicsWorld.createStaticBox(
     {
       x: TOWN_LAYOUT.landmarks.bell.x,
-      y: 0.22,
+      y: TOWN_LAYOUT.landmarks.bell.baseY + 0.22,
       z: TOWN_LAYOUT.landmarks.bell.z,
     },
     { x: 1.65, y: 0.44, z: 1.35 },
@@ -373,7 +394,7 @@ export async function buildTown(physicsWorld, scene, {
     'town_bell',
     {
       x: TOWN_LAYOUT.landmarks.bell.x,
-      y: 1.2,
+      y: TOWN_LAYOUT.landmarks.bell.baseY + 1.2,
       z: TOWN_LAYOUT.landmarks.bell.z,
     },
     { x: 1.55, y: 2.4, z: 0.82 },
@@ -422,7 +443,11 @@ export async function buildTown(physicsWorld, scene, {
     traitEchoes,
     breathingGrass,
     ambientLife,
+    dayOneWorld,
     worldAnimator,
-    updateWorld: (dt, nightState) => worldAnimator.update(dt, nightState),
+    updateWorld: (dt, nightState) => {
+      worldAnimator.update(dt, nightState);
+      dayOneWorld.update(dt);
+    },
   };
 }

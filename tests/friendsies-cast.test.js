@@ -5,8 +5,6 @@ import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from 'three';
 import {
   CURATED_FRIENDSIES_CAST,
   DEFAULT_PLAYER_FRIENDSIES_TOKEN_ID,
-  FRIENDSIES_LICENSE_STATUS,
-  FRIENDSIES_REDISTRIBUTION_STATUS,
   PLAYER_FRIENDSIES_FALLBACK_TOKEN_IDS,
   getCuratedFriendsiesEntry,
 } from '../src/content/friendsies-cast.js';
@@ -17,7 +15,7 @@ import {
   resolveHandheldGlowPresentation,
 } from '../src/visuals/CharacterLoader.js';
 
-test('curated cast records story role, usage terms, and canonical source token', () => {
+test('curated cast records story role and canonical source token without policy duplication', () => {
   const traitSource = getCuratedFriendsiesEntry(1);
   const player = getCuratedFriendsiesEntry(6602);
   const steward = getCuratedFriendsiesEntry(8914);
@@ -30,17 +28,15 @@ test('curated cast records story role, usage terms, and canonical source token',
   assert.ok(steward.storyUse.includes('nighttime-authority'));
 
   for (const entry of [traitSource, player, steward]) {
-    assert.equal(
-      entry.licenseStatus,
-      FRIENDSIES_LICENSE_STATUS.PROJECT_RELEASE_AUTHORIZED,
-    );
-    assert.equal(
-      entry.redistributionStatus,
-      FRIENDSIES_REDISTRIBUTION_STATUS.THORNVALE_BUNDLED_ONLY,
-    );
-    assert.equal(entry.runtimeDistributionScope, 'bundled-thornvale-game-builds-only');
-    assert.equal(entry.rawSourceRedistribution, false);
-    assert.equal(entry.releaseBlocked, false);
+    for (const policyField of [
+      'licenseStatus',
+      'redistributionStatus',
+      'runtimeDistributionScope',
+      'rawSourceRedistribution',
+      'releaseBlocked',
+    ]) {
+      assert.equal(Object.hasOwn(entry, policyField), false);
+    }
     assert.equal(entry.source.collection, 'fRiENDSiES');
     assert.equal(entry.source.tokenId, entry.token_id);
     assert.equal(entry.source.canonicalToken, true);
@@ -48,11 +44,8 @@ test('curated cast records story role, usage terms, and canonical source token',
 
     for (const trait of entry.attributes) {
       assert.equal(trait.sourceTokenId, entry.token_id);
-      assert.equal(trait.licenseStatus, entry.licenseStatus);
-      assert.equal(trait.redistributionStatus, entry.redistributionStatus);
-      assert.equal(trait.runtimeDistributionScope, entry.runtimeDistributionScope);
-      assert.equal(trait.rawSourceRedistribution, false);
-      assert.equal(trait.releaseBlocked, false);
+      assert.equal(Object.hasOwn(trait, 'licenseStatus'), false);
+      assert.equal(Object.hasOwn(trait, 'rightsStatus'), false);
       assert.match(trait.asset_url, /^\/friendsies\/(0001|6602|8914)\//);
     }
   }

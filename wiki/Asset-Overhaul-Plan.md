@@ -48,12 +48,12 @@
   dropped from about 18.2 MiB to 7.73 MiB.
 - The asset manifest, credits/notice, budget audit, and CI-facing `npm run check`
   gate are implemented.
-- The exact local `#0001`, `#6602`, and `#8914` runtime families and documented
-  Trait Echo v1 uses are project-release-authorized for bundled Thornvale builds.
-  Raw/standalone redistribution remains prohibited. The separate arbitrary-
-  token remote-streaming family is project-release-authorized only for the
-  pinned `1..10000` player range and recorded component origin inside published
-  Thornvale builds.
+- ADR 0004 supplies one standing `friendsies-project` authorization for present
+  and future canonical collection assets in every integrated Thornvale role.
+  Local and remote paths share that authorization; the pinned `1..10000`
+  catalog, exact component prefix, hashes, transforms, budgets, and fallbacks
+  remain engineering controls. Raw standalone packs, bulk mirrors,
+  sublicensing, and outside-project reuse remain prohibited.
 - No external CC0 runtime assets have been admitted yet. Five fresh-player
   comparisons and a same-device frame-time profile still gate expansion.
 
@@ -105,8 +105,9 @@ The opening route is the best asset test surface because it includes:
 - Replacing the current cottages, sky, particles, or character skeleton.
 - Photoreal materials that bypass Thornvale's palette and material treatment.
 - CC BY-NC, unclear “free,” ripped, or item-level unverified assets.
-- Shipping newly selected fRiENDSiES traits before their exact redistribution
-  permission is recorded.
+- Shipping newly selected fRiENDSiES traits before exact variant identity,
+  source lineage, geometry, payload, fallback, and QA are recorded. Canonical
+  collection material already inherits ADR 0004's standing authorization.
 
 ## 4. Current baseline
 
@@ -193,33 +194,31 @@ draw physically grounds all seven placements without adding a trait binary.
 
 This is a Thornvale-authored arrangement, not a canonical token composition.
 Runtime and provenance data preserve the source token and trait for every
-family. The exact manifested `friendsies-0001` and `friendsies-8914` files and
-this documented Trait Echo v1 use are project-release-authorized for integrated
-bundled Thornvale builds. Raw-source, standalone asset-pack, collection-wide,
-and outside-project redistribution remain prohibited. `?traits=off` is the
-exact independent rollback.
+family. ADR 0004 grants standing project-wide authorization to use present and
+future canonical fRiENDSiES assets in any integrated Thornvale role; local versus
+streamed delivery, role, placement, and transformation do not reopen permission.
+Raw standalone asset packs, bulk collection mirrors, sublicensing, and
+outside-project reuse remain prohibited. `?traits=off` is the exact independent
+rollback.
 
-That statement is scoped to Trait Echo. Shareable non-bundled player links can
-stream any selected token's character components, including its hand and sprout
-traits, from the pinned collection catalog. The manifest records that path as
-the separate `friendsies-remote-player-streaming` dependency. It is authorized
-for published Thornvale builds only under the pinned catalog, `1..10000` token
-range, `https://storage.googleapis.com` component origin, and integrated player-
-avatar role. That grant does not approve environmental use, bundling, raw
-copying, mirroring, standalone packs, sublicensing, or outside-project use.
+Shareable player links still use the pinned `1..10000` catalog and exact
+canonical asset URL prefix. Those controls, plus hashes, transforms, budgets,
+fallbacks, and QA, are engineering integrity gates rather than a separate or
+narrower authorization.
 
 The following extension points are indexed and curatable but intentionally
 have no Trait Echo/environmental runtime URL in v1:
 
 - `Book Of Ocean` and `Friends Key` from token `#431`: records and access,
-  cataloged and metadata-probed but pending decoded-rig, permission, provenance,
-  and budget review.
+  cataloged and metadata-probed but pending decoded-rig, exact-variant,
+  provenance, budget, fallback, and QA review.
 - `All Seeing` and `Orb`: uncanny observation, cataloged as anomaly-only holds
-  pending exact variant selection, permission, provenance, and budget review.
+  pending exact variant selection, provenance, creative fit, and budget review.
 
 Candidate full tokens such as `#431`, `#1161`, `#54`, `#669`, and `#974` may be
-previewed during internal casting, but they are not automatically approved for
-bundling or release.
+previewed during internal casting. Their authorization is already covered;
+bundling or release still depends on source integrity, runtime readiness,
+payload, fallback, and QA.
 
 ### 5.3 CC0 support batch
 
@@ -262,10 +261,10 @@ Every candidate receives one of these statuses:
 - `blocked`
 
 `project-authored`, `cc0-1.0-verified`, and `project-release-authorized` are
-release-approved. The last status applies only to exact hashed runtime files
-with a recorded owner or licensor grant for bundled Thornvale builds, an
-explicit runtime-distribution scope, and raw-source redistribution disabled. It
-does not grant general or standalone asset reuse.
+release-approved. A project-wide authorization such as ADR 0004 may cover a
+canonical collection independent of exact asset, role, context, transform, or
+revision; exact hashes and source records then prove engineering lineage rather
+than permission. No status grants standalone or outside-project asset reuse.
 `project-use-recorded` may remain in a development build only as an explicit
 release-blocked exception while formal terms are pending. The other statuses
 may not enter runtime. For every imported file, record:
@@ -352,16 +351,18 @@ silhouette hierarchy, or interaction clarity does not pass.
 
 - Move bundled character definitions out of `CharacterLoader.js` into a small
   cast manifest.
-- Add role, story-use, permission, and presentation behavior data.
+- Add role, story-use, source identity, and presentation behavior data; keep
+  authorization out of runtime cast state.
 - Keep the full remote collection index off the curated runtime path.
 - Implement the reversible three-Flower/three-Torch/one-Crown Second Witness
   refinement using only the already bundled local traits.
 - Build a pinned collection index, visual atlas, curation sidecar, and
   one-candidate-at-a-time technical probe for the complete trait library.
 - Keep Book/Friends Key, All Seeing, and Orb out of Trait Echo/environmental
-  runtime requests until their exact permission, provenance, and budgets are
-  approved. Remote full-token player streaming remains a separate
-  release-blocked development contract.
+  runtime requests until their exact variants, provenance, creative fit,
+  budgets, fallbacks, and QA are approved. Their permission already inherits
+  ADR 0004; remote full-token player streaming remains an engineering delivery
+  contract under the same authorization.
 
 ### Phase 4 — CC0 support batch
 
@@ -383,7 +384,7 @@ silhouette hierarchy, or interaction clarity does not pass.
 | `src/config/assets.js` | Parse baseline/pilot selection and expose immutable asset policy. |
 | `src/config/trait-echoes.js` | Define v1 semantics, placements, budgets, and non-runtime backlog entries. |
 | `src/config/town.js` | Add pilot IDs and placements without moving gameplay anchors. |
-| `src/content/friendsies-cast.js` | Curated tokens, traits, roles, story uses, and permission status. |
+| `src/content/friendsies-cast.js` | Curated tokens, traits, roles, story uses, and presentation data; no duplicated permission state. |
 | `src/visuals/TownAssetLoader.js` | Load versioned pilot roots with per-root fallback. |
 | `src/visuals/FriendsiesTraitEchoes.js` | Bake, instance, animate, and dispose environmental trait families. |
 | `src/visuals/BreathingGrass.js` | Generate one deterministic, quality-scaled meadow draw with authored clearances and static reduced-motion behavior. |
@@ -391,8 +392,8 @@ silhouette hierarchy, or interaction clarity does not pass.
 | `src/game/TownBuilder.js` | Select authored visuals and independent trait echoes while retaining interactables and colliders. |
 | `src/visuals/CozyTownKit.js` | Preserve procedural fallback factories. |
 | `scripts/build-village-dressing.py` | Generate and validate the arrival/plaza roots. |
-| `scripts/check-asset-budgets.mjs` | Enforce local/external manifest, size, and allowed-permission rules. |
-| `assets-src/<family>/SOURCE.md` | Record original source, permission, and transforms. |
+| `scripts/check-asset-budgets.mjs` | Enforce local/external manifest, source-integrity, authorization-family, and size rules. |
+| `assets-src/<family>/SOURCE.md` | Record original source, authorization reference or third-party terms, and transforms. |
 | `public/<family>/PROVENANCE.md` | Record runtime hashes and redistribution constraints. |
 | `tests/town-assets.test.js` | Verify roots, hierarchy, geometry, size, and fallback contracts. |
 | `tests/friendsies-cast.test.js` and Trait Echo tests | Verify exact trait resolution, excluded backlog, placement budgets, instancing, and story projection. |
@@ -413,9 +414,9 @@ silhouette hierarchy, or interaction clarity does not pass.
 - The story-state projections and reduced-motion behavior match the semantic
   contract in section 5.2 without changing saves or interactions.
 - Book/Friends Key, All Seeing, and Orb remain absent from Trait
-  Echo/environmental requests and bundled release assets. Arbitrary-token
-  player streaming is tracked separately and is release-authorized only for
-  integrated player-avatar assembly under its pinned manifest contract.
+  Echo/environmental requests and bundled release assets as a creative and
+  technical scope choice. Arbitrary-token player streaming retains its pinned
+  catalog, URL-prefix, token-range, and fallback contract under ADR 0004.
 - Blocking the pilot GLB still leaves a completable v0.3 route.
 - No curated cast member requires the full remote metadata index at runtime.
 - Both story endings, save restore, reset, collisions, and camera behavior remain

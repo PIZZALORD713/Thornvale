@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "friendsies-motion-source-pack-v1",
+  "id": "story-actions-v1",
+  "label": "Story Actions v1",
+  "rigProfile": "rig-profile.json",
+  "sourceRetrievedOn": "2026-07-12",
+  "rootMotionPolicy": "strip-wrapper-translation-bake-bounded-root-rotation",
+  "archives": {
+    "gestures-basic": {
+      "filename": "Gestures Pack Basic.zip",
+      "bytes": 1363387,
+      "sha256": "a02a546a2a5dae2eb0c68acafd6c77161f729aea58a3f8270f2ce03c6fef2a63",
+      "sourcePage": "https://www.mixamo.com/"
+    },
+    "farming": {
+      "filename": "Farming Pack.zip",
+      "bytes": 2635723,
+      "sha256": "14acbae8b09c9034c35639f458c08de06ef7dc4ba9e0aec29f9dfae8c63461b3",
+      "sourcePage": "https://www.mixamo.com/"
+    }
+  },
+  "clips": [
+    {
+      "id": "lumen.acknowledging",
+      "actor": "lumen",
+      "intent": "acknowledging",
+      "clipName": "story-actions-v1-lumen-acknowledging",
+      "archive": "gestures-basic",
+      "source": {
+        "member": "acknowledging.fbx",
+        "bytes": 228241,
+        "sha256": "ffc5c47a44565cb5796a2875d60ab468dab56b4687d0d1b925d2cbd06f1c8149"
+      },
+      "runtime": {
+        "filename": "lumen-acknowledging.glb",
+        "url": "/animations/story-actions-v1/lumen-acknowledging.glb"
+      },
+      "loop": "once",
+      "reducedMotion": "allowed-low-displacement"
+    },
+    {
+      "id": "lumen.happy-hand-gesture",
+      "actor": "lumen",
+      "intent": "welcome",
+      "clipName": "story-actions-v1-lumen-happy-hand-gesture",
+      "archive": "gestures-basic",
+      "source": {
+        "member": "happy hand gesture.fbx",
+        "bytes": 253873,
+        "sha256": "b4a200bdf82cdc614bf866203da0a8b7d0982f4abc2c1e4c96b824fb9b0bed49"
+      },
+      "runtime": {
+        "filename": "lumen-happy-hand-gesture.glb",
+        "url": "/animations/story-actions-v1/lumen-happy-hand-gesture.glb"
+      },
+      "loop": "once",
+      "reducedMotion": "allowed-low-displacement"
+    },
+    {
+      "id": "lumen.thoughtful-head-shake",
+      "actor": "lumen",
+      "intent": "polite-correction",
+      "clipName": "story-actions-v1-lumen-thoughtful-head-shake",
+      "archive": "gestures-basic",
+      "source": {
+        "member": "thoughtful head shake.fbx",
+        "bytes": 259649,
+        "sha256": "145c7d2304eda466ddf0e490cfca1e69f3140cb85a7bb08daec502c7edb94107"
+      },
+      "runtime": {
+        "filename": "lumen-thoughtful-head-shake.glb",
+        "url": "/animations/story-actions-v1/lumen-thoughtful-head-shake.glb"
+      },
+      "loop": "once",
+      "reducedMotion": "allowed-low-displacement"
+    },
+    {
+      "id": "lumen.relieved-sigh",
+      "actor": "lumen",
+      "intent": "relieved-approval",
+      "clipName": "story-actions-v1-lumen-relieved-sigh",
+      "archive": "gestures-basic",
+      "source": {
+        "member": "relieved sigh.fbx",
+        "bytes": 257425,
+        "sha256": "6b32d8d1714833d8564a38b1179e8441f8c18917812efdab79172cc6c1d0327c"
+      },
+      "runtime": {
+        "filename": "lumen-relieved-sigh.glb",
+        "url": "/animations/story-actions-v1/lumen-relieved-sigh.glb"
+      },
+      "loop": "once",
+      "reducedMotion": "allowed-low-displacement"
+    },
+    {
+      "id": "day-one.plant-seed",
+      "actor": "player",
+      "intent": "plant-seed",
+      "clipName": "story-actions-v1-day-one-plant-seed",
+      "archive": "farming",
+      "source": {
+        "member": "dig and plant seeds.fbx",
+        "bytes": 363761,
+        "sha256": "c5f7ba37645c69eb0e5a7535ba264127f7a201782b3e94ccf8dc4b2c64c0d46e"
+      },
+      "runtime": {
+        "filename": "day-one-plant-seed.glb",
+        "url": "/animations/story-actions-v1/day-one-plant-seed.glb"
+      },
+      "loop": "once",
+      "playback": {
+        "durationSeconds": 3.1,
+        "commitSeconds": 2.3,
+        "markers": [
+          { "id": "commit", "seconds": 2.3, "meaning": "The planting hand reaches the bed and seeded mounds appear." }
+        ]
+      },
+      "reducedMotion": "no-skeletal-motion-world-cue"
+    },
+    {
+      "id": "day-one.water-seed",
+      "actor": "player",
+      "intent": "water-seed",
+      "clipName": "story-actions-v1-day-one-water-seed",
+      "archive": "farming",
+      "source": {
+        "member": "watering.fbx",
+        "bytes": 368993,
+        "sha256": "6bce580e09d4fd580e3f2a2fe309d99546f46146cbe3d62bf2d46662a896afc4"
+      },
+      "runtime": {
+        "filename": "day-one-water-seed.glb",
+        "url": "/animations/story-actions-v1/day-one-water-seed.glb"
+      },
+      "loop": "once",
+      "playback": {
+        "durationSeconds": 3.2,
+        "commitSeconds": 2.35,
+        "markers": [
+          { "id": "commit", "seconds": 2.35, "meaning": "The pour reaches its planted-bed lean and the soil darkens." }
+        ]
+      },
+      "reducedMotion": "no-skeletal-motion-world-cue"
+    }
+  ]
+}

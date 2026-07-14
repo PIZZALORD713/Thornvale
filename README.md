@@ -44,13 +44,13 @@ Steward `#8914`. A code-native emergency visual appears only if the bundled
 decoder or both local fRiENDSiES families fail, keeping total asset failure
 playable without replacing the normal fRiENDSiES-first path.
 
-Arbitrary-token streaming is project-release-authorized under a bounded
-external dependency contract. Published Thornvale builds may use the pinned
-catalog for IDs `1`–`10000` and stream the selected token's player components
-only from `https://storage.googleapis.com`. This permits integrated in-game
-player rendering, not full-collection bundling, canonical/raw copying,
-mirroring, standalone packs, environmental reuse, sublicensing, unrelated-
-origin delivery, or use outside Thornvale.
+Canonical fRiENDSiES assets and metadata have standing project authorization
+for integrated Thornvale use. The current player loader intentionally pins one
+catalog revision, accepts IDs `1`–`10000`, and streams only the selected token's
+components from `https://storage.googleapis.com`; those are source-integrity,
+security, performance, and fallback constraints rather than permission limits.
+The authorization does not permit standalone packs, bulk raw collection mirrors
+or dumps, sublicensing, or reuse outside Thornvale.
 
 ### Visual quality controls
 
@@ -114,16 +114,16 @@ flower from the first proof were removed. `Book Of Ocean`, `Friends Key`, `All
 Seeing`, and `Orb` remain cataloged candidates only; none is loaded or shipped
 by v1.
 
-The exact manifested `#0001` Flower White and `#8914` Torch and Crown Up files,
-plus this documented Trait Echo v1 arrangement, are project-release-authorized
-for bundled Thornvale builds. Raw-source, standalone asset-pack, collection-
-wide bundling, and outside-project redistribution remain prohibited. A
-separate authorization permits bounded remote components only as a selected
-in-game player avatar; it does not approve those components for Trait Echo or
-environmental adaptation. Use `?traits=off` for the exact runtime rollback. See
-the [Trait Echo v1 QA
-record](docs/qa/2026-07-12-trait-echo-v1.md) and the adjacent trait provenance
-files for the exact boundary.
+These canonical files and their Thornvale-authored arrangement inherit the
+standing `friendsies-project` authorization. The same authorization covers
+future canonical fRiENDSiES characters, detached traits, hand items, sprouts,
+backpieces, tools, equipment, props, environments, UI, documentation, testing,
+promotional captures, streaming, local bundling or caching, optimization,
+transformation, and derivative runtime assets inside Thornvale. Exact source
+URLs, hashes, transforms, budgets, fallbacks, and QA remain required engineering
+evidence. Use `?traits=off` for the exact runtime rollback. See the [Trait Echo
+v1 QA record](docs/qa/2026-07-12-trait-echo-v1.md), adjacent provenance files,
+and [ADR 0004](docs/decisions/0004-friendsies-project-wide-authorization.md).
 
 ### fRiENDSiES trait library
 
@@ -131,7 +131,8 @@ The environmental trait library is indexed as development source data rather
 than fetched by the Trait Echo runtime. The pinned catalog covers all 10,000
 tokens, 1,077 named traits, and 1,447 distinct asset/preview variants while
 preserving the token IDs that use each visual. Shareable full-player links use
-the separately authorized and bounded ranged-metadata path described above.
+the bounded ranged-metadata implementation described above; both local and
+remote uses inherit the same project-wide authorization.
 
 ```bash
 npm run friendsies:index
@@ -257,10 +258,11 @@ npm run check
 
 `npm run check` runs the full test suite, production build, and development
 asset audit. `npm run assets:release` applies the stricter release gate. The
-exact animation derivatives, local character files, and documented Trait Echo
-v1 uses are approved for Thornvale releases. The arbitrary-token remote-player
-family is separately approved only under its pinned catalog, token-range,
-origin, integrated-player, and no-redistribution contract.
+canonical fRiENDSiES collection has one standing authorization for integrated
+Thornvale use; catalog pins, origins, hashes, transforms, budgets, fallbacks, and
+QA remain engineering release gates. The animation derivatives remain a
+separate `friendsies-animations` family because their Mixamo source chain has
+its own provenance contract.
 
 ### Build for Production
 ```bash

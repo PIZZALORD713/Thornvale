@@ -1,20 +1,21 @@
 # Default player fRiENDSiES #6602 runtime provenance
 
-## Permission status
+## Standing authorization
 
-- Manifest family ID: `friendsies-6602`
+- Manifest family ID: `friendsies-project`
 - Creator: fRiENDSiES
-- License or permission: the Thornvale project owner explicitly authorized the
-  seven exact manifested runtime files below as Thornvale's bundled default
-  player for publication in Thornvale builds on `2026-07-12`.
+- License or permission: ADR 0004 grants standing project-wide authorization
+  for present and future canonical fRiENDSiES assets in any integrated
+  Thornvale role, without per-token, per-file, per-context, or per-transform
+  approval.
 - Release blocked: no
 - Block reason: none
-- Runtime distribution: permitted only as integrated parts of bundled
-  Thornvale game builds.
+- Runtime distribution: permitted as integrated parts of Thornvale builds,
+  tools, documentation, testing, and Thornvale promotion.
 - Raw-source or standalone character-pack redistribution: prohibited by this
   record; canonical files remain external.
-- General reuse outside Thornvale or collection-wide bundling: not granted;
-  bounded remote in-game selection is authorized separately under ADR 0003.
+- Bulk raw collection mirrors, sublicensing, and reuse outside Thornvale are not
+  granted. Exact source and runtime hashes remain engineering evidence.
 
 ## Runtime contract
 
@@ -40,10 +41,11 @@
   fRiENDSiES families fail, so total asset failure still reaches play.
 - Known constraint: desktop Chromium-class browsers are the current target because the runtime GLBs require `EXT_texture_webp`.
 
-The authorization is hash-bound to the seven runtime files above. It does not
-authorize unmanifested `#6602` files, arbitrary fRiENDSiES token streaming, raw
-canonical sources, or standalone redistribution. The separate remote-player
-authorization in ADR 0003 does not broaden this exact local-file grant.
+The seven hashes above describe the current bundled default, not the boundary
+of permission. New canonical fRiENDSiES files, roles, and delivery paths inherit
+ADR 0004 without another approval, while raw standalone redistribution remains
+excluded and every shipped file still needs source, integrity, budget,
+fallback, and QA evidence.
 
 ## Verification
 

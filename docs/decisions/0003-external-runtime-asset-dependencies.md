@@ -3,6 +3,19 @@
 - Status: Accepted
 - Date: 2026-07-12
 
+> The narrow fRiENDSiES permission scope is superseded by
+> [ADR 0004](0004-friendsies-project-wide-authorization.md). This record's
+> external-dependency architecture plus pinned-catalog, origin, URL-prefix,
+> token-range, fallback, and manifest controls remain
+> engineering integrity constraints rather than separate permission limits.
+
+> Current fRiENDSiES amendment: the dependency references
+> `friendsies-project`, declares exact allowed asset URL prefixes in addition to
+> origins, and uses `runtimeUse` only as behavioral documentation. It must not
+> duplicate or narrow authorization in a dependency-level `reason`. Catalog,
+> origin, prefix, token-range, role, or delivery changes may require engineering
+> review and updated evidence, but not another permission decision.
+
 ## Context
 
 The asset manifest originally described only files committed under `public/`.

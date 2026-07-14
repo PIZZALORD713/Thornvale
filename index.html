@@ -2721,6 +2721,7 @@
 
       body:has(#lockOverlay:not(.hidden)) #hud,
       body:has(#lockOverlay:not(.hidden)) #dayNightBadge,
+      body:has(#lockOverlay:not(.hidden)) #survivalStatus,
       body:has(#lockOverlay:not(.hidden)) #instructions,
       body:has(#lockOverlay:not(.hidden)) #storyObjective,
       body:has(#lockOverlay:not(.hidden)) #interactionPrompt,
@@ -2733,6 +2734,7 @@
       /* Civic notes use one paper language and no mascot faces. */
       .status-toast,
       #dayNightBadge,
+      #survivalStatus,
       #kindnessCounter,
       #instructions,
       #interactionPrompt,
@@ -2856,6 +2858,125 @@
         color: var(--tv-ink-inverse);
         border-color: rgba(201, 203, 224, 0.28);
         background: rgba(37, 36, 60, 0.88);
+      }
+
+      #survivalStatus {
+        position: fixed;
+        top: calc(var(--safe-top) + 57px);
+        right: var(--safe-right);
+        width: 214px;
+        padding: 10px 11px 9px;
+        border: 1px solid color-mix(in srgb, var(--tv-edge) 80%, white);
+        border-radius: var(--tv-radius-control);
+        color: var(--tv-ink);
+        background: color-mix(in srgb, var(--tv-paper) 91%, transparent);
+        box-shadow: 0 9px 24px rgba(32, 28, 42, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+        backdrop-filter: blur(11px) saturate(0.96);
+        -webkit-backdrop-filter: blur(11px) saturate(0.96);
+        z-index: 1000;
+        transition: opacity 0.24s ease, transform 0.32s var(--ease-soft), visibility 0.24s;
+      }
+
+      #survivalStatus.hidden {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-5px);
+      }
+
+      .survival-heading {
+        margin-bottom: 7px;
+        color: var(--tv-primary);
+        font-size: 8px;
+        font-weight: 780;
+        letter-spacing: 0.17em;
+        line-height: 1.2;
+        text-transform: uppercase;
+      }
+
+      .survival-meter + .survival-meter {
+        margin-top: 7px;
+      }
+
+      .survival-meter-copy {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 3px;
+      }
+
+      .survival-meter-name {
+        color: var(--tv-ink);
+        font-size: 9px;
+        font-weight: 720;
+        letter-spacing: 0.04em;
+      }
+
+      .survival-meter-label {
+        overflow: hidden;
+        color: var(--tv-muted);
+        font-family: var(--document-font);
+        font-size: 10px;
+        font-weight: 640;
+        line-height: 1.2;
+        text-align: right;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .survival-meter-track {
+        height: 6px;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--tv-edge) 72%, transparent);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--tv-panel) 72%, white);
+      }
+
+      .survival-meter-fill {
+        display: block;
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--tv-secondary);
+        transition: width 0.42s var(--ease-soft);
+      }
+
+      #energyMeter .survival-meter-fill {
+        background: var(--tv-signal);
+      }
+
+      .survival-essentials {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 9px;
+        padding-top: 7px;
+        border-top: 1px solid color-mix(in srgb, var(--tv-edge) 62%, transparent);
+        list-style: none;
+      }
+
+      .survival-essential {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 4px;
+        min-width: 0;
+        color: var(--tv-muted);
+        font-size: 8px;
+        font-weight: 690;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .survival-essential + .survival-essential {
+        border-left: 1px solid color-mix(in srgb, var(--tv-edge) 54%, transparent);
+      }
+
+      .survival-essential strong {
+        color: var(--tv-ink);
+        font-family: var(--document-font);
+        font-size: 11px;
+        font-weight: 720;
+        letter-spacing: 0;
       }
 
       .celestial-icon {
@@ -3290,11 +3411,15 @@
         }
 
         .phase-dot { display: none; }
-        #hud { top: calc(var(--safe-top) + 55px); max-width: calc(100vw - 24px); }
-        .status-toast { width: calc(100vw - 24px); }
+        #hud { top: calc(var(--safe-top) + 55px); max-width: calc(100vw - 204px); }
+        .status-toast { width: 100%; }
         #statusLine { max-width: calc(100vw - 85px); }
+        #survivalStatus {
+          top: calc(var(--safe-top) + 55px);
+          width: 180px;
+        }
         #storyObjective {
-          top: calc(var(--safe-top) + 112px);
+          top: calc(var(--safe-top) + 174px);
           width: calc(100vw - 24px);
         }
 
@@ -3308,6 +3433,8 @@
       }
 
       @media (max-width: 420px) {
+        #hud { max-width: calc(100vw - 188px); }
+        #survivalStatus { width: 164px; }
         #lockOverlay h1 { font-size: clamp(47px, 15vw, 61px); }
         .brand-sigil-wrap { margin-bottom: 15px; }
         .intro-tagline { font-size: 16px; }
@@ -3342,11 +3469,16 @@
           animation-iteration-count: 1 !important;
           transition-duration: 0.01ms !important;
         }
+
+        .survival-meter-fill {
+          transition: none;
+        }
       }
 
       @media (prefers-contrast: more) {
         .status-toast,
         #dayNightBadge,
+        #survivalStatus,
         #interactionPrompt,
         #instructions,
         #storyObjective,
@@ -3355,6 +3487,11 @@
         .welcome-card {
           border-width: 2px;
           background-color: #fffaf0;
+        }
+
+        .survival-meter-track {
+          border-width: 2px;
+          background: #fffaf0;
         }
 
         .story-choice:focus-visible,
@@ -3496,6 +3633,67 @@
         </span>
         <span class="phase-dot" aria-hidden="true"></span>
       </div>
+
+      <aside
+        id="survivalStatus"
+        class="hidden"
+        aria-label="Day one survival status"
+        aria-hidden="true"
+      >
+        <p class="survival-heading">Camp essentials</p>
+
+        <div class="survival-meter">
+          <div class="survival-meter-copy" aria-hidden="true">
+            <span class="survival-meter-name">Nourishment</span>
+            <span id="nourishmentLabel" class="survival-meter-label">—</span>
+          </div>
+          <div
+            id="nourishmentMeter"
+            class="survival-meter-track"
+            role="progressbar"
+            aria-label="Nourishment"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            aria-valuetext="Not yet available"
+          >
+            <span class="survival-meter-fill"></span>
+          </div>
+        </div>
+
+        <div class="survival-meter">
+          <div class="survival-meter-copy" aria-hidden="true">
+            <span class="survival-meter-name">Energy</span>
+            <span id="energyLabel" class="survival-meter-label">—</span>
+          </div>
+          <div
+            id="energyMeter"
+            class="survival-meter-track"
+            role="progressbar"
+            aria-label="Energy"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            aria-valuetext="Not yet available"
+          >
+            <span class="survival-meter-fill"></span>
+          </div>
+        </div>
+
+        <ul class="survival-essentials" aria-label="Supplies">
+          <li class="survival-essential"><span>Wood</span><strong id="survivalWood">0</strong></li>
+          <li class="survival-essential"><span>Fish</span><strong id="survivalFish">0</strong></li>
+          <li class="survival-essential"><span>Seeds</span><strong id="survivalSeeds">0</strong></li>
+        </ul>
+      </aside>
+
+      <p
+        id="survivalAnnouncement"
+        class="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      ></p>
 
       <div id="interactionPrompt" class="hidden" role="status" aria-live="polite" aria-hidden="true">
         <span class="prompt-spark" aria-hidden="true"></span>

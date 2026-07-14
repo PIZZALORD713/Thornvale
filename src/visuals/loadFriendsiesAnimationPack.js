@@ -1,7 +1,8 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationUtils } from 'three';
+import { STORY_ACTIONS_V1 } from '../content/story-actions-v1.js';
 
-const SOURCES = [
+const BASE_SOURCES = [
   '/animations/friendsies-walk.glb',
   '/animations/friendsies-joy-jump.glb',
   '/animations/friendsies-dance-rumba.glb',
@@ -57,16 +58,34 @@ export function deriveFriendsiesLocomotionClips(source, fps = 30) {
   return [...clips, ...derived];
 }
 
-/** Load the optimized animation-only fRiENDSiES pack once per page. */
+async function loadStoryActionSources() {
+  try {
+    const response = await fetch(STORY_ACTIONS_V1.catalogUrl, { cache: 'no-cache' });
+    if (!response.ok) throw new Error(`Story action catalog returned ${response.status}`);
+    const catalog = await response.json();
+    if (catalog?.id !== STORY_ACTIONS_V1.id || !Array.isArray(catalog.clips)) {
+      throw new TypeError('Story action catalog contract did not match story-actions-v1');
+    }
+    return catalog.clips
+      .map((clip) => clip?.url)
+      .filter((url) => typeof url === 'string' && url.startsWith('/animations/'));
+  } catch (error) {
+    console.warn('[FriendsiesAnimator] Optional story-actions-v1 catalog was skipped:', error);
+    return [];
+  }
+}
+
+/** Load the optimized animation-only fRiENDSiES packs once per page. */
 export function loadFriendsiesAnimationPack() {
   if (animationPackPromise) return animationPackPromise;
 
-  animationPackPromise = Promise.allSettled(
-    SOURCES.map(async (url) => {
-      const gltf = await new GLTFLoader().loadAsync(url);
-      return gltf.animations || [];
-    }),
-  )
+  animationPackPromise = loadStoryActionSources()
+    .then((storySources) => Promise.allSettled(
+      [...BASE_SOURCES, ...storySources].map(async (url) => {
+        const gltf = await new GLTFLoader().loadAsync(url);
+        return gltf.animations || [];
+      }),
+    ))
     .then((results) => {
       const clips = results
         .filter((result) => result.status === 'fulfilled')
@@ -74,7 +93,7 @@ export function loadFriendsiesAnimationPack() {
       if (clips.length === 0) throw new Error('No fRiENDSiES animation clips could be loaded');
       for (const result of results) {
         if (result.status === 'rejected') {
-          console.warn('[FriendsiesAnimator] One animation file was skipped:', result.reason);
+          console.warn('[FriendsiesAnimator] One optional animation file was skipped:', result.reason);
         }
       }
       return deriveFriendsiesLocomotionClips(clips);

@@ -1,5 +1,9 @@
 # 2026-07-12 fRiENDSiES #6602 default-player QA
 
+> Historical authorization note: ADR 0004 superseded the narrow fRiENDSiES
+> permission scopes in this record on 2026-07-13. Preserve the QA evidence
+> below; canonical fRiENDSiES assets now share one standing Thornvale-wide grant.
+
 ## Scope and decision gate
 
 - Worktree: `codex/asset-overhaul-test`, dirty with pre-existing asset-overhaul work.

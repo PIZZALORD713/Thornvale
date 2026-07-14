@@ -11,13 +11,16 @@ player-facing quality bar; this page defines the repository handoff.
 3. Complete the browser smoke pass in [`../qa`](../qa/README.md).
 4. Run `npm run assets:release`; resolve every release-blocked asset family.
 5. Confirm every shipped third-party or transformed asset has its source,
-   product-use scope, and raw or standalone redistribution boundary recorded in
-   its adjacent `PROVENANCE.md`.
-6. Confirm every external runtime dependency still matches its authorized
-   pinned catalog, token scope, asset origins, and in-game role. The current
-   fRiENDSiES grant covers integrated remote player avatars in published
-   Thornvale builds only; it does not cover catalog mirroring, local collection
-   bundling, environmental reuse, or outside-project delivery.
+   applicable authorization or license, transform, and raw or standalone
+   redistribution boundary recorded in its adjacent `PROVENANCE.md`.
+6. Confirm every external runtime dependency still matches its pinned catalog,
+   token scope, approved asset origins, fallback, and declared runtime behavior.
+   Canonical fRiENDSiES assets and metadata inherit the standing
+   `friendsies-project` authorization for any integrated Thornvale use; these
+   checks verify source and runtime integrity rather than reopening permission.
+   Standalone packs, bulk raw mirrors or dumps, sublicensing, and outside-project
+   reuse remain excluded. Keep `friendsies-animations` on its separate Mixamo
+   provenance contract.
 7. Confirm `dist/` is generated from the candidate rather than treated as source.
 8. Update [`../../wiki/Changelog.md`](../../wiki/Changelog.md) with player-visible
    changes and known limitations.

@@ -7,20 +7,9 @@
  * collection token.
  */
 
-export const FRIENDSIES_LICENSE_STATUS = Object.freeze({
-  PROJECT_RELEASE_AUTHORIZED: 'project-release-authorized',
-});
-
-export const FRIENDSIES_REDISTRIBUTION_STATUS = Object.freeze({
-  THORNVALE_BUNDLED_ONLY: 'thornvale-bundled-only',
-});
-
 export const DEFAULT_PLAYER_FRIENDSIES_TOKEN_ID = 6602;
 export const PLAYER_FRIENDSIES_FALLBACK_TOKEN_IDS = Object.freeze([6602, 8914]);
 
-const PROJECT_RELEASE_AUTHORIZED = FRIENDSIES_LICENSE_STATUS.PROJECT_RELEASE_AUTHORIZED;
-const THORNVALE_BUNDLED_ONLY = FRIENDSIES_REDISTRIBUTION_STATUS.THORNVALE_BUNDLED_ONLY;
-const RUNTIME_DISTRIBUTION_SCOPE = 'bundled-thornvale-game-builds-only';
 const SOFT_WHITE_HEAD_EMISSION = Object.freeze({
   color: 0xffffff,
   emissiveIntensity: 0.22,
@@ -44,11 +33,6 @@ function curatedTrait(sourceTokenId, traitType, value, assetUrl, options = {}) {
     value,
     asset_url: assetUrl,
     sourceTokenId,
-    licenseStatus: PROJECT_RELEASE_AUTHORIZED,
-    redistributionStatus: THORNVALE_BUNDLED_ONLY,
-    runtimeDistributionScope: RUNTIME_DISTRIBUTION_SCOPE,
-    rawSourceRedistribution: false,
-    releaseBlocked: false,
     ...options,
   };
 }
@@ -61,11 +45,6 @@ function castEntry(tokenId, role, storyUse, attributes) {
     bundledCharacter: attributes.some((trait) => (
       trait.trait_type === 'body' && Boolean(trait.asset_url)
     )),
-    licenseStatus: PROJECT_RELEASE_AUTHORIZED,
-    redistributionStatus: THORNVALE_BUNDLED_ONLY,
-    runtimeDistributionScope: RUNTIME_DISTRIBUTION_SCOPE,
-    rawSourceRedistribution: false,
-    releaseBlocked: false,
     source: {
       collection: 'fRiENDSiES',
       tokenId,

@@ -17,6 +17,9 @@ export const RELEASE_APPROVED_RUNTIME_STATUSES = Object.freeze([
 const RELEASE_APPROVED_STATUS_SET = new Set(RELEASE_APPROVED_RUNTIME_STATUSES);
 const DEVELOPMENT_EXCEPTION_STATUS = 'project-use-recorded';
 const PROJECT_RELEASE_AUTHORIZED_STATUS = 'project-release-authorized';
+export const FRIENDSIES_PROJECT_FAMILY_ID = 'friendsies-project';
+export const FRIENDSIES_REMOTE_PLAYER_DEPENDENCY_ID = 'friendsies-remote-player-streaming';
+export const FRIENDSIES_CANONICAL_ASSET_URL_PREFIX = 'https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/';
 
 function formatBytes(bytes) {
   return `${bytes.toLocaleString('en-US')} B`;
@@ -151,6 +154,24 @@ function parseHttpsUrl(value, label, errors) {
   }
 }
 
+function isCanonicalFriendsiesAssetUrl(value) {
+  return typeof value === 'string'
+    && value.startsWith(FRIENDSIES_CANONICAL_ASSET_URL_PREFIX);
+}
+
+export function validateFriendsiesProjectAssetAuthorization(asset) {
+  const errors = [];
+  const label = asset?.id ? `asset ${asset.id}` : 'asset with missing id';
+  const canonicalSource = isCanonicalFriendsiesAssetUrl(asset?.source?.url);
+  if (canonicalSource && asset?.family !== FRIENDSIES_PROJECT_FAMILY_ID) {
+    errors.push(`${label} must inherit standing authorization from family ${FRIENDSIES_PROJECT_FAMILY_ID}`);
+  }
+  if (asset?.family === FRIENDSIES_PROJECT_FAMILY_ID && !canonicalSource) {
+    errors.push(`${label} claims ${FRIENDSIES_PROJECT_FAMILY_ID} without a canonical fRiENDSiES source URL`);
+  }
+  return errors;
+}
+
 /**
  * Validate network-fetched creative media that never appears under public/.
  * The returned errors are folded into the aggregate asset audit so tests can
@@ -204,15 +225,13 @@ export function validateExternalRuntimeDependencies(manifest) {
       } else {
         errors.push(`${label} uses status ${family.status}, which is neither release-approved nor an explicit release-blocked development exception`);
       }
-      const expectedReason = family.releaseBlocked
-        ? family.releaseBlockReason
-        : family.licenseOrPermission;
-      const expectedReasonField = family.releaseBlocked
-        ? 'releaseBlockReason'
-        : 'licenseOrPermission';
-      if (dependency.reason !== expectedReason) {
-        errors.push(`${label} reason must match family ${dependency.family} ${expectedReasonField}`);
-      }
+    }
+
+    if (
+      id === FRIENDSIES_REMOTE_PLAYER_DEPENDENCY_ID
+      && dependency.family !== FRIENDSIES_PROJECT_FAMILY_ID
+    ) {
+      errors.push(`${label} must inherit standing authorization from family ${FRIENDSIES_PROJECT_FAMILY_ID}`);
     }
 
     const catalog = dependency.metadataCatalog;
@@ -244,6 +263,25 @@ export function validateExternalRuntimeDependencies(manifest) {
       }
     }
 
+    if (!Array.isArray(dependency.allowedAssetUrlPrefixes) || dependency.allowedAssetUrlPrefixes.length === 0) {
+      errors.push(`${label} allowedAssetUrlPrefixes must be a non-empty array`);
+    } else {
+      const seenPrefixes = new Set();
+      for (const prefix of dependency.allowedAssetUrlPrefixes) {
+        const url = parseHttpsUrl(prefix, `${label} allowed asset URL prefix`, errors);
+        if (url && !prefix.endsWith('/')) {
+          errors.push(`${label} allowed asset URL prefix must end with /: ${prefix}`);
+        }
+        if (url && !dependency.allowedAssetOrigins?.includes(url.origin)) {
+          errors.push(`${label} allowed asset URL prefix must belong to an allowed origin: ${prefix}`);
+        }
+        if (seenPrefixes.has(prefix)) {
+          errors.push(`${label} has duplicate allowed asset URL prefix: ${prefix}`);
+        }
+        seenPrefixes.add(prefix);
+      }
+    }
+
     const scope = dependency.tokenScope;
     if (!scope || typeof scope !== 'object' || Array.isArray(scope)) {
       errors.push(`${label} must declare tokenScope`);
@@ -259,10 +297,13 @@ export function validateExternalRuntimeDependencies(manifest) {
       }
     }
 
-    for (const field of ['runtimeUse', 'reason']) {
+    for (const field of ['runtimeUse']) {
       if (typeof dependency[field] !== 'string' || dependency[field].length === 0) {
         errors.push(`${label} must declare ${field}`);
       }
+    }
+    if (Object.hasOwn(dependency, 'reason')) {
+      errors.push(`${label} must not duplicate authorization prose in reason; authorization comes from its family`);
     }
   }
 
@@ -376,6 +417,8 @@ export async function runAssetAudit({
         }
       }
     }
+
+    errors.push(...validateFriendsiesProjectAssetAuthorization(asset));
 
     if (typeof asset.runtime !== 'boolean') errors.push(`${label} runtime must be boolean`);
     if (!Number.isInteger(asset.bytes) || asset.bytes < 0) errors.push(`${label} bytes must be a non-negative integer`);

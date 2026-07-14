@@ -115,7 +115,10 @@ export const TRAIT_ECHO_V1 = deepFreeze({
           cluster: 'bell',
           socket: 'sconce',
           witnessRole: 'ritual',
-          position: [2.44, 1.48, -1.70],
+          anchor: {
+            landmark: 'bell',
+            offset: [-0.56, 1.48, 0.30],
+          },
           height: 1.00,
           yaw: Math.PI,
         },
@@ -151,7 +154,8 @@ export const TRAIT_ECHO_V1 = deepFreeze({
 
 /**
  * Named extension points only. These are not runtime assets and carry no URL;
- * each pair must complete permission, provenance, and budget review first.
+ * each pair inherits the standing fRiENDSiES authorization but still must
+ * complete exact-variant, provenance, geometry, budget, fallback, and QA review.
  */
 export const TRAIT_ECHO_BACKLOG = deepFreeze([
   {
