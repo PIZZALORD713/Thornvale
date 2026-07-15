@@ -23,8 +23,8 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
 
 ## Implementation evidence — updated 2026-07-14
 
-- `npm run check` passed with 216/216 deterministic tests, a production Vite
-  build, the asset audit, and an 8,388,469 / 8,388,608 byte production bundle.
+- `npm run check` passed with 217/217 deterministic tests, a production Vite
+  build, the asset audit, and an 8,388,570 / 8,388,608 byte production bundle.
 - Focused coverage proves the clean resource loop, zero-energy fire/cook/eat recovery, pass-out fee and debt branches, retained progress, save migration, Day One world projection, survival HUD accessibility, and the Day One-to-Ledger gate.
 - An independent code review found no progression, recovery, migration, or Ledger-unlock blockers.
 - Browser smoke at 1280×720 confirmed the welcome screen, arrival letter, first objective, pointer-lock handoff, town presentation, and an error-free console. The pilot and `?assets=baseline&traits=off` variants both booted cleanly after the camp relocation.
@@ -45,6 +45,11 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
   the Community Ledger objective; detailed plant, water, reduced-motion,
   missing-catalog, failed-file, and save-boundary evidence is recorded in the
   Story Actions QA record.
+- A targeted Chromium cooking pass used an actual `E` interaction and confirmed
+  that the fish and center rod roll around their horizontal axis while the rack
+  root and both support stakes remain fixed. The rotor restored on completion,
+  reduced motion committed without transient rotation, and the console remained
+  free of warnings and errors.
 - The browser harness cannot hold continuous WASD input long enough for a representative 3D route traversal. The full walkable clean run and intentional pass-out run therefore remain manual playtest gates; they are not claimed as browser-validated here.
 - A targeted Chromium recovery pass used actual `E` inputs for both branches:
   unrepaired exhaustion settled at the front-gate spawn `(0, ~0.91, 14)`,
