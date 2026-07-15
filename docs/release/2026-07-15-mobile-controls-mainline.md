@@ -67,6 +67,22 @@ Detailed measurements and the physical-device gate are recorded in
 
 ## Publication
 
-The candidate is verified locally and ready for the normal PR, Git-integrated
-Vercel deployment, exact-bundle check, and production smoke. Merge commit,
-deployment identity, and live asset hash must be appended after publication.
+- Pull request: [`#21`](https://github.com/PIZZALORD713/Thornvale/pull/21),
+  merged 2026-07-15
+- Feature commit: `93c47d3e5c44cc746b1b3649c2f386a790195b76`
+- Mainline merge commit: `719f23b89c0b2c8f15dd4d3ba26641d2250b1d1f`
+- GitHub/Vercel production deployment: `5457506153`, successful at
+  2026-07-15 13:05:22 UTC
+- Immutable deployment URL:
+  `https://thornvale-i4mpolw2i-pizzalords-projects.vercel.app`
+- Production alias: `https://thornvale.vercel.app`
+- Live application asset: `assets/index-CNX6_PYE.js`, matching the candidate
+  build
+
+Production smoke passed at 390x844 for touch entry, story-card blocking and
+restore, simultaneous movement/look, outer-band sprint, and neutral release.
+The modern and classic touch presentations both resolved correctly; the desktop
+override kept touch hidden/inert and retained keyboard movement. Fresh sessions
+reported zero warnings and zero errors. The manifest, all three retained
+fRiENDSiES provenance URLs, and the minified Draco decoder returned HTTP 200;
+the live decoder is the expected 487,515 bytes.
