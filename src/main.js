@@ -330,6 +330,8 @@ async function init() {
       resetPlayer: resetPlayerToArrival,
       isDayOneComplete: () => dayOneDirector?.isComplete() ?? false,
       getDayOneObjective: () => dayOneDirector?.currentObjective() || null,
+      getDayOneLedgerRecord: () => dayOneDirector?.ledgerRecordFor() || null,
+      getStewardPosition: () => stewardActor?.position || null,
       setStoryBlocking: handleStoryBlocking,
       onError: (error) => {
         console.error('[CoreHookDirector]', error);
@@ -546,9 +548,14 @@ function moveSteward(anchor, options = {}) {
   return stewardActor;
 }
 
-function resetPlayerToArrival() {
+function resetPlayerToArrival(position = null) {
   if (!playerController || !playerSpawnPoint) return;
-  playerController.teleport(playerSpawnPoint);
+  const target = position?.isVector3
+    ? position.clone()
+    : position
+      ? new Vector3(position.x, position.y, position.z)
+      : playerSpawnPoint;
+  playerController.teleport(target);
   configureCameraRig(cameraRig);
   cameraRig.resetPosition();
 }
@@ -592,13 +599,46 @@ async function recoverPlayerAfterPassOut({ recoverySite = 'gate' } = {}) {
   soundscape?.playInteraction?.('magic');
 }
 
-function ringAnomalyBell() {
+function playAnomalyBellEffects() {
   worldAnimator?.ringBell?.();
   soundscape?.playChime?.('bell', { gain: 0.68, detune: -450 });
   const bell = CORE_HOOK_V03.anchors.interactables.bell;
   const position = new Vector3(bell.x, bell.y + 1.25, bell.z);
   vfx?.interactionBurst(position, 'magic');
-  postProcessing?.pulse(0.72);
+  postProcessing?.pulse(reducedMotion ? 0.38 : 0.72);
+}
+
+async function ringAnomalyBell({ onReveal } = {}) {
+  const shot = CORE_HOOK_V03.anchors.camera?.secondBell;
+  const reveal = () => {
+    onReveal?.();
+    playAnomalyBellEffects();
+  };
+  if (reducedMotion || !shot || !cameraRig?.playFocusShot) {
+    reveal();
+    return;
+  }
+
+  let revealed = false;
+  playerController?.setActionLocked?.(true);
+  try {
+    await cameraRig.playFocusShot({
+      position: shot.position,
+      lookAt: shot.lookAt,
+      flyIn: CORE_HOOK_V03.timing.bellRevealFlyIn,
+      hold: CORE_HOOK_V03.timing.bellRevealHold,
+      flyOut: CORE_HOOK_V03.timing.bellRevealFlyOut,
+      onReveal: () => {
+        revealed = true;
+        reveal();
+      },
+    });
+  } catch (error) {
+    console.warn('[CameraRig] Second-Bell reveal failed; using direct presentation.', error);
+    if (!revealed) reveal();
+  } finally {
+    playerController?.setActionLocked?.(false);
+  }
 }
 
 function applyStoryRoute(choice) {
@@ -1022,6 +1062,13 @@ function updateAudio(dt) {
 }
 
 function handleGlobalInput() {
+  if (
+    cameraRig?.isFocusShotActive?.()
+    && inputManager.consumeKeyPress('KeyE')
+  ) {
+    cameraRig.skipFocusShot();
+  }
+
   const requestedTimeToggle = inputManager.consumeKeyPress('KeyN');
   if (requestedTimeToggle && (!storyEnabled || debugEnabled)) {
     const mode = dayNightSystem.toggle();
@@ -1123,6 +1170,7 @@ function onResize() {
 }
 
 function dispose() {
+  cameraRig?.cancelFocusShot?.();
   if (cameraOcclusionTarget) {
     cameraOcclusionTarget.visible = cameraOcclusionTarget.userData
       ?.cameraAuthoredVisibility ?? true;

@@ -16,8 +16,13 @@ change; run it with `-- --dist` after a production build to enforce the complete
 assets-src/<asset-family>/
   -> documented export or optimization
   -> public/<asset-family>/
-  -> copied unchanged into dist/ by Vite
+  -> runtime files copied into dist/ by Vite
 ```
+
+Repository-only Markdown stays adjacent to its runtime family under `public/`
+for provenance and review. The production build omits unreferenced `.md` files,
+but retains provenance paths declared by the runtime cast manifest. Stable
+runtime asset and declared provenance URLs are copied unchanged.
 
 - Add a real asset-family subdirectory only when source files arrive.
 - Include source URL or creator, license/permission, acquisition date, and export

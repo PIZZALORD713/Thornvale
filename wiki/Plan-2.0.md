@@ -16,8 +16,8 @@
 The first Milestone 1 implementation is now playable end to end. This is a proof build, not an exit-gate claim: the five required fresh-player sessions and learning review still remain. On 2026-07-13, the next proof was deliberately expanded into one complete first day so the cozy actions can earn the later social-horror turn instead of functioning as disconnected feature promises.
 
 - fRiENDSiES `#8914` is the starting steward, Steward Lumen, with white head emission restored and capsule-relative foot alignment.
-- The letter → welcome → Ledger → dusk bell → supernatural second bell → false record → correction → comply/alter sequence is complete.
-- The approved Day One Proof inserts a provisional forest-edge camp and one bounded survival loop between the welcome and the Ledger: gather six wood, catch and cook one fish, eat, plant and water one seed bed, and patch the shelter.
+- The letter → welcome → Ledger enrollment → recorded Day One chores → dusk bell → return toward Lumen → supernatural second bell → false record → correction → comply/alter sequence is complete.
+- The approved Day One Proof begins after Ledger enrollment at a provisional forest-edge camp: gather six wood, catch and cook one fish, eat, plant and water one seed bed, and patch the shelter while the Ledger truthfully records each action.
 - Nourishment and energy make food useful. Running out of working energy causes a recoverable pass-out and a clinic fee or debt without deleting progress or inventory. The front gate is the safe wake point until repairing the shelter establishes camp as the new one.
 - Story time replaces the player-facing day/night toggle; `N` is available only after enabling debug mode.
 - Neighborliness, relationship, rules, events, choice, phase, and ending persist in a versioned local save with reset and corrupt-save recovery.
@@ -25,7 +25,7 @@ The first Milestone 1 implementation is now playable end to end. This is a proof
 - fRiENDSiES idle, walk, joy-jump, and rumba clips are bound through the collection's canonical skeleton. Runtime derivatives and provenance are recorded under `public/animations/`.
 - ADR 0004 grants standing project-wide authorization for present and future canonical fRiENDSiES assets in any integrated Thornvale role—including player/NPC assembly, hand items, sprouts, backpieces, equipment, props, environment, UI, and promotion—without per-token, per-role, per-context, per-transform, or per-revision approval. Shareable player links still use the pinned IDs `1..10000` catalog and exact canonical asset prefix as integrity/security controls; standalone packs, bulk raw mirrors, sublicensing, and outside-project reuse remain excluded.
 - ADR 0005 separately grants standing project-owner authorization for all current and future animation sources and derivatives the owner controls or may lawfully use in any integrated Thornvale role, without per-file, per-clip, per-pack, per-role, per-transform, or per-revision approval. Upstream licenses and exact source lineage remain mandatory release evidence; raw source redistribution, standalone motion packs, sublicensing, and outside-Thornvale use remain excluded. Animation provenance is not merged into canonical fRiENDSiES provenance.
-- Automated state tests cover strict ordering, both anomaly triggers, anomaly idempotency across reload, both endings, save restoration, reset, and corrupt-save recovery.
+- Automated state tests cover strict ordering, the return-route anomaly trigger, anomaly idempotency across reload, both endings, save restoration, reset, and corrupt-save recovery.
 
 The immediate next gate is the bounded [Day One Action Weight](Day-One-Action-Weight.md) pass, followed by observational proof: complete the loop from a clean save, recover from an intentional pass-out, then run five clean first-play sessions. Capture completion time, help requests, optional activity, comprehension of food and energy, whether the actions feel grounded rather than tedious, and whether the Bell turn still lands before adding another day, villager, or broad system.
 
@@ -102,7 +102,7 @@ Multiplayer, broad crafting systems, and procedural content stay behind validati
 
 ### Selected slice premise
 
-The player arrives with a letter in their own handwriting that they do not remember writing. A town steward welcomes them and points them to a provisional plot where the meadow meets the forbidden forest. The player gathers enough to eat, tend one seed bed, and patch the shelter before completing two harmless courtesies: enter their name in the Community Ledger and ring the Town Bell at dusk. A permanent Thornvale home is something the player will be granted later, not something they begin with.
+The player arrives with a letter in their own handwriting that they do not remember writing. A town steward welcomes them, explains the Community Ledger, and asks them to enter their name before settling a provisional plot where the meadow meets the forbidden forest. The Ledger truthfully records the wood they gather, meal they make, seed bed they tend, and shelter they patch. At dusk they complete the second harmless courtesy by ringing the Town Bell once, then start back toward Lumen. A permanent Thornvale home is something the player will be granted later, not something they begin with.
 
 The ledger later records an action the player has not taken. At night, the bell rings by itself. The steward returns with a kind correction. The player can comply with the town's version of events or alter the record. That choice changes the next route, the town's response, and the slice ending.
 
@@ -221,11 +221,11 @@ Estimates are sequencing aids, not commitments. Re-estimate after Milestone 0 on
 
 1. Arrive with the unexplained letter.
 2. Meet the steward and learn where the provisional forest-edge plot was kept for you.
-3. Gather wood, catch and cook a fish, eat, plant and water one seed bed, and patch the shelter in any safe order.
-4. Complete the Ledger and Bell routine.
-5. Learn one rule indirectly.
-6. Advance into night through story state, not a player-facing toggle.
-7. Witness the ledger or bell anomaly.
+3. Enter your name in the Community Ledger and learn that it keeps the town’s shared account.
+4. Gather wood, catch and cook a fish, eat, plant and water one seed bed, and patch the shelter in any safe order while those actions are recorded.
+5. Ring the Bell once at dusk and begin returning to Lumen.
+6. Hear and see the impossible second ring during the return journey.
+7. Find the truthful account replaced by a false correction.
 8. Receive an escalating polite intervention.
 9. Comply or resist.
 10. See a changed route, response, and short resolution.

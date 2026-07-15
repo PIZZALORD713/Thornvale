@@ -202,6 +202,7 @@ export function projectTraitEchoStoryState(snapshot = null) {
   const choice = snapshot?.choices?.[CORE_HOOK_V03.ids.choice] || null;
   const stewardMet = hasEvent(snapshot, events.stewardMet);
   const ledgerSigned = hasEvent(snapshot, events.ledgerSigned);
+  const firstAfternoonComplete = hasEvent(snapshot, events.firstAfternoonComplete);
   const firstBellRung = hasEvent(snapshot, events.firstBellRung);
   const anomalyBellRang = hasEvent(snapshot, events.anomalyBellRang);
   const falseRecordSeen = hasEvent(snapshot, events.falseRecordSeen);
@@ -218,7 +219,12 @@ export function projectTraitEchoStoryState(snapshot = null) {
     torchFlicker: true,
   };
 
-  if (ledgerSigned && !firstBellRung) {
+  if (ledgerSigned && !firstAfternoonComplete) {
+    Object.assign(result, {
+      id: 'registered',
+      torchEmissive: 0.20,
+    });
+  } else if (ledgerSigned && firstAfternoonComplete && !firstBellRung) {
     Object.assign(result, {
       id: 'dusk-guidance',
       bellLight: 0.30,

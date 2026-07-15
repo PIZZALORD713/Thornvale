@@ -239,19 +239,26 @@ test('fRiENDSiES route flowers can replace the 56 central procedural placeholder
   assert.equal(countFlowers(curatedNature), 52);
 });
 
-test('story projection is pure across arrival, dusk, anomaly, intervention, and both choices', () => {
+test('story projection is pure across registration, dusk, anomaly, intervention, and both choices', () => {
   const events = CORE_HOOK_V03.events;
   const arrival = storySnapshot();
-  const dusk = storySnapshot([events.stewardMet, events.ledgerSigned]);
+  const registered = storySnapshot([events.stewardMet, events.ledgerSigned]);
+  const dusk = storySnapshot([
+    events.stewardMet,
+    events.ledgerSigned,
+    events.firstAfternoonComplete,
+  ]);
   const anomaly = storySnapshot([
     events.stewardMet,
     events.ledgerSigned,
+    events.firstAfternoonComplete,
     events.firstBellRung,
     events.anomalyBellRang,
   ]);
   const postBell = storySnapshot([
     events.stewardMet,
     events.ledgerSigned,
+    events.firstAfternoonComplete,
     events.firstBellRung,
   ]);
   const intervention = storySnapshot([
@@ -268,6 +275,7 @@ test('story projection is pure across arrival, dusk, anomaly, intervention, and 
   ], 'alter');
   const inputsBeforeProjection = structuredClone({
     arrival,
+    registered,
     dusk,
     anomaly,
     postBell,
@@ -283,6 +291,16 @@ test('story projection is pure across arrival, dusk, anomaly, intervention, and 
     ledgerFlowerLean: 0,
     crownTilt: 0,
     torchEmissive: 0.08,
+    bellLight: 0,
+    torchFlicker: true,
+  });
+  assert.deepEqual(projectTraitEchoStoryState(registered), {
+    id: 'registered',
+    ledgerFlowerScale: 1,
+    ledgerFlowerScaleY: 1,
+    ledgerFlowerLean: 0,
+    crownTilt: 0,
+    torchEmissive: 0.20,
     bellLight: 0,
     torchFlicker: true,
   });
@@ -353,7 +371,7 @@ test('story projection is pure across arrival, dusk, anomaly, intervention, and 
   assert.deepEqual(first, second);
   assert.equal(Object.isFrozen(first), true);
   assert.deepEqual(
-    { arrival, dusk, anomaly, postBell, intervention, comply, alter },
+    { arrival, registered, dusk, anomaly, postBell, intervention, comply, alter },
     inputsBeforeProjection,
     'story projection must not mutate durable snapshots',
   );
@@ -593,10 +611,12 @@ test('reduced motion applies story state immediately and disposal unregisters wo
   const state = projectTraitEchoStoryState(storySnapshot([
     CORE_HOOK_V03.events.stewardMet,
     CORE_HOOK_V03.events.ledgerSigned,
+    CORE_HOOK_V03.events.firstAfternoonComplete,
   ]));
   echoes.setStoryState(storySnapshot([
     CORE_HOOK_V03.events.stewardMet,
     CORE_HOOK_V03.events.ledgerSigned,
+    CORE_HOOK_V03.events.firstAfternoonComplete,
   ]));
   assert.equal(echoes.current.crownTilt, state.crownTilt);
   assert.equal(echoes.current.ledgerFlowerScale, state.ledgerFlowerScale);

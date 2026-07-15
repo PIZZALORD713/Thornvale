@@ -148,8 +148,10 @@ export class DayOneDirector {
     if (!snapshot.eventsSeen?.includes(this.content.events.stewardMet)) {
       return objectives.meetSteward;
     }
-    if (snapshot.eventsSeen.includes(this.content.events.ledgerSigned)) return null;
-    if (state.complete) return objectives.signLedger;
+    if (!snapshot.eventsSeen.includes(this.content.events.ledgerSigned)) {
+      return objectives.signLedger;
+    }
+    if (state.complete) return null;
     if (state.activity.woodGathered < tuning.requirements.woodGathered) {
       return objectives.gatherWood;
     }
@@ -169,11 +171,37 @@ export class DayOneDirector {
         ? objectives.repairShelter
         : objectives.gatherShelterWood;
     }
-    return objectives.signLedger;
+    return null;
   }
 
   isComplete(snapshot = this.session.snapshot()) {
     return snapshot.dayOne?.complete === true;
+  }
+
+  ledgerRecordFor(snapshot = this.session.snapshot()) {
+    const state = snapshot.dayOne;
+    const record = this.content.ledgerRecord;
+    const requirements = this.content.tuning.requirements;
+    const mark = (complete) => (complete ? record.recorded : record.awaiting);
+    const garden = state.garden.watered
+      ? record.watered
+      : state.garden.planted
+        ? record.planted
+        : record.awaiting;
+
+    return {
+      ...record,
+      entry: [
+        `${record.labels.wood} · ${state.activity.woodGathered} / ${requirements.woodGathered}`,
+        `${record.labels.fish} · ${state.activity.fishCaught} / 1`,
+        `${record.labels.fire} · ${mark(state.camp.fireLit)}`,
+        `${record.labels.cooked} · ${state.activity.mealsCooked} / ${requirements.mealsEaten}`,
+        `${record.labels.eaten} · ${state.activity.mealsEaten} / ${requirements.mealsEaten}`,
+        `${record.labels.garden} · ${garden}`,
+        `${record.labels.shelter} · ${mark(state.camp.shelterRepaired)}`,
+      ].join('\n'),
+      signature: snapshot.playerName || record.signature,
+    };
   }
 
   actionFor(id, snapshot = this.session.snapshot()) {
@@ -254,7 +282,8 @@ export class DayOneDirector {
   _isActive(snapshot) {
     const events = snapshot.eventsSeen || [];
     return events.includes(this.content.events.stewardMet)
-      && !events.includes(this.content.events.ledgerSigned);
+      && events.includes(this.content.events.ledgerSigned)
+      && snapshot.dayOne?.complete !== true;
   }
 
   async _chopWood(context = null) {

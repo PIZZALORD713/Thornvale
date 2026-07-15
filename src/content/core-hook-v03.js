@@ -57,12 +57,26 @@ export const CORE_HOOK_V03 = deepFreeze({
       complyEnding: { x: -0.25, y: 0, z: 4.9, facing: Math.PI },
       alterEnding: { x: 0.15, y: 0, z: 3.55, facing: -Math.PI / 2 },
     },
+    player: {
+      // A restored save between Bell rings resumes on the hill approach, not
+      // at the front gate beside Lumen, preserving the authored return walk.
+      firstBellReturn: { x: 3, y: 3.3, z: -33.4 },
+    },
+    camera: {
+      secondBell: {
+        position: { x: 10.2, y: 7.4, z: -28.8 },
+        lookAt: { x: 3, y: 4.6, z: -36.5 },
+      },
+    },
   },
 
   timing: {
-    anomalyMinimumDelay: 1.5,
-    anomalyMaximumDelay: 7.5,
-    anomalyDistanceFromBell: 4.25,
+    anomalyMinimumDelay: 2.5,
+    anomalyDistanceFromBell: 18,
+    anomalyDistanceToSteward: 13,
+    bellRevealFlyIn: 0.85,
+    bellRevealHold: 1.05,
+    bellRevealFlyOut: 0.85,
     routeArrivalRadius: 1.35,
   },
 
@@ -77,6 +91,7 @@ export const CORE_HOOK_V03 = deepFreeze({
   prompts: {
     meetSteward: 'Speak with Steward Lumen',
     signLedger: 'Enter your name in the Community Ledger',
+    reviewLedger: 'Review today’s Ledger entries',
     ringBell: 'Ring once, now that the lanterns are blooming',
     inspectLedger: 'Read the new correction in the Ledger',
     hearCorrection: 'Ask Steward Lumen about the correction',
@@ -111,12 +126,12 @@ export const CORE_HOOK_V03 = deepFreeze({
       title: 'The second courtesy',
       detail: 'When the lanterns bloom, follow the warm pavers uphill and ring once.',
     },
-    leaveBell: {
-      id: 'leave-bell',
-      label: 'Descend while Thornvale settles',
-      text: 'Walk back down the Bell hill while Thornvale records your plot as Home.',
-      title: 'Descend while Thornvale settles',
-      detail: 'Walk back down the Bell hill while Thornvale records your plot as Home.',
+    returnToLumen: {
+      id: 'return-to-lumen',
+      label: 'Report the courtesy',
+      text: 'Return to Steward Lumen in the plaza and tell him the Bell was rung.',
+      title: 'Report the courtesy',
+      detail: 'Return to Steward Lumen in the plaza and tell him the Bell was rung.',
     },
     inspectLedger: {
       id: 'inspect-ledger',
@@ -173,8 +188,9 @@ export const CORE_HOOK_V03 = deepFreeze({
         'Oh, there you are. We kept your place warm.',
         "I’m Lumen, Thornvale’s steward. Nothing complicated is expected of a new neighbor.",
         'There is a provisional plot along the west clover path, where the meadow meets the old forest. We left a camp cot and seed bed for you.',
-        'Gather what you need, make yourself a meal, and settle the shelter. Then write your name in the Community Ledger.',
-        'When the lanterns bloom, follow the warm pavers to the hill and ring the bell once. Then Thornvale can record the plot as yours.',
+        'Before you settle in, enter your name in the Community Ledger. It keeps a little account of every task, so no neighbor has to remember alone.',
+        'Then gather what you need, make yourself a meal, tend the seed bed, and settle the shelter.',
+        'When the lanterns bloom, follow the warm pavers to the hill, ring the bell once, and return to me.',
         'Only once, and only at dusk. Routines keep everyone from worrying.',
       ],
     },
@@ -184,8 +200,9 @@ export const CORE_HOOK_V03 = deepFreeze({
       portraitTokenId: 8914,
       portrait: '8914',
       body: [
-        'Lovely. The valley already writes you neatly.',
-        'The lanterns are waking. Follow the pavers uphill. One ring, please.',
+        'Lovely. Now the town can keep the day with you.',
+        'Wood gathered, supper made, seed tended, shelter mended—the Ledger will note each kindness as it happens.',
+        'Follow the west clover path to your plot. We will see how quickly it begins to feel like yours.',
       ],
     },
     firstBell: {
@@ -193,7 +210,7 @@ export const CORE_HOOK_V03 = deepFreeze({
       speaker: 'A ribbon tied to the Bell',
       body: [
         'Perfectly on time.',
-        'Your plot is entered under your name. Walk back down while Thornvale settles.',
+        'Your afternoon is entered under your name. Return to Steward Lumen while Thornvale settles.',
       ],
     },
     correction: {
@@ -232,6 +249,16 @@ export const CORE_HOOK_V03 = deepFreeze({
   },
 
   records: {
+    dayOneFallback: {
+      id: 'day-one-neighborly-account',
+      title: 'COMMUNITY LEDGER · TODAY’S ACCOUNT',
+      entry: 'The afternoon is still being written.',
+      signature: 'Neighbor on file',
+      signatureLabel: 'Account kept under',
+      detail: 'The ink keeps pace without a clerk nearby.',
+      actionLabel: 'Close the Ledger',
+      altered: false,
+    },
     signature: {
       id: 'arrival-signature',
       title: 'COMMUNITY LEDGER · NEW ARRIVALS',

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+* Moved Community Ledger enrollment directly after Lumen’s welcome. Day One
+  chores now unlock after signing, update a readable truthful Ledger account,
+  and advance to dusk only when the account is complete. After the first Bell,
+  the player returns toward Lumen; the impossible second ring now interrupts
+  that journey with a bounded camera reveal instead of firing beside the Bell.
+  Reloading between rings resumes on the Bell-side return route, the anomaly is
+  saved on its visible reveal frame, and cancelled fly-ins cannot save a ring
+  the player never heard.
 * Corrected the Day One cooking spit so the center rod and fish roll around
   their horizontal axis while both support stakes remain planted.
 * Made Day One exhaustion recovery legible as camp progression: pass-outs now

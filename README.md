@@ -157,10 +157,12 @@ The default build now plays the complete first-run Core Hook test, **A Courtesy 
 
 1. Read the letter in your own handwriting.
 2. Meet **Steward Lumen**, fRiENDSiES `#8914`.
-3. Sign the Community Ledger and ring the bell once at dusk.
-4. Leave the plaza and hear the impossible second bell.
-5. Read the false correction, confront Lumen, and choose which account remains.
-6. Reach either **Home, as recorded** or **A path the town forgot**.
+3. Sign the Community Ledger and learn that it records each town task.
+4. Settle the forest-edge camp while the Ledger keeps a truthful account.
+5. Ring the Bell once at dusk and start back toward Lumen.
+6. See the Bell framed as it rings a second time on the return journey.
+7. Read the false correction, confront Lumen, and choose which account remains.
+8. Reach either **Home, as recorded** or **A path the town forgot**.
 
 Progress is saved locally and restores the story phase, time, steward position, route, choice, and ending. Use `?story=reset` (or `?reset=1`) for a clean first run. Use `?story=off` only for the presentation sandbox.
 

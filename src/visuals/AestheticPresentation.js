@@ -1,6 +1,7 @@
 const EVENT = Object.freeze({
   stewardMet: 'steward-lumen-met',
   ledgerSigned: 'community-ledger-signed',
+  firstAfternoonComplete: 'first-afternoon-complete',
   firstBellRung: 'dusk-bell-rung',
   anomalyBellRang: 'night-bell-rang-itself',
   falseRecordSeen: 'false-ledger-record-seen',
@@ -9,6 +10,7 @@ const EVENT = Object.freeze({
 export const STORY_PRESENTATION_STATES = Object.freeze([
   'arrival',
   'day',
+  'registered',
   'dusk',
   'post-bell',
   'anomaly',
@@ -27,6 +29,11 @@ const PRESENTATION = Object.freeze({
     standingKey: 'kindly-met',
     standingLabel: 'Kindly met',
     ledgerMood: 'normal',
+  }),
+  registered: Object.freeze({
+    standingKey: 'written-in',
+    standingLabel: 'Written in',
+    ledgerMood: 'signed',
   }),
   dusk: Object.freeze({
     standingKey: 'written-in',
@@ -112,7 +119,8 @@ export function resolveStoryPresentationState(snapshot) {
   if (events.has(EVENT.falseRecordSeen)) return 'intervention';
   if (events.has(EVENT.anomalyBellRang)) return 'anomaly';
   if (events.has(EVENT.firstBellRung)) return 'post-bell';
-  if (events.has(EVENT.ledgerSigned)) return 'dusk';
+  if (events.has(EVENT.ledgerSigned) && events.has(EVENT.firstAfternoonComplete)) return 'dusk';
+  if (events.has(EVENT.ledgerSigned)) return 'registered';
   if (events.has(EVENT.stewardMet)) return 'day';
 
   if (snapshot.phase === 'intervention') return 'intervention';

@@ -1,7 +1,7 @@
 # Day One Proof QA
 
 **Status:** implementation complete; fresh-player validation pending  
-**Player-facing beat:** arrive as an uncertain newcomer, make the provisional forest-edge camp livable, then accept the town's first courtesies  
+**Player-facing beat:** arrive as an uncertain newcomer, enter the town’s shared record, then make the provisional forest-edge camp livable while each action is truthfully recorded
 **Exit criterion:** a clean run and an intentional pass-out run both reach the existing dusk Bell sequence without developer help, lost progress, or a resource soft lock
 
 ## Experience hypothesis
@@ -11,20 +11,21 @@ The player should leave the first afternoon feeling fed, capable, and newly atta
 ## Included loop
 
 1. Read the arrival letter and meet Steward Lumen.
-2. Follow the west path to the provisional camp.
-3. Gather six wood from the woodlot.
-4. Catch one fish at the pond.
-5. Light the campfire, cook the fish, and eat it.
-6. Plant and water the seed bed.
-7. Spend wood to patch the shelter.
-8. Sign the Community Ledger and continue through the existing dusk Bell beat.
+2. Enter a name in the Community Ledger.
+3. Follow the west path to the provisional camp.
+4. Gather six wood from the woodlot.
+5. Catch one fish at the pond.
+6. Light the campfire, cook the fish, and eat it.
+7. Plant and water the seed bed.
+8. Spend wood to patch the shelter.
+9. Ring the Bell once at dusk and return toward Lumen until the impossible second ring interrupts the journey.
 
 The gathering, fishing, gardening, and shelter steps may be completed in different safe orders. The fire, meal, and resource costs remain authored and deterministic for this proof.
 
 ## Implementation evidence — updated 2026-07-14
 
-- `npm run check` passed with 217/217 deterministic tests, a production Vite
-  build, the asset audit, and an 8,388,570 / 8,388,608 byte production bundle.
+- `npm run check` passed with 231/231 deterministic tests, a production Vite
+  build, the asset audit, and an 8,376,953 / 8,388,608 byte production bundle.
 - Focused coverage proves the clean resource loop, zero-energy fire/cook/eat recovery, pass-out fee and debt branches, retained progress, save migration, Day One world projection, survival HUD accessibility, and the Day One-to-Ledger gate.
 - An independent code review found no progression, recovery, migration, or Ledger-unlock blockers.
 - Browser smoke at 1280×720 confirmed the welcome screen, arrival letter, first objective, pointer-lock handoff, town presentation, and an error-free console. The pilot and `?assets=baseline&traits=off` variants both booted cleanly after the camp relocation.
@@ -59,12 +60,27 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
   no warnings or errors. The wake cover stayed opaque if pointer lock was lost,
   held movement through the reveal, and retained a painted cover frame with
   reduced motion enabled.
+- A final 1280×720 Chromium pass used actual `E` interactions for Lumen,
+  Ledger enrollment, one wood action, live Ledger review, and the first Bell.
+  It confirmed the account changed from `WOOD GATHERED · 0 / 6` to `2 / 6`,
+  the Bell remained locked during the recorded afternoon, and waiting four
+  seconds beside it after the first ring did not produce a timer-only anomaly.
+  A restored first-Bell save resumed 0.0008 m from the authored Bell-side
+  return anchor and remained quiet there for another four seconds.
+- The return-to-Lumen reveal locked control, framed the Bell with a measured
+  camera-to-Bell alignment above 0.9999, committed the anomaly on the reveal
+  frame before its single ring, restored player-relative framing within
+  floating-point precision, and released the action lock. A reduced-motion
+  Chromium session produced one durable ring with no focus shot, camera change,
+  or lingering lock. Both sessions reported zero console warnings or errors.
 
 ## Clean-run checks
 
 - Start with `?story=reset` or use the in-game reset path.
 - Confirm Day One nourishment, energy, and Wood/Fish/Seeds are readable without opening debug UI.
-- Confirm camp interactions are unavailable before meeting Lumen and become available afterward.
+- Confirm camp interactions are unavailable before meeting Lumen and remain unavailable until the Ledger is signed.
+- Confirm the Ledger unlocks immediately after Lumen’s welcome and signing it unlocks the Day One chores without advancing time to dusk.
+- Reopen the Ledger during the afternoon and confirm wood, fish, fire, meal, seed-bed, and shelter entries match authoritative progress after reload and pass-out.
 - Confirm the objective always names one achievable next action.
 - Complete the full loop without deliberately repeating resource actions.
 - Confirm nourishment and energy fall on labor and rise after eating.
@@ -72,9 +88,14 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
 - Confirm the fire and patched shelter visibly persist after leaving and returning.
 - Confirm the tent begins as a low collapsed bundle, becomes a standing shelter
   only after the repair contact, and announces that camp is the new wake point.
-- Confirm the Ledger stays locked until the Day One completion predicate is satisfied.
 - Reload before completion and confirm inventory, needs, garden, camp, and objective restore.
-- Complete the loop, sign the Ledger, ring the Bell, and confirm the existing anomaly and choice sequence still completes.
+- Complete the chores and confirm dusk and Bell guidance begin only after the Ledger account is complete.
+- Ring the Bell once, wait beside it, and confirm no timer-only second ring occurs.
+- Reload after the first Bell and confirm the player resumes on the Bell-side
+  return route rather than at the front gate beside Lumen.
+- Return toward Lumen; confirm control pauses, the camera flies to frame the Bell, the second ring occurs at the reveal, and the exact player view and control return afterward.
+- Confirm reduced motion plays the second ring without a forced camera move.
+- Inspect the false Ledger correction and confirm the existing choice sequence still completes.
 
 ## Pass-out recovery checks
 

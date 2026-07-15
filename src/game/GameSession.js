@@ -1,6 +1,6 @@
 import { DAY_ONE_V01 } from '../content/day-one-v01.js';
 
-export const GAME_SESSION_VERSION = 3;
+export const GAME_SESSION_VERSION = 4;
 export const DEFAULT_GAME_SESSION_STORAGE_KEY = 'thornvale.core-hook-v03';
 export const MAX_PLAYER_NAME_LENGTH = 40;
 
@@ -306,6 +306,16 @@ function migrateState(raw) {
       : createDefaultDayOneState();
   }
 
+  if (
+    incomingVersion < 4
+    && uniqueStrings(raw.eventsSeen).includes(DAY_ONE_V01.events.ledgerSigned)
+  ) {
+    // Before schema 4 the Ledger could only be signed after every Day One
+    // requirement. Preserve that historical fact while allowing new signed
+    // saves to contain an afternoon that is still in progress.
+    migrated.dayOne = sanitizeDayOneState(migrated.dayOne, { forceComplete: true });
+  }
+
   migrated.version = GAME_SESSION_VERSION;
   return migrated;
 }
@@ -352,12 +362,13 @@ function sanitizeState(raw, now) {
             : 'arrival';
   if (migrated.phase !== expectedPhase) return null;
 
-  const dayOne = sanitizeDayOneState(migrated.dayOne, {
-    // Older and direct Core Hook saves already beyond the Ledger must remain
-    // playable after the schema upgrade. Normal play reaches this state via
-    // DayOneDirector before the Ledger can be signed.
-    forceComplete: eventSet.has(DAY_ONE_V01.events.ledgerSigned),
-  });
+  const dayOne = sanitizeDayOneState(migrated.dayOne);
+  if (!dayOne.complete && eventSet.has('dusk-bell-rung')) {
+    // The Bell cannot be reached before the signed afternoon account closes.
+    // Reject an impossible v4 transaction instead of preserving story progress
+    // that bypassed the authoritative Day One requirements.
+    return null;
+  }
   if (dayOne.complete) {
     pushUnique(eventsSeen, DAY_ONE_V01.events.afternoonComplete);
   } else {

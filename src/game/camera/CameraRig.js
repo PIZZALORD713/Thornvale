@@ -9,8 +9,28 @@
  * - Hard world-floor constraint so the lens never reveals the underside of the stage
  */
 
-import { Vector3, Raycaster } from 'three';
+import {
+  Matrix4,
+  Quaternion,
+  Raycaster,
+  Vector3,
+} from 'three';
 import { clamp, damp } from '../../utils/math.js';
+
+function smoothstep(value) {
+  const t = clamp(value, 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+function asVector3(value) {
+  if (value?.isVector3) return value.clone();
+  if (Array.isArray(value)) return new Vector3().fromArray(value);
+  return new Vector3(
+    Number(value?.x) || 0,
+    Number(value?.y) || 0,
+    Number(value?.z) || 0,
+  );
+}
 
 export class CameraRig {
   constructor(camera) {
@@ -73,6 +93,10 @@ export class CameraRig {
     this._tmpTargetPos = new Vector3();
     this._tmpLookTarget = new Vector3();
     this._tmpDirection = new Vector3();
+    this._focusTargetDelta = new Vector3();
+    this._focusMatrix = new Matrix4();
+    this._focusShot = null;
+    this._focusPromise = null;
   }
 
   /**
@@ -89,6 +113,7 @@ export class CameraRig {
    * @param {number} deltaY - Pitch change
    */
   applyInput(deltaX, deltaY) {
+    if (this._focusShot) return;
     this.yaw -= deltaX;
     this.pitch += deltaY;
     this.pitch = clamp(this.pitch, this.minPitch, this.maxPitch);
@@ -100,6 +125,11 @@ export class CameraRig {
    * @param {THREE.Scene} scene - Scene for collision raycast (optional)
    */
   update(dt, scene = null) {
+    if (this._focusShot) {
+      this._updateFocusShot(dt);
+      return;
+    }
+
     // Calculate pivot point (above target)
     const pivot = this._tmpPivot.set(
       this.target.x,
@@ -171,6 +201,132 @@ export class CameraRig {
       this.target.z
     );
     this.camera.lookAt(lookTarget);
+  }
+
+  /** Temporarily frame an authored subject, then restore the exact player view. */
+  playFocusShot({
+    position,
+    lookAt,
+    flyIn = 0.75,
+    hold = 1,
+    flyOut = 0.75,
+    onReveal = null,
+  } = {}) {
+    if (this._focusShot) return this._focusPromise;
+    if (!position || !lookAt) {
+      return Promise.reject(new TypeError('CameraRig.playFocusShot requires position and lookAt'));
+    }
+
+    const focusPosition = asVector3(position);
+    const focusLookAt = asVector3(lookAt);
+    const focusQuaternion = new Quaternion().setFromRotationMatrix(
+      this._focusMatrix.lookAt(focusPosition, focusLookAt, this.camera.up),
+    );
+    const shot = {
+      elapsed: 0,
+      flyIn: Math.max(0, Number(flyIn) || 0),
+      hold: Math.max(0, Number(hold) || 0),
+      flyOut: Math.max(0, Number(flyOut) || 0),
+      startPosition: this.camera.position.clone(),
+      startQuaternion: this.camera.quaternion.clone(),
+      startTarget: this.target.clone(),
+      focusPosition,
+      focusQuaternion,
+      onReveal: typeof onReveal === 'function' ? onReveal : null,
+      revealed: false,
+      error: null,
+      resolve: null,
+      reject: null,
+    };
+    this._focusShot = shot;
+    this._focusPromise = new Promise((resolve, reject) => {
+      shot.resolve = resolve;
+      shot.reject = reject;
+    });
+    return this._focusPromise;
+  }
+
+  isFocusShotActive() {
+    return Boolean(this._focusShot);
+  }
+
+  skipFocusShot() {
+    if (!this._focusShot) return false;
+    this._revealFocusShot(this._focusShot);
+    this._finishFocusShot({ skipped: true });
+    return true;
+  }
+
+  cancelFocusShot() {
+    if (!this._focusShot) return false;
+    this._finishFocusShot({ cancelled: true });
+    return true;
+  }
+
+  _updateFocusShot(dt) {
+    const shot = this._focusShot;
+    if (!shot) return;
+    shot.elapsed += Math.max(0, Number(dt) || 0);
+
+    if (shot.flyIn > 0 && shot.elapsed < shot.flyIn) {
+      const t = smoothstep(shot.elapsed / shot.flyIn);
+      this.camera.position.lerpVectors(shot.startPosition, shot.focusPosition, t);
+      this.camera.quaternion.slerpQuaternions(
+        shot.startQuaternion,
+        shot.focusQuaternion,
+        t,
+      );
+      return;
+    }
+
+    this._revealFocusShot(shot);
+    const returnElapsed = shot.elapsed - shot.flyIn - shot.hold;
+    if (returnElapsed <= 0) {
+      this.camera.position.copy(shot.focusPosition);
+      this.camera.quaternion.copy(shot.focusQuaternion);
+      return;
+    }
+
+    if (shot.flyOut > 0 && returnElapsed < shot.flyOut) {
+      const t = smoothstep(returnElapsed / shot.flyOut);
+      this.camera.position.lerpVectors(shot.focusPosition, shot.startPosition, t);
+      this.camera.quaternion.slerpQuaternions(
+        shot.focusQuaternion,
+        shot.startQuaternion,
+        t,
+      );
+      return;
+    }
+
+    this._finishFocusShot();
+  }
+
+  _revealFocusShot(shot) {
+    if (!shot || shot.revealed) return;
+    shot.revealed = true;
+    try {
+      shot.onReveal?.();
+    } catch (error) {
+      shot.error = error;
+    }
+  }
+
+  _finishFocusShot(result = {}) {
+    const shot = this._focusShot;
+    if (!shot) return;
+    // Action lock suppresses intentional travel, but gravity or moving ground
+    // may still move the followed target during the shot. Restore the same
+    // player-relative framing at the target's current position so normal
+    // follow does not lurch on the next frame.
+    this._focusTargetDelta.subVectors(this.target, shot.startTarget);
+    this.camera.position.copy(shot.startPosition).add(this._focusTargetDelta);
+    this._constrainAboveFloor(this.camera.position);
+    this.camera.quaternion.copy(shot.startQuaternion);
+    this._smoothedPosition.copy(this.camera.position);
+    this._focusShot = null;
+    this._focusPromise = null;
+    if (shot.error) shot.reject?.(shot.error);
+    else shot.resolve?.({ ...result, revealed: shot.revealed });
   }
 
   /**
@@ -289,6 +445,7 @@ export class CameraRig {
    * Reset camera position (teleport)
    */
   resetPosition() {
+    this.cancelFocusShot();
     const pivot = this._tmpPivot.set(
       this.target.x,
       this.target.y + this.pivotHeight,

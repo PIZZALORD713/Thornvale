@@ -27,6 +27,19 @@ class MemoryStorage {
   }
 }
 
+function completeDayOneDraft(draft) {
+  draft.dayOne.activity.woodGathered = 6;
+  draft.dayOne.activity.fishCaught = 1;
+  draft.dayOne.activity.mealsCooked = 1;
+  draft.dayOne.activity.mealsEaten = 1;
+  draft.dayOne.activity.seedsPlanted = 1;
+  draft.dayOne.garden.planted = true;
+  draft.dayOne.garden.watered = true;
+  draft.dayOne.camp.fireLit = true;
+  draft.dayOne.camp.shelterRepaired = true;
+  draft.dayOne.complete = true;
+}
+
 function createHarness({
   choice = 'comply',
   playerName = '  Juniper\nVale  ',
@@ -39,15 +52,22 @@ function createHarness({
     label: 'Your first afternoon',
     text: 'Settle the provisional camp.',
   }),
+  getDayOneLedgerRecord = () => ({
+    id: 'day-one-neighborly-account',
+    entry: 'WOOD GATHERED · 0 / 6',
+    signature: 'Juniper Vale',
+  }),
   stewardActionHandler = null,
 } = {}) {
   const calls = [];
+  const playerPlacements = [];
   let now = 1000;
   const session = new GameSession({
     storage,
     storageKey: CORE_HOOK_V03.storageKey,
     now: () => ++now,
   });
+  if (isDayOneComplete()) session.transact(completeDayOneDraft);
 
   const storyUI = {
     setObjective(value) {
@@ -145,7 +165,8 @@ function createHarness({
     moveSteward(_anchor, options) {
       calls.push(`move:${options.id}:${Boolean(options.immediate)}`);
     },
-    ringAnomalyBell: ringAnomalyBell || (() => {
+    ringAnomalyBell: ringAnomalyBell || (({ onReveal } = {}) => {
+      onReveal?.();
       calls.push('bell:anomaly');
     }),
     setRoute(value) {
@@ -156,8 +177,15 @@ function createHarness({
         ? { x: 11.8, y: 0, z: 7 }
         : { x: 7, y: 0, z: 4.25 };
     },
+    resetPlayer(position) {
+      playerPlacements.push(position ? { ...position } : null);
+    },
     isDayOneComplete,
     getDayOneObjective,
+    getDayOneLedgerRecord,
+    getStewardPosition() {
+      return CORE_HOOK_V03.anchors.steward.routine;
+    },
     setStoryBlocking(value) {
       calls.push(`blocking:${value}`);
     },
@@ -169,7 +197,7 @@ function createHarness({
   director.init({
     interactables: [
       { id: 'ledger', position: { x: -2, y: 0.8, z: 3 } },
-      { id: 'bell', position: { x: 3, y: 0.5, z: -2 } },
+      { id: 'bell', position: CORE_HOOK_V03.anchors.interactables.bell },
     ],
     stewardInteractable: {
       id: 'steward-8914',
@@ -177,10 +205,10 @@ function createHarness({
     },
   });
 
-  return { calls, director, session, storage };
+  return { calls, director, session, storage, playerPlacements };
 }
 
-test('the Day One routine gates the Ledger and owns the objective until complete', async () => {
+test('the truthful Ledger stays reviewable during Day One without creating the false record', async () => {
   const dayOne = { complete: false };
   const harness = createHarness({
     isDayOneComplete: () => dayOne.complete,
@@ -194,24 +222,69 @@ test('the Day One routine gates the Ledger and owns the objective until complete
   await harness.director.start();
   await harness.director.interact(CORE_HOOK_V03.ids.steward);
 
-  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.ledger), false);
+  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.ledger), true);
+  assert.ok(harness.calls.includes(`objective:${CORE_HOOK_V03.objectives.signLedger.id}`));
+
+  await harness.director.interact(CORE_HOOK_V03.ids.ledger);
+  assert.equal(harness.director.promptFor(CORE_HOOK_V03.ids.ledger), CORE_HOOK_V03.prompts.reviewLedger);
   assert.ok(harness.calls.includes('objective:day-one-gather-wood'));
+
+  await harness.director.interact(CORE_HOOK_V03.ids.ledger);
+  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.ledger), true);
+  assert.ok(harness.calls.includes('record:day-one-neighborly-account'));
+  assert.equal(harness.session.hasEvent(CORE_HOOK_V03.events.falseRecordSeen), false);
+});
+
+test('Ledger enrollment opens Day One while dusk and the Bell wait for recorded chores', async () => {
+  const dayOne = { complete: false };
+  const harness = createHarness({
+    isDayOneComplete: () => dayOne.complete,
+    getDayOneObjective: () => ({
+      id: 'day-one-gather-wood',
+      label: 'Your first afternoon',
+      text: 'Gather wood for the camp.',
+    }),
+  });
+
+  await harness.director.start();
+  await harness.director.interact(CORE_HOOK_V03.ids.steward);
+
+  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.ledger), true);
+  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.bell), false);
+  assert.equal(
+    harness.calls.filter((call) => call.startsWith('objective:')).at(-1),
+    `objective:${CORE_HOOK_V03.objectives.signLedger.id}`,
+  );
+
+  await harness.director.interact(CORE_HOOK_V03.ids.ledger);
+  assert.equal(harness.session.hasEvent(CORE_HOOK_V03.events.ledgerSigned), true);
+  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.bell), false);
+  assert.equal(
+    harness.calls.filter((call) => call.startsWith('objective:')).at(-1),
+    'objective:day-one-gather-wood',
+  );
+  assert.equal(
+    harness.calls.some((call) => call === 'time:dusk:false'),
+    false,
+    'signing should not skip the recorded afternoon',
+  );
 
   dayOne.complete = true;
   await harness.director.refreshObjective();
-
-  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.ledger), true);
+  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.bell), true);
   assert.equal(
-    harness.calls.at(-1),
-    `objective:${CORE_HOOK_V03.objectives.signLedger.id}`,
+    harness.calls.filter((call) => call.startsWith('objective:')).at(-1),
+    `objective:${CORE_HOOK_V03.objectives.ringBell.id}`,
   );
+  assert.ok(harness.calls.includes('time:dusk:false'));
 });
 
 async function triggerDistanceAnomaly(director) {
-  for (let index = 0; index < 5; index += 1) {
-    assert.equal(director.update(0.25, { x: 3, y: 0, z: -2 }), null);
+  const bell = CORE_HOOK_V03.anchors.interactables.bell;
+  for (let index = 0; index < 10; index += 1) {
+    assert.equal(director.update(0.25, bell), null);
   }
-  const anomaly = director.update(0.25, { x: 8, y: 0, z: -2 });
+  const anomaly = director.update(0.25, CORE_HOOK_V03.anchors.steward.routine);
   assert.ok(anomaly instanceof Promise);
   await anomaly;
 }
@@ -245,6 +318,7 @@ test('GameSession saves versioned state, reloads it, and resets cleanly', () => 
   session.setPlayerName('  Juniper\nVale  ');
   session.discoverRule('bell-once-at-dusk');
   session.transact((draft) => {
+    completeDayOneDraft(draft);
     draft.phase = 'resolution';
     draft.choices.ledger_record = 'alter';
     draft.eventsSeen.push(
@@ -401,13 +475,15 @@ test('CoreHookDirector enforces the authored interaction order', async () => {
     storageKey: CORE_HOOK_V03.storageKey,
   });
   assert.equal(restoredAfterSigning.playerName, 'Juniper Vale');
-  assert.equal(director.isInteractableEnabled('ledger'), false);
+  assert.equal(director.isInteractableEnabled('ledger'), true);
+  assert.equal(director.promptFor('ledger'), CORE_HOOK_V03.prompts.reviewLedger);
   assert.equal(director.isInteractableEnabled('bell'), true);
 
   await director.interact('bell');
   assert.equal(session.phase, 'dusk');
   assert.equal(director.isInteractableEnabled('bell'), false);
-  assert.equal(director.isInteractableEnabled('ledger'), false);
+  assert.equal(director.isInteractableEnabled('ledger'), true);
+  assert.ok(calls.includes(`objective:${CORE_HOOK_V03.objectives.returnToLumen.id}`));
 
   await triggerDistanceAnomaly(director);
   assert.equal(session.phase, 'night-investigation');
@@ -546,7 +622,18 @@ test('the supernatural second bell is durable and can only fire once', async () 
     releaseRing = resolve;
   });
   const harness = createHarness({
-    ringAnomalyBell: () => {
+    ringAnomalyBell: ({ onReveal }) => {
+      assert.equal(
+        harness.session.hasEvent(CORE_HOOK_V03.events.anomalyBellRang),
+        false,
+        'the anomaly must not project during the camera fly-in',
+      );
+      onReveal();
+      assert.equal(
+        harness.session.hasEvent(CORE_HOOK_V03.events.anomalyBellRang),
+        true,
+        'the reveal must be durable before its sound and VFX play',
+      );
       ringCount += 1;
       return ringGate;
     },
@@ -558,21 +645,34 @@ test('the supernatural second bell is durable and can only fire once', async () 
   await director.interact('ledger');
   await director.interact('bell');
 
-  // Stay beside the bell to exercise the maximum-delay path independently of
-  // the distance-trigger path covered by the ordering test.
-  for (let index = 0; index < 29; index += 1) {
-    director.update(0.25, { x: 3, y: 0, z: -2 });
+  const bell = CORE_HOOK_V03.anchors.interactables.bell;
+  // Waiting beside the Bell can no longer produce an immediate or timer-only
+  // second ring. The anomaly belongs to the return journey toward Lumen.
+  for (let index = 0; index < 120; index += 1) {
+    director.update(0.25, bell);
   }
   assert.equal(ringCount, 0);
-  const first = director.update(0.25, { x: 3, y: 0, z: -2 });
-  const duplicate = director.update(0.25, { x: 3, y: 0, z: -2 });
+  assert.equal(
+    director.update(0.25, { x: 3, y: 0, z: -15 }),
+    null,
+    'moving away without returning toward Lumen is not enough',
+  );
+  const returnPosition = CORE_HOOK_V03.anchors.steward.routine;
+  const first = director.update(0.25, returnPosition);
+  const duplicate = director.update(0.25, returnPosition);
 
   assert.equal(first, duplicate);
   assert.equal(ringCount, 1);
   assert.equal(session.hasEvent(CORE_HOOK_V03.events.anomalyBellRang), true);
+  assert.equal(director.isInteractableEnabled('ledger'), false, 'the reveal owns interactions');
 
   releaseRing();
   await first;
+  assert.equal(
+    harness.calls.filter((entry) => entry === 'vfx:magic').length,
+    0,
+    'the injected reveal owns its VFX without a duplicate post-shot flash',
+  );
   for (let index = 0; index < 40; index += 1) {
     await director.update(0.25, { x: 20, y: 0, z: 20 });
   }
@@ -588,6 +688,60 @@ test('the supernatural second bell is durable and can only fire once', async () 
     0,
     'a saved anomaly must not replay after reload',
   );
+});
+
+test('cancelling the second-Bell fly-in during disposal does not save a ring that never happened', async () => {
+  let releasePresentation;
+  const presentationGate = new Promise((resolve) => {
+    releasePresentation = resolve;
+  });
+  const harness = createHarness({
+    ringAnomalyBell: () => presentationGate,
+  });
+  const { director, session } = harness;
+
+  await director.start();
+  await director.interact('steward-8914');
+  await director.interact('ledger');
+  await director.interact('bell');
+  for (let index = 0; index < 10; index += 1) director.update(0.25, director.bellPosition);
+
+  const pending = director.update(0.25, CORE_HOOK_V03.anchors.steward.routine);
+  assert.ok(pending instanceof Promise);
+  assert.equal(session.hasEvent(CORE_HOOK_V03.events.anomalyBellRang), false);
+
+  director.dispose();
+  releasePresentation({ cancelled: true, revealed: false });
+  await pending;
+
+  assert.equal(session.hasEvent(CORE_HOOK_V03.events.anomalyBellRang), false);
+  assert.equal(session.phase, 'dusk');
+});
+
+test('a restored first-Bell save resumes beside the Bell so the return journey keeps its breathing space', async () => {
+  const original = createHarness();
+  await original.director.start();
+  await original.director.interact('steward-8914');
+  await original.director.interact('ledger');
+  await original.director.interact('bell');
+  assert.equal(original.session.phase, 'dusk');
+
+  const restored = createHarness({ storage: original.storage });
+  await restored.director.start();
+
+  assert.deepEqual(
+    restored.playerPlacements,
+    [CORE_HOOK_V03.anchors.player.firstBellReturn],
+  );
+  for (let index = 0; index < 40; index += 1) {
+    assert.equal(
+      restored.director.update(0.25, CORE_HOOK_V03.anchors.player.firstBellReturn),
+      null,
+      'waiting at the restored Bell-side anchor must not trigger the second ring',
+    );
+  }
+  assert.equal(restored.session.hasEvent(CORE_HOOK_V03.events.anomalyBellRang), false);
+  assert.ok(restored.calls.includes(`objective:${CORE_HOOK_V03.objectives.returnToLumen.id}`));
 });
 
 for (const scenario of [
