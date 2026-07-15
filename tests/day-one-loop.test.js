@@ -189,6 +189,11 @@ test('exhaustion is an atomic, nonlethal recovery that retains progress and reco
   assert.equal(state.passedOutCount, 1);
   assert.equal(callbackPayload.paid, 2);
   assert.equal(callbackPayload.debtAdded, 2);
+  assert.equal(
+    callbackPayload.recoverySite,
+    'gate',
+    'an unrepaired shelter cannot become the recovery point',
+  );
   assert.equal(actionController.isActive, false, 'pass-out recovery bypasses the labor clock');
   assert.deepEqual(locks, [], 'pass-out recovery does not leave an action movement lock behind');
 
@@ -199,6 +204,41 @@ test('exhaustion is an atomic, nonlethal recovery that retains progress and reco
 
   state = session.dayOne;
   assert.equal(state.inventory.wood, 3, 'the failed labor action is not replayed after recovery');
+});
+
+test('repairing the shelter announces and persists the new recovery point', async () => {
+  const storage = new MemoryStorage();
+  const { director, session } = createActiveDay({ storage });
+  session.transact((draft) => {
+    draft.dayOne.inventory.wood = DAY_ONE_V01.tuning.shelterWoodCost;
+    draft.dayOne.activity.woodGathered = DAY_ONE_V01.tuning.shelterWoodCost;
+  });
+
+  const repairMessage = await director.interact(DAY_ONE_V01.ids.shelter);
+  assert.equal(session.dayOne.camp.shelterRepaired, true);
+  assert.match(repairMessage, /wake here/i);
+  assert.equal(
+    await director.interact(DAY_ONE_V01.ids.shelter),
+    DAY_ONE_V01.messages.shelterDone,
+    'the recovery-point announcement is emitted only by the repair commit',
+  );
+
+  const restoredSession = new GameSession({ storage });
+  restoredSession.transact((draft) => {
+    draft.dayOne.energy = 0;
+  });
+  let recoveryPayload = null;
+  const restoredDirector = new DayOneDirector({
+    session: restoredSession,
+    onPassOut(payload) {
+      recoveryPayload = payload;
+    },
+  });
+
+  const recoveryMessage = await restoredDirector.interact(DAY_ONE_V01.ids.woodlot);
+  assert.equal(recoveryPayload.recoverySite, 'shelter');
+  assert.equal(recoveryPayload.snapshot.dayOne.camp.shelterRepaired, true);
+  assert.match(recoveryMessage, /repaired shelter/i);
 });
 
 test('lighting, cooking, and eating cost no energy so an exhausted player cannot softlock', async () => {

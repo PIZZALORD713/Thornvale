@@ -18,7 +18,7 @@ The first Milestone 1 implementation is now playable end to end. This is a proof
 - fRiENDSiES `#8914` is the starting steward, Steward Lumen, with white head emission restored and capsule-relative foot alignment.
 - The letter → welcome → Ledger → dusk bell → supernatural second bell → false record → correction → comply/alter sequence is complete.
 - The approved Day One Proof inserts a provisional forest-edge camp and one bounded survival loop between the welcome and the Ledger: gather six wood, catch and cook one fish, eat, plant and water one seed bed, and patch the shelter.
-- Nourishment and energy make food useful. Running out of working energy causes a recoverable pass-out, a clinic fee or debt, and a return to camp without deleting progress or inventory.
+- Nourishment and energy make food useful. Running out of working energy causes a recoverable pass-out and a clinic fee or debt without deleting progress or inventory. The front gate is the safe wake point until repairing the shelter establishes camp as the new one.
 - Story time replaces the player-facing day/night toggle; `N` is available only after enabling debug mode.
 - Neighborliness, relationship, rules, events, choice, phase, and ending persist in a versioned local save with reset and corrupt-save recovery.
 - Both outcomes change the route treatment, steward response, relationship, Neighborliness score, objective, and ending card.
@@ -249,7 +249,7 @@ Estimates are sequencing aids, not commitments. Re-estimate after Milestone 0 on
 - At least four testers finish without help.
 - The core choice changes at least three downstream outputs.
 - No progression blocker, unhandled error, or asset dependency prevents completion.
-- A clean save can finish every Day One activity and reach the Bell; an intentional pass-out returns to camp with prior progress intact and cannot create a resource soft lock.
+- A clean save can finish every Day One activity and reach the Bell; an intentional pass-out returns to the gate before shelter repair or to camp afterward, with prior progress intact and no resource soft lock.
 - The team can state what it learned and what changes before expanding content.
 
 ### Milestone 2 — Narrative Vertical Slice

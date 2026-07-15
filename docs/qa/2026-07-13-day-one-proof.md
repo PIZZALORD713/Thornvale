@@ -23,9 +23,8 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
 
 ## Implementation evidence — updated 2026-07-14
 
-- `npm run check` passed with 212/212 deterministic tests, a production Vite
-  build, the asset audit, and an 8,383,699 / 8,388,608 byte production bundle
-  after the complete action-weight implementation.
+- `npm run check` passed with 216/216 deterministic tests, a production Vite
+  build, the asset audit, and an 8,388,469 / 8,388,608 byte production bundle.
 - Focused coverage proves the clean resource loop, zero-energy fire/cook/eat recovery, pass-out fee and debt branches, retained progress, save migration, Day One world projection, survival HUD accessibility, and the Day One-to-Ledger gate.
 - An independent code review found no progression, recovery, migration, or Ledger-unlock blockers.
 - Browser smoke at 1280×720 confirmed the welcome screen, arrival letter, first objective, pointer-lock handoff, town presentation, and an error-free console. The pilot and `?assets=baseline&traits=off` variants both booted cleanly after the camp relocation.
@@ -47,6 +46,14 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
   missing-catalog, failed-file, and save-boundary evidence is recorded in the
   Story Actions QA record.
 - The browser harness cannot hold continuous WASD input long enough for a representative 3D route traversal. The full walkable clean run and intentional pass-out run therefore remain manual playtest gates; they are not claimed as browser-validated here.
+- A targeted Chromium recovery pass used actual `E` inputs for both branches:
+  unrepaired exhaustion settled at the front-gate spawn `(0, ~0.91, 14)`,
+  repairing the shelter swapped the collapsed and erected silhouettes and
+  announced the new wake point, and repaired exhaustion settled beside camp at
+  `(-29.3, ~0.91, 3.8)`. Reload preserved the repaired shelter; the console had
+  no warnings or errors. The wake cover stayed opaque if pointer lock was lost,
+  held movement through the reveal, and retained a painted cover frame with
+  reduced motion enabled.
 
 ## Clean-run checks
 
@@ -58,6 +65,8 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
 - Confirm nourishment and energy fall on labor and rise after eating.
 - Confirm the garden visibly changes after planting and watering.
 - Confirm the fire and patched shelter visibly persist after leaving and returning.
+- Confirm the tent begins as a low collapsed bundle, becomes a standing shelter
+  only after the repair contact, and announces that camp is the new wake point.
 - Confirm the Ledger stays locked until the Day One completion predicate is satisfied.
 - Reload before completion and confirm inventory, needs, garden, camp, and objective restore.
 - Complete the loop, sign the Ledger, ring the Bell, and confirm the existing anomaly and choice sequence still completes.
@@ -65,7 +74,10 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
 ## Pass-out recovery checks
 
 - Repeat labor until there is not enough energy for the next paid action.
-- Confirm the pass-out is a recovery, not death: the player returns to camp with safe nourishment and energy.
+- Before shelter repair, confirm the pass-out is a recovery, not death: the
+  player returns to the front gate with safe nourishment and energy.
+- After shelter repair, confirm a later pass-out returns beside the camp
+  shelter instead, with the erected state still visible.
 - Confirm gathered wood, fish, planted/watered state, shelter state, and other completed work are retained.
 - Confirm the clinic fee reduces coins when possible and otherwise becomes doctor debt; neither case blocks the day.
 - Confirm lighting, cooking, and eating remain possible at zero working energy so the player cannot be trapped.

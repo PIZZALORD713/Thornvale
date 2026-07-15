@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+* Made Day One exhaustion recovery legible as camp progression: pass-outs now
+  return to the front gate until the provisional shelter is repaired, then use
+  camp as the durable wake point. The unfinished tent is a low collapsed bundle
+  rather than an already-standing A-frame; the repair erects it and gives a
+  one-time update that future recovery happens there.
 * Fixed malformed mint tea-house roof topology that produced stretched,
   flickering planes near the pawn. Curled eaves now export as closed,
   outward-wound solids with concave-safe triangulation and modeled separation
