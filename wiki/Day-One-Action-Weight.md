@@ -36,7 +36,7 @@ Missing-resource, full-inventory, completed, and other invalid interactions resp
 - Authoritative state remains unchanged before the commit cue. The cue transacts and saves once; later cancellation can skip recovery presentation but cannot roll back the result.
 - Reloading before commit permits a clean retry. Reloading after commit restores the result and never resumes transient animation.
 - Movement and jumping are suppressed during the timeline, while mouse-look and Escape remain available.
-- Insufficient labor energy starts no chore animation. Pass-out recovery saves fee or debt first, then uses its own short fade, camp return, and fade-in presentation.
+- Insufficient labor energy starts no chore animation. Pass-out recovery saves fee or debt first, covers the teleport and camera reset with a bounded wake transition, then returns the player to the front gate until shelter repair establishes camp as the saved wake point.
 - Lighting, cooking, and eating remain available at zero working energy.
 - Reduced motion preserves duration and commit timing while suppressing recoil,
   repeated bobbing, and camera shake. Plant and water play no skeletal clip in

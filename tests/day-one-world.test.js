@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Scene, Vector3 } from 'three';
+import { Box3, Scene, Vector3 } from 'three';
 import { DAY_ONE_V01 } from '../src/content/day-one-v01.js';
 import { getBuildingBounds, TOWN_LAYOUT } from '../src/config/town.js';
 import {
@@ -151,6 +151,18 @@ test('Day One camp reads as a separate, reachable forest-edge clearing', () => {
 test('Day One world projects progress without owning gameplay state', () => {
   const world = createDayOneWorld({ reducedMotion: true });
 
+  assert.ok(world.shelterCollapsed, 'the unfinished shelter needs a collapsed projection');
+  assert.ok(world.shelterErected, 'the repaired shelter needs a standing projection');
+  assert.equal(world.shelterCollapsed.visible, true);
+  assert.equal(world.shelterErected.visible, false);
+  const collapsedBounds = new Box3().setFromObject(world.shelterCollapsed);
+  const erectedBounds = new Box3().setFromObject(world.shelterErected);
+  assert.ok(collapsedBounds.max.y <= 0.65, 'collapsed shelter silhouette stays near the ground');
+  assert.ok(erectedBounds.max.y >= 1.35, 'repaired shelter restores a standing roofline');
+  assert.ok(
+    erectedBounds.max.y - collapsedBounds.max.y >= 0.7,
+    'repair creates a legible silhouette change',
+  );
   assert.equal(world.fireFlame.visible, false);
   assert.equal(world.shelterRepair.visible, false);
   assert.equal(world.shelterTear.visible, true);
@@ -173,6 +185,8 @@ test('Day One world projects progress without owning gameplay state', () => {
   assert.equal(world._state, snapshot.dayOne);
   assert.equal(world.fireFlame.visible, true);
   assert.equal(world.cookedFishVisual.visible, true);
+  assert.equal(world.shelterCollapsed.visible, false);
+  assert.equal(world.shelterErected.visible, true);
   assert.equal(world.shelterRepair.visible, true);
   assert.equal(world.shelterTear.visible, false);
   assert.equal(world.plantedSeeds.visible, true);
@@ -192,6 +206,8 @@ test('Day One world projects progress without owning gameplay state', () => {
     activity: { woodGathered: 6, fishCaught: 1 },
   });
   assert.equal(world.fireFlame.visible, false);
+  assert.equal(world.shelterCollapsed.visible, true);
+  assert.equal(world.shelterErected.visible, false);
   assert.equal(world._woodPieces.filter(({ visible }) => visible).length, 5);
   world.dispose();
 });
@@ -233,6 +249,35 @@ test('clipless chores animate truthful code-native props and restore them on com
     assert.deepEqual(probe(), before, `${actionKey} should restore its transient transform`);
   }
 
+  world.dispose();
+});
+
+test('the repair commit swaps shelter states without a terminal-frame flash', () => {
+  const world = createDayOneWorld();
+  const action = DAY_ONE_V01.actions.repairShelter;
+  const event = (type, progress) => ({
+    type,
+    id: action.id,
+    action,
+    duration: action.duration,
+    commitTime: action.commitTime,
+    progress,
+  });
+  const authoredRotation = world.shelterVisual.quaternion.toArray();
+
+  world.handleAction(event('start', 0));
+  world.handleAction(event('progress', 0.6));
+  world.update(1 / 60);
+  assert.notDeepEqual(world.shelterVisual.quaternion.toArray(), authoredRotation);
+
+  world.setState({ camp: { shelterRepaired: true } });
+  world.handleAction(event('progress', 0.9));
+  world.update(1 / 60);
+  world.handleAction(event('complete', 1));
+
+  assert.equal(world.shelterCollapsed.visible, false);
+  assert.equal(world.shelterErected.visible, true);
+  assert.deepEqual(world.shelterVisual.quaternion.toArray(), authoredRotation);
   world.dispose();
 });
 

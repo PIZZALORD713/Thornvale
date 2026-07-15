@@ -2731,6 +2731,20 @@
         visibility: hidden;
       }
 
+      #lockOverlay.is-recovering {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: none;
+        background: rgba(20, 17, 28, 0.98);
+        transition: opacity 240ms ease;
+      }
+
+      #lockOverlay.is-recovering .content,
+      #lockOverlay.is-recovering .overlay-bloom {
+        opacity: 0;
+        visibility: hidden;
+      }
+
       /* Civic notes use one paper language and no mascot faces. */
       .status-toast,
       #dayNightBadge,

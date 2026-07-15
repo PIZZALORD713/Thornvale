@@ -462,12 +462,25 @@ export class DayOneDirector {
       state.passedOutCount += 1;
     });
 
+    const recoverySite = snapshot.dayOne.camp.shelterRepaired
+      ? 'shelter'
+      : 'gate';
+    const recoveryMessages = recoverySite === 'shelter'
+      ? {
+        paid: this.content.messages.passedOutShelterPaid,
+        debt: this.content.messages.passedOutShelterDebt,
+      }
+      : {
+        paid: this.content.messages.passedOutGatePaid,
+        debt: this.content.messages.passedOutGateDebt,
+      };
+
     const message = debtAdded > 0
-      ? fillMessage(this.content.messages.passedOutDebt, {
+      ? fillMessage(recoveryMessages.debt, {
         paid,
         debt: debtAdded,
       })
-      : fillMessage(this.content.messages.passedOutPaid, {
+      : fillMessage(recoveryMessages.paid, {
         fee: paid,
       });
 
@@ -479,6 +492,7 @@ export class DayOneDirector {
         paid,
         debtAdded,
         fee: tuning.doctorFee,
+        recoverySite,
       });
     }
     return this._announce(message, snapshot);

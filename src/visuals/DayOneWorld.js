@@ -241,6 +241,64 @@ export class DayOneWorld {
       side: DoubleSide,
     });
 
+    this.shelterCollapsed = this._group('day_one_shelter_collapsed');
+    const canvasBundle = this._mesh(
+      'day_one_collapsed_canvas_bundle',
+      new BoxGeometry(2.2, 0.14, 1.62),
+      shade,
+    );
+    canvasBundle.position.set(0, 0.14, 0);
+    canvasBundle.rotation.set(0.04, -0.12, 0.035);
+    const canvasFold = this._mesh(
+      'day_one_collapsed_canvas_fold',
+      new BoxGeometry(1.45, 0.1, 0.78),
+      canvas,
+    );
+    canvasFold.position.set(-0.18, 0.25, 0.14);
+    canvasFold.rotation.y = 0.17;
+    const fallenRidge = this._mesh(
+      'day_one_collapsed_ridge_pole',
+      new CylinderGeometry(0.045, 0.055, 2.95, 7),
+      wood,
+    );
+    fallenRidge.rotation.x = Math.PI / 2;
+    fallenRidge.position.set(0.32, 0.12, -0.08);
+    const fallenSupport = this._mesh(
+      'day_one_collapsed_support_pole',
+      new CylinderGeometry(0.035, 0.055, 1.7, 7),
+      wood,
+    );
+    fallenSupport.rotation.z = Math.PI / 2;
+    fallenSupport.position.set(-0.18, 0.13, 0.32);
+    const rolledBedroll = this._mesh(
+      'day_one_collapsed_bedroll',
+      new CylinderGeometry(0.18, 0.18, 1.4, 12),
+      blanket,
+    );
+    rolledBedroll.rotation.z = Math.PI / 2;
+    rolledBedroll.position.set(-0.12, 0.26, -0.5);
+
+    this.shelterTear = this._mesh(
+      'day_one_shelter_torn_flap',
+      new PlaneGeometry(0.54, 0.66),
+      shade,
+      { cast: false },
+    );
+    this.shelterTear.position.set(0.38, 0.29, -0.14);
+    this.shelterTear.rotation.set(-Math.PI / 2, 0, -0.24);
+    this._rememberActionTransform('shelter-tear', this.shelterTear);
+    this.shelterCollapsed.add(
+      canvasBundle,
+      canvasFold,
+      fallenRidge,
+      fallenSupport,
+      rolledBedroll,
+      this.shelterTear,
+    );
+    group.add(this.shelterCollapsed);
+
+    this.shelterErected = this._group('day_one_shelter_erected');
+
     for (const side of [-1, 1]) {
       const panel = this._mesh(
         `day_one_tent_canvas_${side < 0 ? 'left' : 'right'}`,
@@ -249,7 +307,7 @@ export class DayOneWorld {
       );
       panel.position.set(side * 0.55, 0.83, 0);
       panel.rotation.z = side * -0.69;
-      group.add(panel);
+      this.shelterErected.add(panel);
     }
 
     const ridge = this._mesh(
@@ -259,7 +317,7 @@ export class DayOneWorld {
     );
     ridge.rotation.x = Math.PI / 2;
     ridge.position.y = 1.39;
-    group.add(ridge);
+    this.shelterErected.add(ridge);
     for (const z of [-1.36, 1.36]) {
       for (const side of [-1, 1]) {
         const support = this._mesh(
@@ -269,7 +327,7 @@ export class DayOneWorld {
         );
         support.position.set(side * 0.55, 0.68, z);
         support.rotation.z = side * -0.7;
-        group.add(support);
+        this.shelterErected.add(support);
       }
     }
 
@@ -286,18 +344,7 @@ export class DayOneWorld {
     );
     pillow.scale.set(1.3, 0.35, 0.72);
     pillow.position.set(0, 0.29, 0.72);
-    group.add(bedroll, pillow);
-
-    this.shelterTear = this._mesh(
-      'day_one_shelter_torn_flap',
-      new PlaneGeometry(0.54, 0.66),
-      shade,
-      { cast: false },
-    );
-    this.shelterTear.position.set(0.83, 0.72, -0.28);
-    this.shelterTear.rotation.set(0.18, -0.04, -0.69);
-    this._rememberActionTransform('shelter-tear', this.shelterTear);
-    group.add(this.shelterTear);
+    this.shelterErected.add(bedroll, pillow);
 
     this.shelterRepair = this._group('day_one_shelter_repair_visible');
     const patchMesh = this._mesh(
@@ -317,7 +364,8 @@ export class DayOneWorld {
     tie.rotation.z = -0.12;
     this.shelterRepair.add(patchMesh, tie);
     this._rememberActionTransform('shelter-repair', this.shelterRepair);
-    group.add(this.shelterRepair);
+    this.shelterErected.add(this.shelterRepair);
+    group.add(this.shelterErected);
     this._rememberActionTransform('shelter', group);
     this.root.add(group);
   }
@@ -704,6 +752,8 @@ export class DayOneWorld {
     if (this.fireFlame) this.fireFlame.visible = fireLit;
     if (this.fireLight) this.fireLight.intensity = fireLit ? 1.2 : 0;
     if (this.cookedFishVisual) this.cookedFishVisual.visible = fireLit && cookedFish > 0;
+    if (this.shelterCollapsed) this.shelterCollapsed.visible = !shelterRepaired;
+    if (this.shelterErected) this.shelterErected.visible = shelterRepaired;
     if (this.shelterRepair) this.shelterRepair.visible = shelterRepaired;
     if (this.shelterTear) this.shelterTear.visible = !shelterRepaired;
     if (this.plantedSeeds) this.plantedSeeds.visible = planted;

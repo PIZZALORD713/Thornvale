@@ -298,7 +298,7 @@ async function init() {
       session: gameSession,
       content: DAY_ONE_V01,
       actionController: dayOneActionController,
-      onPassOut: recoverPlayerAtCamp,
+      onPassOut: recoverPlayerAfterPassOut,
     });
 
     projectSessionState(gameSession.snapshot(), { animate: false });
@@ -553,10 +553,40 @@ function resetPlayerToArrival() {
   cameraRig.resetPosition();
 }
 
-function recoverPlayerAtCamp() {
-  const anchor = DAY_ONE_V01.anchors.campRecovery;
-  if (playerController && anchor) {
-    playerController.teleport(new Vector3(anchor.x, anchor.y, anchor.z));
+function waitForRecoveryFrame(delay) {
+  if (delay > 0) {
+    return new Promise((resolve) => window.setTimeout(resolve, delay));
+  }
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+  });
+}
+
+async function recoverPlayerAfterPassOut({ recoverySite = 'gate' } = {}) {
+  const anchor = recoverySite === 'shelter'
+    ? DAY_ONE_V01.anchors.campRecovery
+    : playerSpawnPoint;
+  const cover = hud?.elements?.lockOverlay;
+  playerController?.setActionLocked?.(true);
+  cover?.classList.add('is-recovering');
+  try {
+    if (cover) {
+      await waitForRecoveryFrame(reducedMotion ? 0 : 240);
+    }
+    if (playerController && anchor) {
+      const recoveryPoint = anchor.isVector3
+        ? anchor.clone()
+        : new Vector3(anchor.x, anchor.y, anchor.z);
+      playerController.teleport(recoveryPoint);
+    }
+    configureCameraRig(cameraRig);
+    cameraRig?.resetPosition?.();
+  } finally {
+    cover?.classList.remove('is-recovering');
+    if (cover) {
+      await waitForRecoveryFrame(reducedMotion ? 0 : 560);
+    }
+    playerController?.setActionLocked?.(false);
   }
   postProcessing?.pulse?.(0.38);
   soundscape?.playInteraction?.('magic');
