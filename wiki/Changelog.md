@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Corrected the Day One cooking spit so the center rod and fish roll around
+  their horizontal axis while both support stakes remain planted.
 * Made Day One exhaustion recovery legible as camp progression: pass-outs now
   return to the front gate until the provisional shelter is repaired, then use
   camp as the durable wake point. The unfinished tent is a low collapsed bundle

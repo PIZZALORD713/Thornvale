@@ -224,7 +224,7 @@ test('clipless chores animate truthful code-native props and restore them on com
     chopWood: () => world.woodlotAxe.quaternion.toArray(),
     catchFish: () => world.fishingRod.quaternion.toArray(),
     lightFire: () => world.campfireVisual.scale.toArray(),
-    cookFish: () => world.cookedFishVisual.quaternion.toArray(),
+    cookFish: () => world.fishRotor.quaternion.toArray(),
     eatFish: () => world.cookedFishVisual.scale.toArray(),
     repairShelter: () => world.shelterVisual.quaternion.toArray(),
   };
@@ -249,6 +249,48 @@ test('clipless chores animate truthful code-native props and restore them on com
     assert.deepEqual(probe(), before, `${actionKey} should restore its transient transform`);
   }
 
+  world.dispose();
+});
+
+test('cooking turns the meal around the horizontal spit without rotating its supports', () => {
+  const world = createDayOneWorld();
+  const action = DAY_ONE_V01.actions.cookFish;
+  const event = (type, progress) => ({
+    type,
+    id: action.id,
+    action,
+    duration: action.duration,
+    commitTime: action.commitTime,
+    progress,
+  });
+  const authoredRootPosition = world.cookedFishVisual.position.toArray();
+  const authoredRootRotation = world.cookedFishVisual.quaternion.toArray();
+  const supports = world.cookedFishVisual.children.filter(
+    ({ name }) => name === 'day_one_cooking_spit_support',
+  );
+  const authoredSupports = supports.map(({ quaternion }) => quaternion.toArray());
+
+  assert.ok(world.fishRotor, 'the rod and meal need a dedicated rotisserie pivot');
+  world.handleAction(event('start', 0));
+  world.handleAction(event('progress', 0.25));
+  world.update(1 / 60);
+
+  const rotatedAxis = new Vector3(1, 0, 0).applyQuaternion(
+    world.fishRotor.quaternion,
+  );
+  assert.ok(Math.abs(rotatedAxis.x - 1) < 1e-9);
+  assert.ok(Math.abs(rotatedAxis.y) < 1e-9);
+  assert.ok(Math.abs(rotatedAxis.z) < 1e-9);
+  assert.ok(Math.abs(world.fishRotor.rotation.x - Math.PI / 2) < 1e-9);
+  assert.deepEqual(world.cookedFishVisual.position.toArray(), authoredRootPosition);
+  assert.deepEqual(world.cookedFishVisual.quaternion.toArray(), authoredRootRotation);
+  assert.deepEqual(
+    supports.map(({ quaternion }) => quaternion.toArray()),
+    authoredSupports,
+  );
+
+  world.handleAction(event('complete', 1));
+  assert.ok(Math.abs(world.fishRotor.rotation.x) < 1e-9);
   world.dispose();
 });
 

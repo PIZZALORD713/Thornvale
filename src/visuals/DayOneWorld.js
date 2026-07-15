@@ -457,16 +457,19 @@ export class DayOneWorld {
       wood,
     );
     spit.rotation.z = Math.PI / 2;
-    spit.position.y = 0.72;
     const meal = this._mesh(
       'day_one_cooked_fish_meal',
       new SphereGeometry(0.19, 11, 7),
       fish,
     );
     meal.scale.set(1.5, 0.62, 0.34);
-    meal.position.y = 0.73;
-    this.cookedFishVisual.add(spit, meal);
+    meal.position.y = 0.01;
+    this.fishRotor = this._group('day_one_fish_rotor');
+    this.fishRotor.position.y = 0.72;
+    this.fishRotor.add(spit, meal);
+    this.cookedFishVisual.add(this.fishRotor);
     this._rememberActionTransform('cooked-fish', this.cookedFishVisual);
+    this._rememberActionTransform('fish-rotor', this.fishRotor);
     group.add(this.cookedFishVisual);
     this._rememberActionTransform('campfire', group);
     this.root.add(group);
@@ -821,10 +824,9 @@ export class DayOneWorld {
         }
         break;
       case 'cook-fish':
-        if (this.cookedFishVisual) {
+        if (this.fishRotor) {
           this.cookedFishVisual.visible = true;
-          this.cookedFishVisual.rotation.y += progress * Math.PI * 2;
-          this.cookedFishVisual.position.y += effort * 0.055;
+          this.fishRotor.rotation.x += progress * Math.PI * 2;
         }
         break;
       case 'eat-fish':
