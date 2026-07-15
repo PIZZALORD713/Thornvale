@@ -26,6 +26,11 @@ The first Milestone 1 implementation is now playable end to end. This is a proof
 - ADR 0004 grants standing project-wide authorization for present and future canonical fRiENDSiES assets in any integrated Thornvale role—including player/NPC assembly, hand items, sprouts, backpieces, equipment, props, environment, UI, and promotion—without per-token, per-role, per-context, per-transform, or per-revision approval. Shareable player links still use the pinned IDs `1..10000` catalog and exact canonical asset prefix as integrity/security controls; standalone packs, bulk raw mirrors, sublicensing, and outside-project reuse remain excluded.
 - ADR 0005 separately grants standing project-owner authorization for all current and future animation sources and derivatives the owner controls or may lawfully use in any integrated Thornvale role, without per-file, per-clip, per-pack, per-role, per-transform, or per-revision approval. Upstream licenses and exact source lineage remain mandatory release evidence; raw source redistribution, standalone motion packs, sublicensing, and outside-Thornvale use remain excluded. Animation provenance is not merged into canonical fRiENDSiES provenance.
 - Automated state tests cover strict ordering, the return-route anomaly trigger, anomaly idempotency across reload, both endings, save restoration, reset, and corrupt-save recovery.
+- The recovered touch-input pilot now ships through the same semantic movement,
+  look, Jump, and interaction contract as desktop. Auto selection, modern and
+  classic presentations, pass-out clearing, Bell-shot skipping, and iPhone Home
+  Screen guidance are implemented; representative-device performance and a
+  full physical-phone route remain validation gates rather than support claims.
 
 The immediate next gate is the bounded [Day One Action Weight](Day-One-Action-Weight.md) pass, followed by observational proof: complete the loop from a clean save, recover from an intentional pass-out, then run five clean first-play sessions. Capture completion time, help requests, optional activity, comprehension of food and energy, whether the actions feel grounded rather than tedious, and whether the Bell turn still lands before adding another day, villager, or broad system.
 
@@ -119,7 +124,7 @@ This scenario uses assets and interactions that already exist while testing the 
 | Neighborliness | Internal 0–100 score with diegetic feedback; numeric value appears only in debug tools |
 | Content model | Authored events and conditions before procedural direction |
 | Avatar reliability | A bundled Thornvale-safe fallback must always boot; Friendsies assets are optional until provenance and hosting are documented |
-| Mobile and controllers | Deferred until the desktop slice passes its validation gate |
+| Mobile and controllers | Touch input pilot included; full mobile performance/support and controller work remain gated |
 | Multiplayer | Conditional after the single-player hook validates |
 
 ### Slice state model
@@ -146,7 +151,7 @@ The score is not a morality meter. High Neighborliness grants warmth and access 
 - Character customization beyond a reliable default avatar
 - Accounts, cloud saves, room servers, chat, or multiplayer synchronization
 - Three complete endings; two polished endings are the target, with Rewrite as a stretch goal
-- Mobile parity
+- Full mobile parity, performance support, and controller support beyond the bounded touch-input pilot
 
 ## 4. Success scorecard
 
@@ -381,7 +386,7 @@ Avoid turning these names into a framework project. A module should exist only w
 - Additional zones and villager arcs
 - A rule/anomaly authoring tool if content volume justifies it
 - Procedural Anomaly Director using the authored events as validated inputs
-- Controller and mobile investigations
+- Controller support and mobile performance/support validation
 
 ### P3 — Conditional bets
 

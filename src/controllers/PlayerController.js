@@ -54,8 +54,8 @@ export class PlayerController {
     const safeDt = Math.max(0, Number(dt) || 0);
 
     // --- Input -> Camera ---
-    const mouseDelta = this.input.consumeMouseDelta();
-    this.cameraRig.applyInput(mouseDelta.x, mouseDelta.y);
+    const lookDelta = this.input.consumeLookDelta?.() ?? this.input.consumeMouseDelta();
+    this.cameraRig.applyInput(lookDelta.x, lookDelta.y);
 
     // --- Platform velocity ---
     if (this.platformCarrier && this.motor.collider) {
@@ -83,21 +83,24 @@ export class PlayerController {
     this.jumpCooldown = Math.max(0, this.jumpCooldown - safeDt);
     this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - safeDt);
 
-    const jumpHeld = !this.actionLocked && Boolean(this.input.keys?.jump);
-    const jumpPressed = !this.actionLocked && (typeof this.input.consumeKeyPress === 'function'
-      ? this.input.consumeKeyPress('Space')
-      : (jumpHeld && !this._jumpHeldLastUpdate));
+    const jumpHeld = !this.actionLocked && (this.input.isActionHeld?.('jump')
+      ?? Boolean(this.input.keys?.jump));
+    const jumpPressed = !this.actionLocked && (this.input.consumeActionPress?.('jump')
+      ?? (typeof this.input.consumeKeyPress === 'function'
+        ? this.input.consumeKeyPress('Space')
+        : (jumpHeld && !this._jumpHeldLastUpdate)));
     this._jumpHeldLastUpdate = jumpHeld;
 
     if (this.actionLocked) {
-      this.input.consumeKeyPress?.('Space');
+      if (typeof this.input.consumeActionPress === 'function') this.input.consumeActionPress('jump');
+      else this.input.consumeKeyPress?.('Space');
       this.jumpBufferTimer = 0;
     } else if (jumpPressed) {
       this.jumpBufferTimer = this.jumpBufferTime;
     }
     if (!this.actionLocked) this._consumeBufferedJump();
 
-    const sprinting = Boolean(this.input.keys?.sprint)
+    const sprinting = (this.input.isActionHeld?.('sprint') ?? Boolean(this.input.keys?.sprint))
       && (moveInput.x * moveInput.x + moveInput.z * moveInput.z > 0.001);
     this._motorIntent.targetSpeed = sprinting
       ? (this.motor.sprintSpeed ?? 5.6)

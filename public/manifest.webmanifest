@@ -1,0 +1,12 @@
+{
+  "id": "/",
+  "name": "Thornvale · A Courtesy Before Dusk",
+  "short_name": "Thornvale",
+  "description": "A small town remembers every kindness.",
+  "start_url": "/?controls=auto",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#161929",
+  "theme_color": "#f3c7cf"
+}

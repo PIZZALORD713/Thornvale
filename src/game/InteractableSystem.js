@@ -13,6 +13,9 @@ export class InteractableSystem {
   }
 
   update(playerPosition, inputManager) {
+    const consumeInteract = () => (typeof inputManager.consumeActionPress === 'function'
+      ? inputManager.consumeActionPress('interact')
+      : inputManager.consumeKeyPress('KeyE'));
     let closest = null;
     let closestDist = Infinity;
 
@@ -37,18 +40,22 @@ export class InteractableSystem {
       this.activeInteractable = closest;
       this.activePrompt = prompt;
       if (closest) {
-        this.hud.showPrompt(`Press E — ${prompt}`);
+        if (inputManager.controlMode === 'touch') {
+          this.hud.showPrompt(prompt, { controlMode: 'touch' });
+        } else {
+          this.hud.showPrompt(`Press E — ${prompt}`);
+        }
       } else {
         this.hud.hidePrompt();
       }
     }
 
     if (!closest) {
-      inputManager.consumeKeyPress('KeyE');
+      consumeInteract();
       return;
     }
 
-    if (inputManager.consumeKeyPress('KeyE') && !this.inFlight) {
+    if (consumeInteract() && !this.inFlight) {
       const interaction = closest;
       let pending;
       try {

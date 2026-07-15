@@ -190,13 +190,14 @@ export class HUD {
     element.textContent = String(count);
   }
 
-  showPrompt(text) {
+  showPrompt(text, { controlMode = 'desktop' } = {}) {
     if (!this.elements.prompt) return;
 
     const message = String(text ?? 'Interact');
     const match = message.match(/^Press\s+([^\s]+)\s*[—–-]\s*(.+)$/i);
     const key = match?.[1] || 'E';
     const action = match?.[2] || message;
+    const touch = controlMode === 'touch';
 
     const spark = document.createElement('span');
     spark.className = 'prompt-spark';
@@ -207,7 +208,7 @@ export class HUD {
     keyShell.className = 'prompt-key-shell';
 
     const pressLabel = document.createElement('span');
-    pressLabel.textContent = 'Press';
+    pressLabel.textContent = touch ? 'Nearby' : 'Press';
 
     const keycap = document.createElement('kbd');
     keycap.textContent = key;
@@ -216,9 +217,13 @@ export class HUD {
     actionLabel.className = 'prompt-action';
     actionLabel.textContent = action;
 
-    keyShell.append(pressLabel, keycap);
+    keyShell.append(pressLabel);
+    if (!touch) keyShell.append(keycap);
     this.elements.prompt.replaceChildren(spark, keyShell, actionLabel);
-    this.elements.prompt.setAttribute('aria-label', `Press ${key} to ${action}`);
+    this.elements.prompt.setAttribute(
+      'aria-label',
+      touch ? `${action}. Use the Interact button.` : `Press ${key} to ${action}`,
+    );
     this.elements.prompt.setAttribute('aria-hidden', 'false');
     this.elements.prompt.classList.remove('hidden');
     this.restartAnimation(this.elements.prompt, 'is-changing');

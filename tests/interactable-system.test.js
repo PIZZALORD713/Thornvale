@@ -67,3 +67,41 @@ test('a synchronous interaction throw is contained by the in-flight failure path
     console.error = originalError;
   }
 });
+
+test('semantic interact presses use the same nearest-target and in-flight contract', async () => {
+  let calls = 0;
+  let pressed = true;
+  const prompts = [];
+  const system = new InteractableSystem({
+    showPrompt(message) { prompts.push(message); },
+    hidePrompt() {},
+    setStatus() {},
+  });
+  system.register({
+    id: 'ledger',
+    position: { distanceTo: () => 0.5 },
+    radius: 2,
+    prompt: 'Sign the ledger',
+    onInteract() {
+      calls += 1;
+      return 'signed';
+    },
+  });
+  const input = {
+    consumeActionPress(action) {
+      assert.equal(action, 'interact');
+      const result = pressed;
+      pressed = false;
+      return result;
+    },
+    consumeKeyPress() {
+      throw new Error('semantic input must not fall back to a physical key');
+    },
+  };
+
+  system.update({}, input);
+  await system.inFlight;
+
+  assert.equal(calls, 1);
+  assert.deepEqual(prompts, ['Press E — Sign the ledger']);
+});

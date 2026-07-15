@@ -7,3 +7,9 @@ without a request to Google's decoder CDN.
 
 Three.js is distributed under the MIT License. See the repository dependency
 and `node_modules/three/LICENSE` in a development checkout.
+
+The production build applies Oxc compression without identifier mangling to
+the copied `draco_decoder.js` fallback. The checked-in Three.js source remains
+byte-identical, the `/draco/` runtime URLs and decoder API remain stable, and
+the WASM decoder and wrapper are copied unchanged. A build must fail rather
+than ship the fallback if this deterministic transform reports an error.

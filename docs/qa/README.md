@@ -54,6 +54,9 @@ The fRiENDSiES deep-link and remote-fallback evidence is recorded in
 [`2026-07-12-friendsies-url-selection.md`](2026-07-12-friendsies-url-selection.md).
 The mint tea-house roof topology repair and release evidence is recorded in
 [`2026-07-14-mint-tea-house-roof.md`](2026-07-14-mint-tea-house-roof.md).
+The recovered touch-input path, current Ledger/pass-out/Bell integration,
+rollback matrix, and representative-phone gate are recorded in
+[`2026-07-15-mobile-controls-mainline.md`](2026-07-15-mobile-controls-mainline.md).
 Do not commit generated `dist/`, screenshots, traces, or `output/` artifacts by
 default. When evidence is needed for a release or regression, store a concise
 Markdown record here named `YYYY-MM-DD-short-topic.md` and link any deliberately

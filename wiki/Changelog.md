@@ -17,6 +17,37 @@
   camp as the durable wake point. The unfinished tent is a low collapsed bundle
   rather than an already-standing A-frame; the repair erects it and gives a
   one-time update that future recovery happens there.
+* Added a premium touch-control presentation as the default within the bounded
+  touch pilot: a calmer idle stick, vertical right-thumb action arc, themed
+  inline glyphs, aligned
+  movement/Jump centers, contextual interaction placement, and an invisible
+  action moat that prevents near-miss camera drags. Movement, sprint, Jump, and
+  interaction availability project visible held state without changing input
+  authority. Reduced-motion, increased-contrast, and forced-color variants are
+  covered, while `?controlsStyle=classic` provides an immediate presentation
+  rollback through the unchanged semantic input path.
+* Added an automatic coarse-touch controls pilot with independent analog move
+  and drag-look regions, outer-band sprint, Jump, and a contextual action
+  button. Touch entry avoids pointer lock, story cards and lifecycle
+  interruptions clear input, and `?controls=touch|desktop|auto` keeps QA and
+  rollback deterministic. Desktop keyboard/mouse remains unchanged. Automated
+  release gates pass; the feature remains a pilot until a full Core Hook run and
+  performance measurements are completed on a representative phone.
+* Added an honest iPhone Safari app-mode path instead of treating rotation as
+  automatic fullscreen. A standalone web manifest and Apple web-app metadata
+  support Home Screen launch; eligible browser-tab sessions show a compact
+  entry instruction and one dismissible first-rotation reminder, deferred while
+  story UI is blocking and suppressed in standalone mode. Dynamic viewport
+  height plus coalesced `window` and `visualViewport` resizing keeps the canvas
+  and dependent presentation aligned with Safari's available viewport. The
+  physical gate removes any old shortcut, reinstalls through Share > Add to Home
+  Screen, enables Open as Web App when offered, and launches from the icon;
+  standalone storage may be separate from the Safari-tab save.
+* Compressed only the production copy of the bundled Draco JavaScript fallback
+  without identifier mangling, preserving the checked-in Three.js source,
+  stable `/draco/` runtime contract, and WASM decoder. A decode-equivalence
+  regression protects the fallback while keeping the production artifact under
+  the fixed 8 MiB cap.
 * Fixed malformed mint tea-house roof topology that produced stretched,
   flickering planes near the pawn. Curled eaves now export as closed,
   outward-wound solids with concave-safe triangulation and modeled separation
@@ -42,8 +73,8 @@
   sublicensing, and outside-project reuse remain excluded; animation families
   inherit ADR 0005 while retaining their independent Mixamo or other upstream
   rights and provenance records.
-* Added the bounded Day One Proof between Steward Lumen's welcome and the
-  Community Ledger: gather wood, fish the pond, light a fire, cook and eat,
+* Added the bounded Day One Proof after Community Ledger enrollment and before
+  the dusk Bell: gather wood, fish the pond, light a fire, cook and eat,
   plant and water one seed bed, and brace a provisional forest-edge shelter.
   Nourishment, working energy, a small saved inventory, camp/garden projection,
   and recoverable pass-out with a clinic fee or debt now form one testable loop;
