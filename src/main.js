@@ -25,6 +25,12 @@ import { InputManager } from './core/InputManager.js';
 import { CharacterMotor } from './physics/CharacterMotor.js';
 import { CameraRig } from './game/camera/CameraRig.js';
 import { configureCameraRig } from './config/camera.js';
+import { resolveControlMode, resolveTouchControlStyle } from './config/controls.js';
+import {
+  isAppleMobilePlatform,
+  resolveInstalledDisplayMode,
+  shouldShowAppleAppModeHint,
+} from './config/display-mode.js';
 import { resolvePlayerFriendsiesSelection } from './config/player-character.js';
 import { PlayerController } from './controllers/PlayerController.js';
 import { VisualRig } from './visuals/VisualRig.js';
@@ -46,6 +52,8 @@ import { PlayerAnimator } from './visuals/PlayerAnimator.js';
 import { CozySoundscape } from './audio/CozySoundscape.js';
 import { HUD } from './ui/HUD.js';
 import { StoryUI } from './ui/StoryUI.js';
+import { TouchControls } from './ui/TouchControls.js';
+import { MobileDisplayNotice } from './ui/MobileDisplayNotice.js';
 import { DayNightSystem } from './game/DayNightSystem.js';
 import { GameSession } from './game/GameSession.js';
 import { CoreHookDirector } from './game/CoreHookDirector.js';
@@ -69,6 +77,8 @@ let renderer;
 let clock;
 let physicsWorld;
 let inputManager;
+let touchControls;
+let mobileDisplayNotice;
 let characterMotor;
 let cameraRig;
 let visualRig;
@@ -106,12 +116,15 @@ let playerGlow;
 let storyStarted = false;
 let storyBlocking = false;
 let storyBlockDepth = 0;
+let worldEntered = false;
+let worldEntryPending = false;
 let stewardCastReady = false;
 let animationClips = [];
 let townLandmarks = {};
 let playerSpawnPoint;
 let cameraOcclusionTarget = null;
 let playerFriendsiesSelection = null;
+let resizeFrameId = 0;
 
 const playerGlowDay = new Color(0xffc9dc);
 const playerGlowNight = new Color(0xa9c4ff);
@@ -122,6 +135,32 @@ const params = new URLSearchParams(window.location.search);
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
 const visualQuality = params.get('quality') || (reducedMotion ? 'medium' : 'high');
 const storyEnabled = params.get('story') !== 'off';
+const controlMode = resolveControlMode({
+  requested: params.get('controls') || 'auto',
+  maxTouchPoints: navigator.maxTouchPoints || 0,
+  coarsePointer: window.matchMedia?.('(pointer: coarse)')?.matches ?? false,
+});
+const touchControlMode = controlMode === 'touch';
+const touchControlStyle = resolveTouchControlStyle({
+  requested: params.get('controlsStyle') || 'modern',
+});
+const installedDisplayMode = resolveInstalledDisplayMode({
+  standaloneMedia: window.matchMedia?.('(display-mode: standalone)')?.matches ?? false,
+  fullscreenMedia: window.matchMedia?.('(display-mode: fullscreen)')?.matches ?? false,
+  navigatorStandalone: navigator.standalone === true,
+});
+const showAppleAppModeHint = shouldShowAppleAppModeHint({
+  controlMode,
+  displayMode: installedDisplayMode,
+  appleMobile: isAppleMobilePlatform({
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    maxTouchPoints: navigator.maxTouchPoints,
+  }),
+});
+document.documentElement.dataset.controls = controlMode;
+document.documentElement.dataset.touchStyle = touchControlStyle;
+document.documentElement.dataset.displayMode = installedDisplayMode;
 
 const gameState = {
   weather: reducedMotion ? 'clear' : 'mixed',
@@ -139,6 +178,12 @@ function setLoading(progress, message) {
 async function init() {
   hud = new HUD().init();
   storyUI = new StoryUI({ onBlockingChange: handleStoryBlocking }).init();
+  configureControlPresentation();
+  mobileDisplayNotice = new MobileDisplayNotice({
+    eligible: showAppleAppModeHint,
+    getWorldEntered: () => worldEntered,
+    getStoryBlocking: () => storyBlocking,
+  }).init();
   setLoading(0.06, 'Waking the valley…');
 
   scene = new Scene();
@@ -222,18 +267,22 @@ async function init() {
 
   setLoading(0.56, 'Inviting the fireflies…');
 
-  inputManager = new InputManager();
+  inputManager = new InputManager({ controlMode });
   inputManager.init(renderer.domElement);
-  inputManager.onLockChange = (locked) => {
-    if (locked && storyBlocking) {
-      inputManager.exitLock();
-      return;
-    }
-    if (storyBlocking) hud.elements.lockOverlay?.classList.add('hidden');
-    else hud.elements.lockOverlay?.classList.toggle('hidden', locked);
-    if (locked && hud.elements.resumeLook) hud.elements.resumeLook.hidden = true;
-    hud.setPlaying?.(locked);
-  };
+  if (touchControlMode) {
+    touchControls = new TouchControls(inputManager).init();
+  } else {
+    inputManager.onLockChange = (locked) => {
+      if (locked && storyBlocking) {
+        inputManager.exitLock();
+        return;
+      }
+      if (storyBlocking) hud.elements.lockOverlay?.classList.add('hidden');
+      else hud.elements.lockOverlay?.classList.toggle('hidden', locked);
+      if (locked && hud.elements.resumeLook) hud.elements.resumeLook.hidden = true;
+      hud.setPlaying?.(locked);
+    };
+  }
 
   characterMotor = new CharacterMotor(physicsWorld);
   characterMotor.init(spawnPoint, scene);
@@ -348,8 +397,9 @@ async function init() {
   }
 
   cacheCollisionObjects();
-  bindPointerLock();
-  window.addEventListener('resize', onResize);
+  bindWorldEntry();
+  window.addEventListener('resize', scheduleResize);
+  window.visualViewport?.addEventListener?.('resize', scheduleResize);
   window.addEventListener('beforeunload', dispose, { once: true });
 
   setLoading(1, 'The gate is open.');
@@ -371,6 +421,9 @@ async function init() {
     visualRig,
     characterMotor,
     playerController,
+    inputManager,
+    touchControls,
+    controlMode,
     stewardActor,
     storyUI,
     gameSession,
@@ -575,6 +628,7 @@ async function recoverPlayerAfterPassOut({ recoverySite = 'gate' } = {}) {
     : playerSpawnPoint;
   const cover = hud?.elements?.lockOverlay;
   playerController?.setActionLocked?.(true);
+  touchControls?.setEnabled?.(false);
   cover?.classList.add('is-recovering');
   try {
     if (cover) {
@@ -594,6 +648,7 @@ async function recoverPlayerAfterPassOut({ recoverySite = 'gate' } = {}) {
       await waitForRecoveryFrame(reducedMotion ? 0 : 560);
     }
     playerController?.setActionLocked?.(false);
+    touchControls?.setEnabled?.(worldEntered && !storyBlocking);
   }
   postProcessing?.pulse?.(0.38);
   soundscape?.playInteraction?.('magic');
@@ -620,6 +675,7 @@ async function ringAnomalyBell({ onReveal } = {}) {
   }
 
   let revealed = false;
+  touchControls?.clear?.();
   playerController?.setActionLocked?.(true);
   try {
     await cameraRig.playFocusShot({
@@ -654,12 +710,22 @@ function handleStoryBlocking(blocking) {
   if (blocking) storyBlockDepth += 1;
   else storyBlockDepth = Math.max(0, storyBlockDepth - 1);
   storyBlocking = storyBlockDepth > 0;
+  mobileDisplayNotice?.setStoryBlocking?.(storyBlocking);
   inputManager?.setGameplayEnabled?.(!storyBlocking);
+  touchControls?.setEnabled?.(worldEntered && !storyBlocking);
   if (storyBlocking) {
     hud?.elements?.lockOverlay?.classList.add('hidden');
     if (hud?.elements?.resumeLook) hud.elements.resumeLook.hidden = true;
     if (document.pointerLockElement) inputManager?.exitLock?.();
-  } else if (wasBlocking && storyStarted && !inputManager?.isLocked) {
+  }
+
+  if (touchControlMode) {
+    hud?.elements?.lockOverlay?.classList.add('hidden');
+    if (hud?.elements?.resumeLook) hud.elements.resumeLook.hidden = true;
+    return;
+  }
+
+  if (!storyBlocking && wasBlocking && storyStarted && !inputManager?.isLocked) {
     // StoryUI closes inside the click/key gesture, so this request can restore
     // mouse look without making the player discover an extra canvas click.
     void inputManager?.requestLock?.().then((locked) => {
@@ -671,17 +737,28 @@ function handleStoryBlocking(blocking) {
   }
 }
 
-function bindPointerLock() {
+function bindWorldEntry() {
   const enterWorld = async () => {
+    if (worldEntryPending) return;
+    worldEntryPending = true;
     if (hud?.elements?.resumeLook) hud.elements.resumeLook.hidden = true;
     soundscape?.start();
     hud?.beginAdventure?.();
-    const locked = await inputManager?.requestLock?.();
-    if (!locked) {
-      // Embedded browsers can deny pointer lock. Keep keyboard play and the
-      // cinematic scene available instead of trapping the player in the card.
+
+    if (touchControlMode) {
+      worldEntered = true;
       hud.elements.lockOverlay?.classList.add('hidden');
       hud.setPlaying?.(true);
+      touchControls?.setEnabled?.(!storyBlocking);
+    } else {
+      const locked = await inputManager?.requestLock?.();
+      worldEntered = true;
+      if (!locked) {
+        // Embedded browsers can deny pointer lock. Keep keyboard play and the
+        // cinematic scene available instead of trapping the player in the card.
+        hud.elements.lockOverlay?.classList.add('hidden');
+        hud.setPlaying?.(true);
+      }
     }
 
     if (storyEnabled && coreHookDirector && !storyStarted) {
@@ -691,16 +768,40 @@ function bindPointerLock() {
       } catch (error) {
         storyStarted = false;
         console.error('[CoreHookDirector] first run failed to start', error);
-        hud?.setStatus?.('The first page would not open. Click the valley to try again.');
+        hud?.setStatus?.(`The first page would not open. ${touchControlMode ? 'Tap the gate' : 'Click the valley'} to try again.`);
+        if (touchControlMode) {
+          touchControls?.setEnabled?.(false);
+          hud?.elements?.lockOverlay?.classList.remove('hidden');
+        }
       }
     }
+    worldEntryPending = false;
   };
 
   hud.elements.lockOverlay?.addEventListener('click', enterWorld);
   hud.elements.resumeLook?.addEventListener('click', enterWorld);
-  renderer.domElement.addEventListener('click', () => {
-    if (!inputManager.isLocked) enterWorld();
-  });
+  if (!touchControlMode) {
+    renderer.domElement.addEventListener('click', () => {
+      if (!inputManager.isLocked) enterWorld();
+    });
+  }
+}
+
+function configureControlPresentation() {
+  if (!touchControlMode) return;
+  const overlay = hud?.elements?.lockOverlay;
+  document.getElementById('touchControls')?.classList.toggle('tc-modern', touchControlStyle === 'modern');
+  const appModeHint = document.getElementById('mobileAppModeHint');
+  if (appModeHint) appModeHint.hidden = !showAppleAppModeHint;
+  overlay?.setAttribute(
+    'aria-label',
+    showAppleAppModeHint
+      ? 'Enter Thornvale. Tap to begin. To hide Safari controls, use Share, Add to Home Screen, then launch Thornvale from its icon.'
+      : 'Enter Thornvale. Tap to begin.',
+  );
+  const enterLabel = overlay?.querySelector?.('.enter-cta > span:last-child');
+  if (enterLabel) enterLabel.textContent = 'Tap to enter through the gate';
+  overlay?.querySelector?.('.mouse-mark')?.classList.add('touch-mark');
 }
 
 async function loadFriendsiesCast() {
@@ -1001,6 +1102,12 @@ function animate() {
 
   if (interactableSystem && characterMotor) {
     interactableSystem.update(characterMotor.getPosition(), inputManager);
+    const focusShotActive = Boolean(cameraRig?.isFocusShotActive?.());
+    touchControls?.setInteraction?.(
+      focusShotActive ? 'Skip' : (interactableSystem.activePrompt || 'Interact'),
+      focusShotActive
+        || (Boolean(interactableSystem.activeInteractable) && !interactableSystem.inFlight),
+    );
   }
 
   const twilightActive = (dayNightSystem?.mix || 0) >= 0.42;
@@ -1064,7 +1171,7 @@ function updateAudio(dt) {
 function handleGlobalInput() {
   if (
     cameraRig?.isFocusShotActive?.()
-    && inputManager.consumeKeyPress('KeyE')
+    && inputManager.consumeActionPress('interact')
   ) {
     cameraRig.skipFocusShot();
   }
@@ -1159,6 +1266,14 @@ function isCameraDecoration(object) {
   return false;
 }
 
+function scheduleResize() {
+  if (resizeFrameId) return;
+  resizeFrameId = window.requestAnimationFrame(() => {
+    resizeFrameId = 0;
+    onResize();
+  });
+}
+
 function onResize() {
   const width = window.innerWidth;
   const height = window.innerHeight;
@@ -1171,6 +1286,10 @@ function onResize() {
 
 function dispose() {
   cameraRig?.cancelFocusShot?.();
+  window.removeEventListener('resize', scheduleResize);
+  window.visualViewport?.removeEventListener?.('resize', scheduleResize);
+  if (resizeFrameId) window.cancelAnimationFrame(resizeFrameId);
+  resizeFrameId = 0;
   if (cameraOcclusionTarget) {
     cameraOcclusionTarget.visible = cameraOcclusionTarget.userData
       ?.cameraAuthoredVisibility ?? true;
@@ -1216,6 +1335,10 @@ function dispose() {
   visualRig?.removeFromScene?.(scene);
   visualRig?.dispose();
   characterLoader?.clearAll();
+  touchControls?.dispose();
+  touchControls = null;
+  mobileDisplayNotice?.dispose();
+  mobileDisplayNotice = null;
   inputManager?.dispose();
   postProcessing?.dispose();
   vfx?.dispose();

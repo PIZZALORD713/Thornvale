@@ -17,6 +17,51 @@ index.html
       -> render/update loop
 ```
 
+## Current control flow
+
+`src/main.js` resolves `?controls=touch|desktop|auto` during composition. Auto
+mode selects touch only when `navigator.maxTouchPoints` is greater than zero
+and `(pointer: coarse)` matches; the explicit selectors keep QA deterministic.
+It separately resolves `?controlsStyle=modern|classic`; modern is the safe
+default and classic is a presentation-only rollback. The resolved style is
+projected onto document/UI datasets and does not fork input authority.
+
+`InputManager` aggregates device sources into semantic movement, look, held
+actions, and edge-triggered action presses. Keyboard and mouse remain one
+source. `TouchControls` is a UI intent producer: its independent left movement
+pointer, right look pointer, Jump button, and contextual interaction button
+write through the same semantic contract. `PlayerController` and
+`InteractableSystem` consume that contract rather than owning device-specific
+DOM behavior. `TouchControls` also projects moving, sprinting, held Jump, and
+interaction availability as visual state on its root; terminal lifecycle paths
+clear those projections alongside semantic touch state.
+
+Touch mode does not request pointer lock. Story/modal blocking disables the
+touch UI and clears its source; pointer cancellation, blur, visibility changes,
+resize, orientation changes, disable, and disposal follow the same neutral-input
+path. Pass-out recovery temporarily disables the whole touch surface, while the
+second-Bell camera reveal clears held touch state and temporarily projects Skip
+through the semantic interaction edge. This seam is an included controls pilot
+only and does not change the Plan 2.0 mobile-parity or performance scope.
+
+The iPhone display-mode seam is separate from gameplay input.
+`src/config/display-mode.js` performs pure Apple-platform, browser/standalone,
+and notice-eligibility decisions. `src/ui/MobileDisplayNotice.js` owns only the
+first in-play rotation notice lifecycle, including story-blocking deferral and
+disposal; it never sizes the viewport or writes gameplay state. `src/main.js`
+wires those decisions, while the web manifest and Apple metadata declare the
+Home Screen standalone contract. iPhone Safari cannot automatically enter
+element fullscreen on rotation, so browser-tab UI explains the supported Add
+to Home Screen path and is suppressed in standalone mode.
+
+Viewport projection remains a composition concern. The document uses dynamic
+viewport height, and `window.resize` plus `visualViewport.resize` are coalesced
+through one animation-frame callback before the camera, renderer,
+post-processing, and pixel-ratio consumers update. Input cancellation remains
+independent in `TouchControls`. A Home Screen launch may use storage separate
+from the Safari tab; `GameSession` remains authoritative within whichever
+browser context launched the game.
+
 ## Source boundaries
 
 | Directory | Owns | Should not own |

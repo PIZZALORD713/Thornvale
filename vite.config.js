@@ -1,8 +1,26 @@
-import { defineConfig } from 'vite';
+import { defineConfig, minify } from 'vite';
 import { transform } from 'lightningcss';
-import { readdir, rm } from 'node:fs/promises';
+import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { CURATED_FRIENDSIES_CAST } from './src/content/friendsies-cast.js';
+
+export async function minifyDracoDecoderSource(source) {
+  const result = await minify('draco_decoder.js', source, {
+    module: false,
+    compress: true,
+    mangle: false,
+    codegen: { legalComments: 'inline', removeWhitespace: true },
+    sourcemap: false,
+  });
+  if (result.errors?.length) {
+    throw new Error(
+      `Draco decoder minification failed: ${result.errors
+        .map((error) => error.message || String(error))
+        .join('; ')}`,
+    );
+  }
+  return result.code;
+}
 
 export function minifyInlineCss(html) {
   return html.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (_match, attributes, css) => {
@@ -38,6 +56,22 @@ function inlineCssMinifier() {
     apply: 'build',
     enforce: 'post',
     transformIndexHtml: minifyProductionHtml,
+  };
+}
+
+function copiedDracoMinifier() {
+  let decoderPath;
+  return {
+    name: 'thornvale-copied-draco-minifier',
+    apply: 'build',
+    enforce: 'post',
+    configResolved(config) {
+      decoderPath = resolve(config.root, config.build.outDir, 'draco/draco_decoder.js');
+    },
+    async writeBundle() {
+      const source = await readFile(decoderPath, 'utf8');
+      await writeFile(decoderPath, await minifyDracoDecoderSource(source));
+    },
   };
 }
 
@@ -80,7 +114,7 @@ export default defineConfig({
   // Root-relative build assets keep generator-style /fren/:token deep links
   // from looking for JavaScript under /fren/assets/.
   base: '/',
-  plugins: [inlineCssMinifier(), omitPublicDocsFromDeployment()],
+  plugins: [inlineCssMinifier(), copiedDracoMinifier(), omitPublicDocsFromDeployment()],
   build: {
     outDir: 'dist',
     sourcemap: false,

@@ -230,7 +230,7 @@ Keywords: *cottagecore, folk-horror, uncanny social pressure, “nice” dystopi
 ## Current Status
 - **Concept + narrative pillars:** ✅
 - **Core loop definition:** ✅
-- **Technical prototype:** ✅ third-person controller, collision, authored town, story-driven day/night, fRiENDSiES animation, and debug tools
+- **Technical prototype:** ✅ third-person controller, collision, authored town, story-driven day/night, fRiENDSiES animation, desktop input, a bounded touch-input pilot, and debug tools
 - **Core Hook Proof v0.3:** ✅ one steward, one rule, one anomaly, one intervention, two consequential outcomes, local save/reset, and state-transition tests
 - **Current target:** five fresh-player validation sessions and tuning from observed completion/friction data
 
@@ -243,6 +243,14 @@ Keywords: *cottagecore, folk-horror, uncanny social pressure, “nice” dystopi
 - **`**: Toggle debug overlay
 - **N**: Toggle Day/Night only while debug mode is open
 - **ESC**: Release cursor
+
+On coarse-pointer touch devices, Thornvale automatically presents a left
+movement stick, right-side drag look, outer-band sprint, Jump, and contextual
+Interact/Skip actions. Use `?controls=touch` or `?controls=desktop` for an
+explicit input path during QA; `?controlsStyle=classic` keeps the original touch
+layout as a presentation rollback. Desktop keyboard and mouse remain the
+supported baseline while representative-phone performance and full mobile
+support stay behind their physical-device gate.
 
 ## Run & Deploy
 ### Local Dev

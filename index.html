@@ -4,12 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#f3c7cf" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Thornvale" />
     <meta
       name="description"
       content="Enter Thornvale, a small town that remembers every kindness."
     />
     <title>Thornvale · A Courtesy Before Dusk</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <style>
       :root {
         color-scheme: dark;
@@ -59,6 +64,7 @@
       body {
         width: 100%;
         height: 100%;
+        height: 100dvh;
         overflow: hidden;
         overscroll-behavior: none;
       }
@@ -3474,6 +3480,426 @@
         .intro-footnote { margin-top: 8px; }
       }
 
+      /* ----------------------------------------------------------
+         TOUCH CONTROL PILOT
+         ---------------------------------------------------------- */
+      .touch-controls {
+        position: fixed;
+        inset: 0;
+        z-index: 1200;
+        opacity: 1;
+        pointer-events: none;
+        visibility: visible;
+        transition: opacity 0.18s ease, visibility 0.18s ease;
+      }
+
+      .touch-controls[hidden] { display: none !important; }
+
+      .touch-move-zone {
+        position: absolute;
+        bottom: var(--safe-bottom);
+        left: var(--safe-left);
+        width: 132px;
+        height: 132px;
+        border-radius: 50%;
+        pointer-events: auto;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .touch-stick-base {
+        position: absolute;
+        inset: 5px;
+        border: 1px solid rgba(255, 255, 255, 0.56);
+        border-radius: 50%;
+        background:
+          radial-gradient(circle, rgba(255, 253, 244, 0.15) 0 37%, transparent 38%),
+          rgba(45, 39, 55, 0.28);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.34),
+          0 12px 30px rgba(25, 22, 34, 0.18);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        pointer-events: none;
+      }
+
+      .touch-stick-base::after {
+        content: "MOVE";
+        position: absolute;
+        bottom: 14px;
+        left: 50%;
+        color: rgba(255, 253, 244, 0.72);
+        font-size: 8px;
+        font-weight: 850;
+        letter-spacing: 0.14em;
+        transform: translateX(-50%);
+      }
+
+      .touch-stick-knob {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 48px;
+        height: 48px;
+        margin: -24px 0 0 -24px;
+        border: 1px solid rgba(255, 255, 255, 0.78);
+        border-radius: 50%;
+        background: linear-gradient(145deg, rgba(255, 249, 235, 0.92), rgba(222, 188, 201, 0.82));
+        box-shadow: 0 7px 18px rgba(43, 32, 52, 0.24), inset 0 1px 0 white;
+        will-change: transform;
+      }
+
+      .touch-look-zone {
+        position: absolute;
+        top: 16%;
+        right: 0;
+        bottom: 0;
+        width: 58%;
+        z-index: 1;
+        pointer-events: auto;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .touch-actions {
+        position: absolute;
+        right: var(--safe-right);
+        bottom: var(--safe-bottom);
+        z-index: 2;
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        pointer-events: none;
+      }
+
+      .touch-action {
+        display: inline-grid;
+        min-width: 64px;
+        min-height: 64px;
+        padding: 8px 12px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 50%;
+        color: #fffdf4;
+        font: 850 10px/1.15 inherit;
+        letter-spacing: 0.08em;
+        text-align: center;
+        text-transform: uppercase;
+        background: rgba(77, 61, 83, 0.62);
+        box-shadow: 0 10px 26px rgba(30, 24, 38, 0.24), inset 0 1px 0 rgba(255,255,255,0.28);
+        backdrop-filter: blur(9px);
+        -webkit-backdrop-filter: blur(9px);
+        pointer-events: auto;
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .touch-action:active { transform: scale(0.94); }
+      .touch-action:focus-visible { outline: 3px solid rgba(255, 231, 172, 0.9); }
+      .touch-action[hidden] { display: none !important; }
+
+      .touch-action--interact {
+        max-width: 132px;
+        min-width: 106px;
+        min-height: 58px;
+        border-radius: 18px;
+        background: rgba(129, 79, 105, 0.78);
+      }
+
+      .touch-action-icon { display: none; }
+
+      html[data-touch-style="classic"] .touch-action-label { display: inline; }
+      html[data-touch-style="modern"] .touch-controls { color: var(--tv-paper); }
+
+      .tc-modern .touch-stick-base {
+        inset: 12px;
+        border-color: color-mix(in srgb, var(--tv-paper) 48%, transparent);
+        background: color-mix(in srgb, var(--tv-ink) 54%, transparent);
+        opacity: 0.3;
+        transform: scale(0.94);
+        transition: opacity 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+      }
+
+      .tc-modern .touch-stick-base::after { content: none; }
+
+      .tc-modern .touch-stick-knob {
+        width: 44px;
+        height: 44px;
+        margin: -22px 0 0 -22px;
+        border-color: color-mix(in srgb, var(--tv-paper) 80%, transparent);
+        background: color-mix(in srgb, var(--tv-paper) 72%, var(--tv-primary));
+        opacity: 0.86;
+      }
+
+      .tc-modern[data-moving="true"] .touch-stick-base {
+        border-color: color-mix(in srgb, var(--tv-paper) 72%, transparent);
+        opacity: 0.9;
+        transform: scale(1);
+      }
+
+      .tc-modern[data-sprinting="true"] .touch-stick-base {
+        border-color: color-mix(in srgb, var(--tv-signal) 88%, white);
+        box-shadow:
+          0 0 0 4px color-mix(in srgb, var(--tv-signal) 22%, transparent),
+          0 12px 30px rgba(26, 21, 36, 0.18);
+      }
+
+      .tc-modern .touch-actions {
+        right: var(--safe-right);
+        bottom: calc(var(--safe-bottom) + 23px);
+        min-width: 154px;
+        min-height: 168px;
+        padding: 10px;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: flex-end;
+        gap: 10px;
+        pointer-events: auto;
+        touch-action: none;
+      }
+
+      .tc-modern .touch-action {
+        min-width: 66px;
+        min-height: 66px;
+        padding: 7px;
+        grid-template-rows: 26px auto;
+        gap: 2px;
+        border-color: color-mix(in srgb, var(--tv-paper) 62%, transparent);
+        border-radius: 20px 29px 22px 26px;
+        color: var(--tv-paper);
+        background: color-mix(in srgb, var(--tv-ink) 68%, transparent);
+        opacity: 0.72;
+        transition: opacity 0.14s ease, transform 0.14s ease, border-color 0.14s ease;
+      }
+
+      .tc-modern .touch-action-icon {
+        display: grid;
+        width: 24px;
+        height: 24px;
+        place-items: center;
+      }
+
+      .tc-modern .touch-action-icon svg {
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .tc-modern .touch-action-label {
+        font-size: 8px;
+        font-weight: 780;
+        letter-spacing: 0.11em;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      .tc-modern .touch-action--interact {
+        min-width: 118px;
+        min-height: 52px;
+        padding: 8px 13px;
+        grid-template-columns: 24px minmax(0, 1fr);
+        grid-template-rows: 1fr;
+        gap: 8px;
+        border-radius: 13px 22px 14px 18px;
+        margin-right: 26px;
+        background: color-mix(in srgb, var(--tv-primary) 88%, transparent);
+      }
+
+      .tc-modern .touch-action--interact .touch-action-label {
+        overflow: hidden;
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-align: left;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .tc-modern .touch-action:active,
+      .tc-modern[data-jump-active="true"] .touch-action--jump {
+        border-color: color-mix(in srgb, var(--tv-signal) 78%, white);
+        opacity: 1;
+        transform: translateY(1px) scale(0.96);
+      }
+
+      .tc-modern[data-interaction-available="true"] .touch-action--interact {
+        opacity: 0.96;
+      }
+
+      html[data-controls="touch"] #instructions,
+      html[data-controls="touch"] #interactionPrompt,
+      html[data-controls="touch"] #resumeLookButton,
+      html[data-controls="touch"] #storyKeyHint,
+      html[data-controls="touch"] .story-choice-key,
+      html[data-controls="touch"] .escape-hint {
+        display: none !important;
+      }
+
+      html[data-story-blocking] .touch-controls {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .mouse-mark.touch-mark {
+        width: 23px;
+        height: 23px;
+        border-radius: 50%;
+      }
+
+      .mouse-mark.touch-mark::before {
+        top: 50%;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .mobile-app-mode-hint {
+        display: grid;
+        gap: 2px;
+        margin-top: 10px;
+        padding: 9px 11px;
+        border: 1px solid color-mix(in srgb, var(--tv-primary) 25%, var(--tv-edge));
+        border-radius: 8px 14px 9px 11px;
+        color: var(--tv-muted);
+        font-size: 10px;
+        font-weight: 590;
+        letter-spacing: 0.01em;
+        line-height: 1.35;
+        text-align: left;
+        background: color-mix(in srgb, var(--tv-paper) 76%, transparent);
+      }
+
+      .mobile-app-mode-hint strong {
+        color: var(--tv-primary);
+        font-size: 9px;
+        font-weight: 780;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .mobile-app-mode-hint[hidden],
+      html[data-display-mode="standalone"] .mobile-app-mode-hint {
+        display: none !important;
+      }
+
+      .mobile-display-notice {
+        position: fixed;
+        top: var(--safe-top);
+        left: 50%;
+        z-index: 1600;
+        display: grid;
+        width: min(430px, calc(100vw - var(--safe-left) - var(--safe-right)));
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 9px 9px 13px;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 9px 18px 10px 14px;
+        color: var(--tv-ink);
+        background: color-mix(in srgb, var(--tv-paper) 94%, transparent);
+        box-shadow: 0 12px 28px rgba(30, 24, 38, 0.24);
+        transform: translateX(-50%);
+        pointer-events: auto;
+      }
+
+      .mobile-display-notice p {
+        font-size: 11px;
+        font-weight: 620;
+        line-height: 1.35;
+      }
+
+      .mobile-display-notice button {
+        min-width: 60px;
+        min-height: 44px;
+        padding: 7px 10px;
+        border: 1px solid color-mix(in srgb, var(--tv-primary) 38%, var(--tv-edge));
+        border-radius: 8px 14px 9px 11px;
+        color: var(--tv-primary);
+        font-size: 10px;
+        font-weight: 780;
+        background: var(--tv-paper);
+        touch-action: manipulation;
+      }
+
+      .mobile-display-notice button:focus-visible {
+        outline: 3px solid rgba(255, 231, 172, 0.9);
+        outline-offset: 2px;
+      }
+
+      .mobile-display-notice[hidden],
+      html:not([data-controls="touch"]) .mobile-display-notice,
+      html[data-display-mode="standalone"] .mobile-display-notice,
+      html[data-story-blocking] .mobile-display-notice {
+        display: none !important;
+      }
+
+      @media (orientation: landscape) and (max-height: 520px) {
+        .touch-move-zone { width: 108px; height: 108px; }
+        .touch-stick-knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
+        .touch-stick-base::after { bottom: 9px; }
+        .touch-action { min-width: 56px; min-height: 56px; }
+        .touch-action--interact { min-width: 96px; min-height: 52px; }
+        .tc-modern .touch-stick-base { inset: 6px; }
+        .tc-modern .touch-actions {
+          bottom: calc(var(--safe-bottom) + 18px);
+          min-width: 140px;
+          min-height: 154px;
+        }
+        .tc-modern .touch-action {
+          min-width: 60px;
+          min-height: 60px;
+        }
+        .tc-modern .touch-action--interact {
+          min-width: 104px;
+          min-height: 48px;
+          margin-right: 22px;
+        }
+        .mobile-app-mode-hint {
+          grid-template-columns: auto 1fr;
+          gap: 8px;
+          margin-top: 7px;
+          padding: 6px 9px;
+          font-size: 9px;
+        }
+        .mobile-display-notice {
+          top: max(76px, calc(env(safe-area-inset-top) + 8px));
+          width: min(470px, calc(100vw - var(--safe-left) - var(--safe-right)));
+          padding-block: 7px;
+        }
+        .mobile-display-notice p { font-size: 10px; }
+      }
+
+      @media (orientation: portrait) and (max-width: 340px) {
+        .touch-move-zone { width: 110px; height: 110px; }
+        .touch-stick-knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
+        .touch-stick-base::after { bottom: 9px; }
+        .touch-actions { gap: 8px; }
+        .touch-action { min-width: 56px; min-height: 56px; padding-inline: 9px; }
+        .touch-action--interact { min-width: 88px; max-width: 96px; min-height: 52px; }
+        .tc-modern .touch-stick-base { inset: 7px; }
+        .tc-modern .touch-actions {
+          bottom: calc(var(--safe-bottom) + 18px);
+          min-width: 142px;
+          min-height: 156px;
+        }
+        .tc-modern .touch-action {
+          min-width: 60px;
+          min-height: 60px;
+        }
+        .tc-modern .touch-action--interact {
+          min-width: 104px;
+          min-height: 48px;
+          margin-right: 20px;
+        }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -3486,6 +3912,13 @@
 
         .survival-meter-fill {
           transition: none;
+        }
+
+        .touch-stick-base,
+        .touch-stick-knob,
+        .touch-action {
+          animation: none !important;
+          transition: none !important;
         }
       }
 
@@ -3512,6 +3945,33 @@
         .story-action:focus-visible {
           outline-color: #fff0a5;
           outline-width: 4px;
+        }
+
+        .tc-modern .touch-stick-base,
+        .tc-modern .touch-action {
+          border-width: 2px;
+          border-color: var(--tv-paper);
+          background-color: var(--tv-ink);
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          opacity: 1;
+        }
+
+        .tc-modern .touch-action--interact {
+          background-color: var(--tv-primary);
+        }
+      }
+
+      @media (forced-colors: active) {
+        .tc-modern .touch-stick-base,
+        .tc-modern .touch-stick-knob,
+        .tc-modern .touch-action {
+          border: 2px solid ButtonText;
+          color: ButtonText;
+          background: Canvas;
+          box-shadow: none;
+          forced-color-adjust: auto;
+          opacity: 1;
         }
       }
     </style>
@@ -3734,6 +4194,55 @@
         </div>
       </div>
 
+      <aside
+        id="mobileDisplayNotice"
+        class="mobile-display-notice"
+        role="region"
+        aria-label="iPhone app view"
+        hidden
+      >
+        <p aria-live="polite">
+          Safari keeps its bars in this tab. Use Share, then Add to Home Screen,
+          and reopen Thornvale there.
+        </p>
+        <button id="mobileDisplayNoticeDismiss" type="button">Got it</button>
+      </aside>
+
+      <div id="touchControls" class="touch-controls tc-modern" hidden inert aria-hidden="true">
+        <div id="touchMoveZone" class="touch-move-zone" aria-label="Move">
+          <span class="touch-stick-base" aria-hidden="true">
+            <span id="touchMoveKnob" class="touch-stick-knob"></span>
+          </span>
+        </div>
+
+        <div id="touchLookZone" class="touch-look-zone" aria-label="Drag to look"></div>
+
+        <div class="touch-actions">
+          <button
+            id="touchInteractButton"
+            class="touch-action touch-action--interact"
+            type="button"
+            hidden
+            disabled
+          >
+            <span class="touch-action-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6Z" />
+              </svg>
+            </span>
+            <span id="touchInteractLabel" class="touch-action-label">Interact</span>
+          </button>
+          <button id="touchJumpButton" class="touch-action touch-action--jump" type="button">
+            <span class="touch-action-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="m6 14 6-6 6 6m-6-6v11" />
+              </svg>
+            </span>
+            <span class="touch-action-label">Jump</span>
+          </button>
+        </div>
+      </div>
+
       <div id="debug" aria-hidden="true">
         <div class="debug-heading">
           <span class="debug-title">Debug</span>
@@ -3782,6 +4291,10 @@
             <span class="mouse-mark"></span>
             <span>Enter through the gate</span>
           </div>
+          <p id="mobileAppModeHint" class="mobile-app-mode-hint" hidden>
+            <strong>Hide Safari controls</strong>
+            <span>Tap Share, then Add to Home Screen, and open Thornvale from its icon.</span>
+          </p>
           <p class="escape-hint"><kbd>ESC</kbd><span>releases your cursor anytime</span></p>
         </div>
 
