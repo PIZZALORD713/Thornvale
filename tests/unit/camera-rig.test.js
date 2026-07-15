@@ -189,3 +189,127 @@ test('the Bell hill keeps the camera above its visible surface at pitch extremes
     );
   }
 });
+
+test('a focus shot reveals once, ignores orbit input, and restores the exact player camera pose', async () => {
+  const { camera, rig } = createRig();
+  rig.yaw = 0.45;
+  rig.pitch = 0.2;
+  rig.resetPosition();
+  const startPosition = camera.position.clone();
+  const startQuaternion = camera.quaternion.clone();
+  const startYaw = rig.yaw;
+  const startPitch = rig.pitch;
+  let revealCount = 0;
+
+  const shot = rig.playFocusShot({
+    position: new Vector3(9, 7, -29),
+    lookAt: new Vector3(3, 4.6, -36.5),
+    flyIn: 0.75,
+    hold: 1,
+    flyOut: 0.75,
+    onReveal() {
+      revealCount += 1;
+    },
+  });
+
+  rig.applyInput(1, 1);
+  for (let frame = 0; frame < 160; frame += 1) rig.update(1 / 60);
+  await shot;
+
+  assert.equal(revealCount, 1);
+  assert.equal(rig.isFocusShotActive(), false);
+  assert.equal(rig.yaw, startYaw);
+  assert.equal(rig.pitch, startPitch);
+  assert.ok(camera.position.distanceTo(startPosition) < 1e-8);
+  assert.ok(1 - Math.abs(camera.quaternion.dot(startQuaternion)) < 1e-8);
+});
+
+test('a focus shot preserves player-relative framing when its target moves during the reveal', async () => {
+  const { camera, rig } = createRig();
+  rig.resetPosition();
+  const startPosition = camera.position.clone();
+  const targetDelta = new Vector3(0, 2.3, 0);
+  const shot = rig.playFocusShot({
+    position: { x: 9, y: 7, z: -29 },
+    lookAt: { x: 3, y: 4.6, z: -36.5 },
+    flyIn: 0,
+    hold: 0,
+    flyOut: 0,
+  });
+
+  rig.setTarget(rig.target.clone().add(targetDelta));
+  rig.update(1 / 60);
+  await shot;
+
+  const expected = startPosition.clone().add(targetDelta);
+  assert.ok(
+    camera.position.distanceTo(expected) < 1e-8,
+    'return framing should follow target displacement instead of snapping to its stale world pose',
+  );
+  const restoredPosition = camera.position.clone();
+  rig.update(1 / 60);
+  assert.ok(
+    camera.position.distanceTo(restoredPosition) < 0.05,
+    'normal follow should resume without a visible first-frame lurch',
+  );
+});
+
+test('skipping and cancelling a focus shot always restore the player view safely', async () => {
+  const { camera, rig } = createRig();
+  rig.resetPosition();
+  const startPosition = camera.position.clone();
+  const startQuaternion = camera.quaternion.clone();
+  let revealCount = 0;
+
+  const skipped = rig.playFocusShot({
+    position: { x: 9, y: 7, z: -29 },
+    lookAt: { x: 3, y: 4.6, z: -36.5 },
+    flyIn: 10,
+    hold: 10,
+    flyOut: 10,
+    onReveal() {
+      revealCount += 1;
+    },
+  });
+  rig.update(0.25);
+  assert.equal(rig.skipFocusShot(), true);
+  assert.deepEqual(await skipped, { skipped: true, revealed: true });
+  assert.equal(revealCount, 1);
+  assert.ok(camera.position.distanceTo(startPosition) < 1e-8);
+  assert.ok(1 - Math.abs(camera.quaternion.dot(startQuaternion)) < 1e-8);
+
+  const cancelled = rig.playFocusShot({
+    position: { x: 9, y: 7, z: -29 },
+    lookAt: { x: 3, y: 4.6, z: -36.5 },
+    onReveal() {
+      revealCount += 1;
+    },
+  });
+  assert.equal(rig.cancelFocusShot(), true);
+  assert.deepEqual(await cancelled, { cancelled: true, revealed: false });
+  assert.equal(revealCount, 1, 'cancellation must not invent a Bell ring');
+  assert.ok(camera.position.distanceTo(startPosition) < 1e-8);
+});
+
+test('a failing focus reveal rejects after restoring the exact player camera pose', async () => {
+  const { camera, rig } = createRig();
+  rig.resetPosition();
+  const startPosition = camera.position.clone();
+  const startQuaternion = camera.quaternion.clone();
+  const shot = rig.playFocusShot({
+    position: { x: 9, y: 7, z: -29 },
+    lookAt: { x: 3, y: 4.6, z: -36.5 },
+    flyIn: 0,
+    hold: 0,
+    flyOut: 0,
+    onReveal() {
+      throw new Error('bell presentation failed');
+    },
+  });
+
+  rig.update(1 / 60);
+  await assert.rejects(shot, /bell presentation failed/);
+  assert.equal(rig.isFocusShotActive(), false);
+  assert.ok(camera.position.distanceTo(startPosition) < 1e-8);
+  assert.ok(1 - Math.abs(camera.quaternion.dot(startQuaternion)) < 1e-8);
+});

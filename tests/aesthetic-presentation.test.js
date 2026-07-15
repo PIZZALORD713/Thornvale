@@ -52,8 +52,22 @@ test('story snapshots project through the courtesy-correction presentation gramm
       route: null,
     },
     {
-      label: 'dusk guidance',
+      label: 'registered daylight',
       snapshot: snapshotThrough(3, { phase: 'day-routine' }),
+      state: 'registered',
+      standing: 'Written in',
+      ledger: 'signed',
+      route: null,
+    },
+    {
+      label: 'dusk guidance',
+      snapshot: {
+        ...snapshotThrough(3, { phase: 'day-routine' }),
+        eventsSeen: [
+          ...snapshotThrough(3).eventsSeen,
+          CORE_HOOK_V03.events.firstAfternoonComplete,
+        ],
+      },
       state: 'dusk',
       standing: 'Written in',
       ledger: 'signed',
@@ -124,6 +138,27 @@ test('story snapshots project through the courtesy-correction presentation gramm
   }
 });
 
+test('early enrollment is daylight registration and only completed chores project dusk', () => {
+  const registered = projectStoryPresentation(snapshotThrough(3, {
+    phase: 'day-routine',
+    dayOne: { complete: false },
+  }));
+  assert.equal(registered.state, 'registered');
+  assert.equal(registered.ledgerMood, 'signed');
+  assert.equal(registered.standingLabel, 'Written in');
+
+  const dusk = projectStoryPresentation({
+    ...snapshotThrough(3, { phase: 'day-routine' }),
+    eventsSeen: [
+      ...snapshotThrough(3).eventsSeen,
+      CORE_HOOK_V03.events.firstAfternoonComplete,
+    ],
+    dayOne: { complete: true },
+  });
+  assert.equal(dusk.state, 'dusk');
+  assert.equal(dusk.ledgerMood, 'signed');
+});
+
 test('event precedence wins over stale phase fields and ending fallback remains stable', () => {
   const anomaly = projectStoryPresentation(snapshotThrough(5, { phase: 'arrival' }));
   assert.equal(anomaly.state, 'anomaly');
@@ -157,7 +192,13 @@ test('presentation datasets apply to a tiny document and clear to story-off safe
 });
 
 test('the emitted dusk datasets activate the Second Witness stylesheet contract', async () => {
-  const dusk = projectStoryPresentation(snapshotThrough(3, { phase: 'day-routine' }));
+  const dusk = projectStoryPresentation({
+    ...snapshotThrough(3, { phase: 'day-routine' }),
+    eventsSeen: [
+      ...snapshotThrough(3).eventsSeen,
+      CORE_HOOK_V03.events.firstAfternoonComplete,
+    ],
+  });
   assert.equal(dusk.datasets.storyMood, 'dusk');
   assert.equal(dusk.datasets.storyState, 'dusk');
 

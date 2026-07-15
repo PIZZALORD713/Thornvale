@@ -1,10 +1,22 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { minifyInlineCss, minifyProductionHtml } from '../vite.config.js';
+import {
+  minifyInlineCss,
+  minifyProductionHtml,
+  removeNonRuntimePublicDocs,
+} from '../vite.config.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -50,4 +62,27 @@ test('production HTML safely collapses inter-tag layout whitespace', async () =>
   const protectedMarkup = '<main>Before</main>\n<pre>  keep\n    this  </pre>\n<textarea>  keep me  </textarea>';
   assert.match(minifyProductionHtml(protectedMarkup), /<pre>  keep\n    this  <\/pre>/);
   assert.match(minifyProductionHtml(protectedMarkup), /<textarea>  keep me  <\/textarea>/);
+});
+
+test('production packaging preserves runtime-declared provenance while omitting repository-only Markdown', async () => {
+  const output = await mkdtemp(join(tmpdir(), 'thornvale-dist-'));
+  try {
+    const nested = join(output, 'friendsies', '8914');
+    const unreferenced = join(output, 'village');
+    await mkdir(nested, { recursive: true });
+    await mkdir(unreferenced, { recursive: true });
+    await writeFile(join(output, 'README.md'), 'repository guidance');
+    await writeFile(join(nested, 'PROVENANCE.md'), 'source evidence');
+    await writeFile(join(nested, 'body.glb'), 'runtime bytes');
+    await writeFile(join(unreferenced, 'PROVENANCE.md'), 'repository-only evidence');
+
+    await removeNonRuntimePublicDocs(output);
+
+    await assert.rejects(access(join(output, 'README.md')), { code: 'ENOENT' });
+    await assert.rejects(access(join(unreferenced, 'PROVENANCE.md')), { code: 'ENOENT' });
+    assert.equal(await readFile(join(nested, 'PROVENANCE.md'), 'utf8'), 'source evidence');
+    assert.equal(await readFile(join(nested, 'body.glb'), 'utf8'), 'runtime bytes');
+  } finally {
+    await rm(output, { recursive: true, force: true });
+  }
 });

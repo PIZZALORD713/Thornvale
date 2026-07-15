@@ -64,19 +64,21 @@ Expected story reactions:
 
 1. **Arrival:** one private offering is visible; Ledger witnesses begin
    restrained, Gate sconces flicker independently, and the Crown is upright.
-2. **Dusk guidance:** after signing the Ledger, the Bell Torch and its night
-   light strengthen while the paired motifs settle into shared rhythm.
-3. **Post-bell:** after the player's first ring, the Bell guidance settles.
-4. **Anomaly:** the impossible second bell breaks agreement in the Ledger
+2. **Registration:** after signing the Ledger, the civic treatment acknowledges
+   the player without activating Bell guidance.
+3. **Dusk guidance:** after the recorded afternoon is complete, the Bell Torch
+   and its night light strengthen while the paired motifs settle into shared rhythm.
+4. **Post-bell:** after the player's first ring, the Bell guidance settles.
+5. **Anomaly:** the impossible second bell breaks agreement in the Ledger
    witness pair, tilts the Crown, holds the Torches still, and removes Bell
    guidance.
-5. **Intervention:** the false record closes the Ledger witnesses toward the
+6. **Intervention:** the false record closes the Ledger witnesses toward the
    record, tilts the Crown farther, and nearly extinguishes the Torches.
-6. **Comply:** the witness pair and Crown return upright; the Gate treatment
+7. **Comply:** the witness pair and Crown return upright; the Gate treatment
    becomes warmly synchronized.
-7. **Alter:** one witness remains dissenting, the Crown reaches its strongest
+8. **Alter:** one witness remains dissenting, the Crown reaches its strongest
    tilt, and the Gate treatment remains cold and asymmetric.
-8. **Reduced motion:** the same semantic states apply immediately, without
+9. **Reduced motion:** the same semantic states apply immediately, without
    ambient flower sway or Torch flicker.
 
 ## Excluded backlog

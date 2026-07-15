@@ -32,7 +32,12 @@ function createActiveDay({ storage = new MemoryStorage(), ...directorOptions } =
   const session = new GameSession({ storage, now: () => ++now });
   session.transact((draft) => {
     draft.phase = 'day-routine';
-    draft.eventsSeen.push('arrival-letter-seen', DAY_ONE_V01.events.stewardMet);
+    draft.playerName = 'Juniper Vale';
+    draft.eventsSeen.push(
+      'arrival-letter-seen',
+      DAY_ONE_V01.events.stewardMet,
+      DAY_ONE_V01.events.ledgerSigned,
+    );
   });
   const director = new DayOneDirector({ session, ...directorOptions });
   return { director, session, storage };
@@ -52,9 +57,53 @@ test('Day One starts only after meeting the steward and exposes deterministic ob
     draft.eventsSeen.push('arrival-letter-seen', DAY_ONE_V01.events.stewardMet);
   });
 
+  assert.equal(director.isInteractableEnabled(DAY_ONE_V01.ids.woodlot), false);
+  assert.equal(director.currentObjective().id, 'day-one-sign-ledger');
+
+  session.transact((draft) => {
+    draft.playerName = 'Juniper Vale';
+    draft.eventsSeen.push(DAY_ONE_V01.events.ledgerSigned);
+  });
+
   assert.equal(director.isInteractableEnabled(DAY_ONE_V01.ids.woodlot), true);
   assert.equal(director.promptFor(DAY_ONE_V01.ids.woodlot), DAY_ONE_V01.prompts.chop);
   assert.equal(director.currentObjective().id, 'day-one-gather-wood');
+});
+
+test('Day One chores begin only after Ledger enrollment and close when the record is complete', () => {
+  const session = new GameSession({ storage: null });
+  const director = new DayOneDirector({ session });
+  session.transact((draft) => {
+    draft.phase = 'day-routine';
+    draft.eventsSeen.push('arrival-letter-seen', DAY_ONE_V01.events.stewardMet);
+  });
+
+  assert.equal(director.isInteractableEnabled(DAY_ONE_V01.ids.woodlot), false);
+  assert.equal(director.currentObjective().id, DAY_ONE_V01.objectives.signLedger.id);
+
+  session.transact((draft) => {
+    draft.playerName = 'Juniper Vale';
+    draft.eventsSeen.push(DAY_ONE_V01.events.ledgerSigned);
+  });
+
+  assert.equal(director.isInteractableEnabled(DAY_ONE_V01.ids.woodlot), true);
+  assert.equal(director.currentObjective().id, DAY_ONE_V01.objectives.gatherWood.id);
+
+  session.transact((draft) => {
+    Object.assign(draft.dayOne, {
+      ...draft.dayOne,
+      complete: true,
+    });
+    draft.dayOne.activity.woodGathered = 6;
+    draft.dayOne.activity.mealsEaten = 1;
+    draft.dayOne.garden.planted = true;
+    draft.dayOne.garden.watered = true;
+    draft.dayOne.camp.shelterRepaired = true;
+    draft.eventsSeen.push(DAY_ONE_V01.events.afternoonComplete);
+  });
+
+  assert.equal(director.isInteractableEnabled(DAY_ONE_V01.ids.woodlot), false);
+  assert.equal(director.currentObjective(), null);
 });
 
 test('the complete first-afternoon loop preserves spent-resource progress and survives reload', async () => {
@@ -113,8 +162,8 @@ test('the complete first-afternoon loop preserves spent-resource progress and su
   );
   assert.equal(state.complete, true);
   assert.equal(session.hasEvent(DAY_ONE_V01.events.afternoonComplete), true);
-  assert.match(completionMessage, /Community Ledger waits/);
-  assert.equal(director.currentObjective().id, 'day-one-sign-ledger');
+  assert.match(completionMessage, /Town Bell waits/);
+  assert.equal(director.currentObjective(), null);
 
   const restored = new GameSession({ storage });
   assert.equal(restored.dayOne.complete, true);
@@ -135,6 +184,45 @@ test('the complete first-afternoon loop preserves spent-resource progress and su
     coins: 8,
     doctorDebt: 0,
   });
+});
+
+test('the readable Ledger account derives every recorded task from authoritative Day One state', () => {
+  const { director, session } = createActiveDay();
+  session.transact((draft) => {
+    draft.dayOne.inventory.wood = 2;
+    draft.dayOne.activity.woodGathered = 2;
+    draft.dayOne.activity.fishCaught = 1;
+    draft.dayOne.camp.fireLit = true;
+    draft.dayOne.activity.mealsCooked = 1;
+    draft.dayOne.garden.planted = true;
+  });
+
+  const record = director.ledgerRecordFor();
+  assert.equal(record.id, DAY_ONE_V01.ledgerRecord.id);
+  assert.equal(record.signature, 'Juniper Vale');
+  assert.match(record.entry, /WOOD GATHERED · 3 \/ 6/);
+  assert.match(record.entry, /PONDFISH CAUGHT · 1 \/ 1/);
+  assert.match(record.entry, /CAMPFIRE LIT · RECORDED/);
+  assert.match(record.entry, /SUPPER PREPARED · 1 \/ 1/);
+  assert.match(record.entry, /SUPPER TAKEN · 0 \/ 1/);
+  assert.match(record.entry, /SEED BED · PLANTED/);
+  assert.match(record.entry, /SHELTER BRACED · AWAITING/);
+});
+
+test('the Ledger records work beyond the minimum instead of quietly capping the truth', () => {
+  const { director, session } = createActiveDay();
+  session.transact((draft) => {
+    draft.dayOne.activity.woodGathered = 8;
+    draft.dayOne.activity.fishCaught = 2;
+    draft.dayOne.activity.mealsCooked = 2;
+    draft.dayOne.activity.mealsEaten = 2;
+  });
+
+  const record = director.ledgerRecordFor();
+  assert.match(record.entry, /WOOD GATHERED · 8 \/ 6/);
+  assert.match(record.entry, /PONDFISH CAUGHT · 2 \/ 1/);
+  assert.match(record.entry, /SUPPER PREPARED · 2 \/ 1/);
+  assert.match(record.entry, /SUPPER TAKEN · 2 \/ 1/);
 });
 
 test('exhaustion is an atomic, nonlethal recovery that retains progress and records doctor debt', async () => {
@@ -437,7 +525,72 @@ test('v2 saves backfill Day One only when the Ledger was already signed', () => 
   assert.equal(JSON.parse(storage.getItem(migrated.storageKey)).version, GAME_SESSION_VERSION);
 });
 
-test('Ledger signing closes Day One interactions without discarding the completed slice', async () => {
+test('v3 signed saves preserve the old completed invariant while v4 signed saves may be partial', () => {
+  const storage = new MemoryStorage();
+  const base = {
+    phase: 'day-routine',
+    neighborliness: 65,
+    relationship: { steward: 'warm' },
+    playerName: 'Juniper Vale',
+    rulesKnown: [],
+    choices: {},
+    eventsSeen: [
+      'arrival-letter-seen',
+      DAY_ONE_V01.events.stewardMet,
+      DAY_ONE_V01.events.ledgerSigned,
+    ],
+    ending: null,
+    dayOne: {
+      nourishment: 72,
+      energy: 82,
+      coins: 8,
+      doctorDebt: 0,
+      inventory: { wood: 2, rawFish: 0, cookedFish: 0, seeds: 1 },
+      activity: {
+        woodGathered: 2,
+        fishCaught: 0,
+        mealsCooked: 0,
+        mealsEaten: 0,
+        seedsPlanted: 0,
+      },
+      garden: { planted: false, watered: false },
+      camp: { fireLit: false, shelterRepaired: false },
+      passedOutCount: 0,
+      complete: false,
+    },
+    updatedAt: 42,
+  };
+
+  storage.setItem('thornvale.core-hook-v03', JSON.stringify({ ...base, version: 3 }));
+  const legacy = new GameSession({ storage });
+  assert.equal(legacy.dayOne.complete, true);
+  assert.equal(legacy.hasEvent(DAY_ONE_V01.events.afternoonComplete), true);
+
+  storage.setItem('thornvale.core-hook-v03', JSON.stringify({
+    ...base,
+    version: GAME_SESSION_VERSION,
+  }));
+  const current = new GameSession({ storage });
+  assert.equal(current.dayOne.complete, false);
+  assert.equal(current.dayOne.activity.woodGathered, 2);
+  assert.equal(current.hasEvent(DAY_ONE_V01.events.afternoonComplete), false);
+});
+
+test('a first Bell transaction cannot bypass an incomplete v4 afternoon', () => {
+  const { session } = createActiveDay();
+
+  assert.throws(() => {
+    session.transact((draft) => {
+      draft.phase = 'dusk';
+      draft.eventsSeen.push('dusk-bell-rung');
+    });
+  }, /invalid state/i);
+  assert.equal(session.phase, 'day-routine');
+  assert.equal(session.hasEvent('dusk-bell-rung'), false);
+  assert.equal(session.dayOne.complete, false);
+});
+
+test('a completed Ledger account closes Day One interactions without discarding the slice', async () => {
   const { director, session } = createActiveDay();
   session.transact((draft) => {
     const state = draft.dayOne;
@@ -453,16 +606,12 @@ test('Ledger signing closes Day One interactions without discarding the complete
     state.complete = true;
     draft.eventsSeen.push(DAY_ONE_V01.events.afternoonComplete);
   });
-  session.transact((draft) => {
-    draft.eventsSeen.push(DAY_ONE_V01.events.ledgerSigned);
-  });
-
   assert.equal(director.isComplete(), true);
   assert.equal(director.isInteractableEnabled(DAY_ONE_V01.ids.woodlot), false);
   assert.equal(director.currentObjective(), null);
   assert.match(
     await director.interact(DAY_ONE_V01.ids.woodlot),
-    /after you meet Thornvale’s steward/,
+    /Ledger/,
   );
   assert.equal(session.dayOne.complete, true);
 });

@@ -73,7 +73,7 @@ test('the town bell sits on an elevated walkable hill reached by a three-dimensi
     'ringing the Bell should require a meaningful journey beyond the plaza',
   );
   assert.match(CORE_HOOK_V03.objectives.ringBell.text, /uphill/i);
-  assert.match(CORE_HOOK_V03.objectives.leaveBell.text, /back down/i);
+  assert.match(CORE_HOOK_V03.objectives.returnToLumen.text, /return to Steward Lumen/i);
   assert.notEqual(
     CORE_HOOK_V03.dialogue.firstBell.speaker,
     'Steward Lumen',

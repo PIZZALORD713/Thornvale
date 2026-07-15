@@ -53,6 +53,8 @@ export class CoreHookDirector {
       resetPlayer: deps.resetPlayer || null,
       isDayOneComplete: deps.isDayOneComplete || (() => Boolean(this.session.dayOne?.complete)),
       getDayOneObjective: deps.getDayOneObjective || (() => null),
+      getDayOneLedgerRecord: deps.getDayOneLedgerRecord || (() => null),
+      getStewardPosition: deps.getStewardPosition || (() => this.deps.stewardActor?.position),
       setStoryBlocking: deps.setStoryBlocking || null,
       onError: deps.onError || null,
     };
@@ -121,6 +123,14 @@ export class CoreHookDirector {
 
   async refreshObjective() {
     this._assertUsable();
+    const events = this.content.events;
+    if (
+      this.session.hasEvent(events.ledgerSigned)
+      && this._isDayOneComplete()
+      && !this.session.hasEvent(events.firstBellRung)
+    ) {
+      await this._applyStoryTime('dusk');
+    }
     await this._setCurrentObjective();
     return this.session.snapshot();
   }
@@ -182,10 +192,13 @@ export class CoreHookDirector {
     const timing = this.content.timing;
     const movedAway = horizontalDistance(playerPosition, this.bellPosition)
       >= timing.anomalyDistanceFromBell;
-    const distanceReady = movedAway && this.anomalyElapsed >= timing.anomalyMinimumDelay;
-    const timerReady = this.anomalyElapsed >= timing.anomalyMaximumDelay;
+    const nearSteward = horizontalDistance(playerPosition, this._getStewardPosition())
+      <= timing.anomalyDistanceToSteward;
+    const distanceReady = movedAway
+      && nearSteward
+      && this.anomalyElapsed >= timing.anomalyMinimumDelay;
 
-    if ((distanceReady || timerReady) && !this.anomalyPromise) {
+    if (distanceReady && !this.anomalyPromise) {
       this.anomalyPromise = this._fireAnomaly()
         .catch((error) => {
           this._reportError(error, 'anomaly');
@@ -210,9 +223,9 @@ export class CoreHookDirector {
         : this.content.prompts.meetSteward;
     }
     if (role === 'ledger') {
-      return this.session.hasEvent(events.ledgerSigned)
-        ? this.content.prompts.inspectLedger
-        : this.content.prompts.signLedger;
+      if (!this.session.hasEvent(events.ledgerSigned)) return this.content.prompts.signLedger;
+      if (this.session.hasEvent(events.anomalyBellRang)) return this.content.prompts.inspectLedger;
+      return this.content.prompts.reviewLedger;
     }
     if (role === 'bell') return this.content.prompts.ringBell;
     return null;
@@ -232,8 +245,10 @@ export class CoreHookDirector {
     const choiceMade = this.session.hasEvent(events.choiceMade);
 
     if (role === 'steward') return !met || (falseRecord && !choiceMade);
-    if (role === 'ledger') return (met && dayOneComplete && !signed) || (anomaly && !falseRecord);
-    if (role === 'bell') return signed && !firstBell;
+    if (role === 'ledger') {
+      return (met && !signed) || (signed && !anomaly) || (anomaly && !falseRecord);
+    }
+    if (role === 'bell') return signed && dayOneComplete && !firstBell;
     return false;
   }
 
@@ -355,8 +370,16 @@ export class CoreHookDirector {
       this._playStewardAction(this.content.gestures?.acknowledging, 'joy');
       this._interactionFeedback(this.content.ids.ledger, 'kindness', 0.28);
       await this._setNeighborliness(change);
-      await this._applyStoryTime('dusk');
-      await this._setObjective(this.content.objectives.ringBell);
+      await this._setCurrentObjective();
+      return;
+    }
+
+    if (!this.session.hasEvent(events.anomalyBellRang)) {
+      await this._ui(
+        'showRecord',
+        this._getDayOneLedgerRecord() || this.content.records.dayOneFallback,
+      );
+      await this._setCurrentObjective();
       return;
     }
 
@@ -392,34 +415,50 @@ export class CoreHookDirector {
     this._playStewardAction(this.content.gestures?.relievedSigh, 'joy');
     await this._setNeighborliness(change);
     await this._applyStoryTime('night');
-    await this._setObjective(this.content.objectives.leaveBell);
+    await this._setObjective(this.content.objectives.returnToLumen);
   }
 
   async _fireAnomaly() {
     const events = this.content.events;
     if (this.session.hasEvent(events.anomalyBellRang)) return this.session.snapshot();
     const generation = this.generation;
+    this.busy = true;
+    let committed = false;
 
-    // Persist before any audiovisual callback. If a callback fails or the page
-    // closes during the ring, reload resumes after the anomaly instead of
-    // producing a second supernatural bell.
-    this.session.transact((draft) => {
-      pushUnique(draft.eventsSeen, events.anomalyBellRang);
-      draft.phase = 'night-investigation';
-    });
+    const commitAnomaly = () => {
+      if (committed || this.session.hasEvent(events.anomalyBellRang)) return;
+      // Commit on the reveal frame, before its sound and VFX. A reload during
+      // the fly-in may replay a Bell that never rang; once the player hears it,
+      // the durable event already prevents a duplicate supernatural ring.
+      this.session.transact((draft) => {
+        pushUnique(draft.eventsSeen, events.anomalyBellRang);
+        draft.phase = 'night-investigation';
+      });
+      committed = true;
+    };
 
-    if (typeof this.deps.ringAnomalyBell === 'function') {
-      await this._safeCall(this.deps.ringAnomalyBell);
-    } else {
-      this.deps.worldAnimator?.ringBell?.();
-      this.deps.soundscape?.playInteraction?.('bell');
+    try {
+      if (typeof this.deps.ringAnomalyBell === 'function') {
+        await this._safeCall(this.deps.ringAnomalyBell, { onReveal: commitAnomaly });
+      }
+
+      if (generation !== this.generation || this.disposed) return this.session.snapshot();
+
+      if (!committed) {
+        // The adapter failed or was cancelled without a reveal while this
+        // director remained live. Produce one direct, durable fallback ring.
+        commitAnomaly();
+        this.deps.worldAnimator?.ringBell?.();
+        this.deps.soundscape?.playInteraction?.('bell');
+        this._interactionFeedback(this.content.ids.bell, 'magic', 0.7, { playSound: false });
+      }
+
+      this.deps.hud?.setStatus?.(this.content.status.anomaly);
+      await this._setObjective(this.content.objectives.inspectLedger);
+      return this.session.snapshot();
+    } finally {
+      if (generation === this.generation) this.busy = false;
     }
-
-    if (generation !== this.generation || this.disposed) return this.session.snapshot();
-    this._interactionFeedback(this.content.ids.bell, 'magic', 0.7, { playSound: false });
-    this.deps.hud?.setStatus?.(this.content.status.anomaly);
-    await this._setObjective(this.content.objectives.inspectLedger);
-    return this.session.snapshot();
   }
 
   async _resolveChoice(choice) {
@@ -481,11 +520,23 @@ export class CoreHookDirector {
     const choice = this.session.getChoice(this.content.ids.choice);
 
     if (this.session.hasEvent(events.firstBellRung)) await this._applyStoryTime('night', immediate);
-    else if (this.session.hasEvent(events.ledgerSigned)) await this._applyStoryTime('dusk', immediate);
+    else if (this.session.hasEvent(events.ledgerSigned) && this._isDayOneComplete()) {
+      await this._applyStoryTime('dusk', immediate);
+    }
     else await this._applyStoryTime('day', immediate);
 
     if (choice) await this._safeCall(this.deps.setRoute, choice);
     else await this._safeCall(this.deps.setRoute, null);
+
+    if (
+      this.session.hasEvent(events.firstBellRung)
+      && !this.session.hasEvent(events.anomalyBellRang)
+    ) {
+      await this._safeCall(
+        this.deps.resetPlayer,
+        this.content.anchors.player?.firstBellReturn,
+      );
+    }
 
     if (choice && this.content.outcomes[choice]) {
       await this._moveSteward(this.content.outcomes[choice].stewardAnchor, true);
@@ -559,12 +610,12 @@ export class CoreHookDirector {
       const choice = this.session.getChoice(this.content.ids.choice);
       objective = this.content.objectives[this.content.outcomes[choice]?.objective];
     } else if (!this.session.hasEvent(events.stewardMet)) objective = this.content.objectives.meetSteward;
+    else if (!this.session.hasEvent(events.ledgerSigned)) objective = this.content.objectives.signLedger;
     else if (!this._isDayOneComplete()) {
       objective = this._getDayOneObjective() || this.content.objectives.firstAfternoon;
     }
-    else if (!this.session.hasEvent(events.ledgerSigned)) objective = this.content.objectives.signLedger;
     else if (!this.session.hasEvent(events.firstBellRung)) objective = this.content.objectives.ringBell;
-    else if (!this.session.hasEvent(events.anomalyBellRang)) objective = this.content.objectives.leaveBell;
+    else if (!this.session.hasEvent(events.anomalyBellRang)) objective = this.content.objectives.returnToLumen;
     else if (!this.session.hasEvent(events.falseRecordSeen)) objective = this.content.objectives.inspectLedger;
     else if (this.session.hasEvent(events.choiceMade)) {
       const choice = this.session.getChoice(this.content.ids.choice);
@@ -591,6 +642,27 @@ export class CoreHookDirector {
     } catch (error) {
       this._reportError(error, 'day-one-objective');
       return null;
+    }
+  }
+
+  _getDayOneLedgerRecord() {
+    try {
+      return this.deps.getDayOneLedgerRecord?.() || null;
+    } catch (error) {
+      this._reportError(error, 'day-one-ledger-record');
+      return null;
+    }
+  }
+
+  _getStewardPosition() {
+    try {
+      return pointFrom(
+        this.deps.getStewardPosition?.(),
+        this.content.anchors.steward.routine,
+      );
+    } catch (error) {
+      this._reportError(error, 'steward-position');
+      return pointFrom(null, this.content.anchors.steward.routine);
     }
   }
 

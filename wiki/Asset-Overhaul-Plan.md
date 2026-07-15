@@ -169,8 +169,9 @@ The presentation reacts to durable story state without changing gameplay:
 - Arrival begins with one private offering, restrained Ledger witnesses, and
   independently flickering Gate sconces; meeting Lumen completes the welcome
   arrangement.
-- Signing the Ledger raises the Bell Torch as a dusk guide. Its light settles
-  after the first ring.
+- Signing the Ledger acknowledges the player without raising the Bell guide.
+  Completing the recorded afternoon raises the Bell Torch at dusk; its light
+  settles after the first ring.
 - The impossible second bell breaks agreement in the Ledger witness pair,
   tilts the Crown, synchronizes the Gate sconces into impossible stillness, and
   removes the Bell's guiding light.
