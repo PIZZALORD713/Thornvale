@@ -22,10 +22,10 @@ The player should leave the first afternoon feeling fed, capable, and newly atta
 
 The gathering, fishing, gardening, and shelter steps may be completed in different safe orders. The fire, meal, and resource costs remain authored and deterministic for this proof.
 
-## Implementation evidence — updated 2026-07-14
+## Implementation evidence — updated 2026-07-16
 
-- `npm run check` passed with 231/231 deterministic tests, a production Vite
-  build, the asset audit, and an 8,376,953 / 8,388,608 byte production bundle.
+- `npm run check` passed with 255/255 deterministic tests, a production Vite
+  build, the asset audit, and an 8,379,189 / 8,388,608 byte production bundle.
 - Focused coverage proves the clean resource loop, zero-energy fire/cook/eat recovery, pass-out fee and debt branches, retained progress, save migration, Day One world projection, survival HUD accessibility, and the Day One-to-Ledger gate.
 - An independent code review found no progression, recovery, migration, or Ledger-unlock blockers.
 - Browser smoke at 1280×720 confirmed the welcome screen, arrival letter, first objective, pointer-lock handoff, town presentation, and an error-free console. The pilot and `?assets=baseline&traits=off` variants both booted cleanly after the camp relocation.
@@ -51,7 +51,6 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
   root and both support stakes remain fixed. The rotor restored on completion,
   reduced motion committed without transient rotation, and the console remained
   free of warnings and errors.
-- The browser harness cannot hold continuous WASD input long enough for a representative 3D route traversal. The full walkable clean run and intentional pass-out run therefore remain manual playtest gates; they are not claimed as browser-validated here.
 - A targeted Chromium recovery pass used actual `E` inputs for both branches:
   unrepaired exhaustion settled at the front-gate spawn `(0, ~0.91, 14)`,
   repairing the shelter swapped the collapsed and erected silhouettes and
@@ -73,6 +72,40 @@ The gathering, fishing, gardening, and shelter steps may be completed in differe
   floating-point precision, and released the action lock. A reduced-motion
   Chromium session produced one durable ring with no focus shot, camera change,
   or lingering lock. Both sessions reported zero console warnings or errors.
+
+## Production qualification — 2026-07-16
+
+The exact cohort candidate is recorded in
+[`../playtests/2026-07-16-m1-day-one-cohort.md`](../playtests/2026-07-16-m1-day-one-cohort.md):
+runtime commit `1e58739c9fe6ae9c1a218f7eaa8c98dabb4827ea`, GitHub
+deployment `5457588533`, public bundle `assets/index-CNX6_PYE.js`, and SHA-256
+`827e9dbcde47f92559ee19cc159cba4c7aa5b0d17d178faf44dd43e854a255df`.
+
+- A clean operator-guided production lap dispatched keyboard events through the
+  production InputManager, motor, collision, and interaction paths to walk the
+  full arrival, camp, pond, Bell, return, and ending routes. It signed the
+  Ledger before chores, completed all Day One work, verified the truthful
+  finished account, observed the erected shelter, reached the second Bell
+  camera reveal, and completed the Alter ending. Console: zero warnings and
+  zero errors.
+- An intentional production pass-out lap cooked but did not eat the fish, then
+  spent its remaining energy in the garden. The failed shelter attempt returned
+  to the front gate at `(0, ~0.91, 14)`, restored needs to `70 / 55`, charged
+  four coins, and retained five wood, one cooked fish, the fire, and garden.
+  The shelter stayed collapsed and the Ledger showed supper prepared but not
+  taken and shelter awaiting.
+- Reload restored the exact recovery state and gate spawn. Eating and repairing
+  then produced `82 / 93` energy/nourishment, one wood, an erected shelter, a
+  complete account, and access to the first Bell. Console: zero warnings and
+  zero errors.
+- A representative 8.965-second walked segment on the qualification machine at
+  1280×720 sampled 1,070 frames: 8.33 ms median, 8.36 ms p95, 8.80 ms p99,
+  and 9.28 ms maximum.
+
+Both operator routes therefore satisfy the route and recovery technical
+preflight. Their waypoint guidance does not prove unaided human completion, so
+they do not count toward the five fresh-player records or the
+four-without-coaching threshold.
 
 ## Clean-run checks
 
