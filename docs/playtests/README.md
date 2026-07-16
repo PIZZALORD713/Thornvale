@@ -4,6 +4,13 @@ Use these records to decide what ThornVale should change before expanding scope.
 The current milestone and success thresholds remain authoritative in
 [`../../wiki/Plan-2.0.md`](../../wiki/Plan-2.0.md).
 
+## Active cohort
+
+The qualified production candidate and facilitator protocol are frozen in
+[`2026-07-16-m1-day-one-cohort.md`](2026-07-16-m1-day-one-cohort.md). Use that
+one build and study condition for the next five comparable fresh-player
+sessions; a changed runtime bundle starts a new cohort.
+
 ## Run a session
 
 1. Copy [`FRESH-PLAYER-TEMPLATE.md`](FRESH-PLAYER-TEMPLATE.md) to

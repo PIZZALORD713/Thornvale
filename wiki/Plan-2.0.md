@@ -32,7 +32,13 @@ The first Milestone 1 implementation is now playable end to end. This is a proof
   Screen guidance are implemented; representative-device performance and a
   full physical-phone route remain validation gates rather than support claims.
 
-The immediate next gate is the bounded [Day One Action Weight](Day-One-Action-Weight.md) pass, followed by observational proof: complete the loop from a clean save, recover from an intentional pass-out, then run five clean first-play sessions. Capture completion time, help requests, optional activity, comprehension of food and energy, whether the actions feel grounded rather than tedious, and whether the Bell turn still lands before adding another day, villager, or broad system.
+The bounded [Day One Action Weight](Day-One-Action-Weight.md) implementation and
+both operator technical preflights are complete on the frozen
+[`M1-DAYONE-2026-07-16-A`](../docs/playtests/2026-07-16-m1-day-one-cohort.md)
+production candidate. The immediate gate is now five clean first-play sessions.
+Capture completion time, help requests, optional activity, comprehension of food
+and energy, whether the actions feel grounded rather than tedious, and whether
+the Bell turn still lands before adding another day, villager, or broad system.
 
 ### Approved scope extension — Day One Proof
 

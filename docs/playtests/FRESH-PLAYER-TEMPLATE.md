@@ -58,6 +58,22 @@ Record facts in the moment. Use `B` for progression blocker, `F` for friction,
 | | Comply or alter | | | | |
 | | Playable aftermath / ending | | | | |
 
+## Milestone 1 Day One addendum
+
+Complete these fields for the `M1-DAYONE` cohort so the five sessions remain
+comparable. Record observable evidence before interpretation.
+
+| Field | Result | Evidence |
+| --- | --- | --- |
+| Time to first self-directed resource action | | |
+| Optional extra resource action attempted | Yes / No | |
+| Understood why eating mattered | Yes / No / Unclear | |
+| Understood the pass-out consequence, if encountered | Yes / No / Unclear / Not encountered | |
+| Chore actions felt grounded or satisfying rather than slow | Yes / No / Unclear | |
+| Repeated chores were described as tedious | Yes / No | Exact words and route stage |
+| Repairing camp created attachment or ownership | Yes / No / Unclear | |
+| Camp improvement made the Bell conflict feel more consequential | Yes / No / Unclear | |
+
 ## Help log
 
 Record the exact question or behavior before assisting.
