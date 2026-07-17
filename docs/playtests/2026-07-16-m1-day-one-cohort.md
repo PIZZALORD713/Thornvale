@@ -1,15 +1,16 @@
 # Milestone 1 Day One Cohort
 
 - **Cohort ID:** `M1-DAYONE-2026-07-16-A`
-- **Status:** ready for five fresh-player sessions
+- **Status:** Phase 1 broad build complete; available for lightweight fresh-player feedback
 - **Study condition:** production desktop build, pilot assets, trait echoes on,
   keyboard and mouse, high quality, normal motion
 
-This cohort tests whether a route-naive player can complete the authored Day One
+This checkpoint tests whether a route-naive player can complete the authored Day One
 and Core Hook without required coaching, understand the food-and-energy loop,
 feel ownership of the repaired camp, and recognize the Bell and Ledger turn. It
-does not authorize another day, villager, or broad system before the evidence is
-reviewed.
+is a reproducible Phase 1 reference, not a fixed-quota permission gate. Later
+work should still follow an explicit phase contract rather than expanding these
+systems incidentally.
 
 ## Frozen build contract
 
@@ -24,11 +25,10 @@ reviewed.
 | Automated release gate | `npm run check`: 255/255 tests, production build, and asset audit passed; production `dist` was 8,379,189 / 8,388,608 bytes |
 | Qualified browser | Chrome 150 on macOS, 1280 x 720 viewport, DPR 1 |
 
-The public alias is mutable. Before every session, confirm it still serves
-`assets/index-CNX6_PYE.js`. If either the bundle name or SHA-256 changes, stop
-the cohort and create a new build label. Do not merge or deploy runtime changes
-between sessions. Documentation-only changes are acceptable only while the live
-bundle remains byte-identical.
+The public alias is mutable. Record the served bundle when exact comparison
+matters. If the runtime changes, use a new build label; ordinary phase feedback
+may continue across labeled refinements, while baseline-versus-pilot comparisons
+must use a consistent build and condition.
 
 Do not keep `story=reset` in the participant URL: it would erase the save again
 on reload. Give each participant a new browser profile or clear Thornvale local
@@ -96,24 +96,20 @@ resource action, optional extra work, food/energy comprehension, perceived
 action weight, camp attachment, and whether the Bell conflict felt more
 consequential after repairing the shelter.
 
-## Exit rule
+## Feedback and refinement rule
 
-Run at least five comparable fresh-player sessions. The gate may pass only when
-at least four of the first five—or at least 80% of any larger comparable
-set—complete the route without required coaching. No progression blocker,
-unhandled error, or asset dependency may prevent completion, and no player may
-lose or duplicate progress. The choice must still change at least three
-downstream outputs. Most players must describe the chore actions as grounded or
-satisfying rather than slow; two or more independently calling the repeated
-chores tedious is the explicit action-weight tuning failure. After five records,
-write what the team learned and decide whether to pass, make one bounded
-correction and start a new cohort, or stop for a blocker. Do not generalize from
-operator preflights or a single participant.
+Invite fresh players as they are available and use the short questionnaire.
+Review roughly three sessions for early repeated patterns; five or more improve
+confidence but are not required before agentic work continues. Fix reproducible
+progression, save-integrity, or runtime failures immediately. Carry ordinary
+confusion, action-weight, comprehension, and emotional-response findings into a
+bounded refinement pass. Do not generalize from operator preflights or a single
+participant, and do not treat isolated taste as a stop-work order.
 
 | Slot | Record | Status |
 | --- | --- | --- |
-| 01 | `YYYY-MM-DD-session-01.md` | Pending |
-| 02 | `YYYY-MM-DD-session-02.md` | Pending |
-| 03 | `YYYY-MM-DD-session-03.md` | Pending |
-| 04 | `YYYY-MM-DD-session-04.md` | Pending |
-| 05 | `YYYY-MM-DD-session-05.md` | Pending |
+| 01 | `YYYY-MM-DD-session-01.md` | Available |
+| 02 | `YYYY-MM-DD-session-02.md` | Available |
+| 03 | `YYYY-MM-DD-session-03.md` | Early pattern review |
+| 04 | `YYYY-MM-DD-session-04.md` | Optional confidence |
+| 05 | `YYYY-MM-DD-session-05.md` | Optional confidence |

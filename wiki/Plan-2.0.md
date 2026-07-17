@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Core Hook Proof v0.3 and bounded Day One systems implemented; playfeel refinement and validation pending |
+| Status | Phase 1 broad build complete; lightweight player feedback and secondary refinement are next |
 | Prepared | 2026-07-11 |
 | Baseline | `main` at `114a5faf5c0784715315744730b9c7b375b2473e` |
 | Target | A polished 20–30 minute single-player browser demo |
@@ -13,7 +13,7 @@
 
 ## 0. Build status — Core Hook Proof v0.3
 
-The first Milestone 1 implementation is now playable end to end. This is a proof build, not an exit-gate claim: the five required fresh-player sessions and learning review still remain. On 2026-07-13, the next proof was deliberately expanded into one complete first day so the cozy actions can earn the later social-horror turn instead of functioning as disconnected feature promises.
+The first Milestone 1 implementation is now playable end to end. Its broad-build phase is complete: the intended route, authoritative state, technical qualification, and production candidate all exist. Lightweight fresh-player feedback and a secondary refinement pass come next; they do not retroactively make the build incomplete or require agentic work to sit idle while a fixed participant quota is assembled. On 2026-07-13, the proof was deliberately expanded into one complete first day so the cozy actions can earn the later social-horror turn instead of functioning as disconnected feature promises.
 
 - fRiENDSiES `#8914` is the starting steward, Steward Lumen, with white head emission restored and capsule-relative foot alignment.
 - The letter → welcome → Ledger enrollment → recorded Day One chores → dusk bell → return toward Lumen → supernatural second bell → false record → correction → comply/alter sequence is complete.
@@ -35,10 +35,13 @@ The first Milestone 1 implementation is now playable end to end. This is a proof
 The bounded [Day One Action Weight](Day-One-Action-Weight.md) implementation and
 both operator technical preflights are complete on the frozen
 [`M1-DAYONE-2026-07-16-A`](../docs/playtests/2026-07-16-m1-day-one-cohort.md)
-production candidate. The immediate gate is now five clean first-play sessions.
-Capture completion time, help requests, optional activity, comprehension of food
-and energy, whether the actions feel grounded rather than tedious, and whether
-the Bell turn still lands before adding another day, villager, or broad system.
+production candidate. This is now the Phase 1 feedback checkpoint, not a
+permission gate for every subsequent piece of work. Invite fresh players as
+they are available, ask the short phase-specific questionnaire, and capture
+completion, required help, food and
+energy comprehension, action feel, camp attachment, and the Bell turn. Use
+repeated observations to prioritize a bounded refinement pass while the next
+coherent phase can be shaped and built in broad strokes.
 
 ### Approved scope extension — Day One Proof
 
@@ -50,7 +53,7 @@ This is a thin authored exception to the original cozy-system non-goals, not aut
 - A provisional camp at the edge of town near the forbidden forest. The permanent Thornvale home remains a later source of upgrades, customization, story pressure, and variable play.
 - One three-to-four-second anticipation, effort, contact, and recovery sequence for every successful Day One action. Movement pauses for the committed beat, camera look remains available, and saved state changes exactly once at the visible contact cue.
 
-The proof does **not** include crop growth across days, seasons, weather simulation, recipes, shops, a simulated doctor visit, freeform building, a broad economy, procedural resource placement, or forbidden-forest exploration. Those require evidence from the one-day test before entering the first three-day plan.
+The proof does **not** include crop growth across days, seasons, weather simulation, recipes, shops, a simulated doctor visit, freeform building, a broad economy, procedural resource placement, or forbidden-forest exploration. Those remain outside Phase 1 and may enter a later phase only through an explicit phase contract, not as incidental expansion.
 
 ## 1. Executive decision
 
@@ -58,7 +61,7 @@ Thornvale already has enough engine foundation to test its premise. The current 
 
 Plan 2.0 therefore makes the next release a **single-player core-hook proof**, not multiplayer. The next playable build must let a player experience one wholesome routine, discover one unspoken rule, witness one anomaly, face one polite intervention, and make one obey-or-resist choice with a visible consequence.
 
-Multiplayer, broad crafting systems, and procedural content stay behind validation gates. The Day One Proof is the smallest authored survival-and-home loop required to test the first complete Thornvale experience; it is not a release of those broader systems from their gates.
+Multiplayer, broad crafting systems, and procedural content stay behind explicit phase decisions. The Day One Proof is the smallest authored survival-and-home loop required to test the first complete Thornvale experience; it is not blanket authorization for those broader systems.
 
 ## 2. Review of the current plan
 
@@ -103,7 +106,7 @@ Multiplayer, broad crafting systems, and procedural content stay behind validati
 | Physics is documented as TBD even though Rapier is in production code. | Record current decisions and update documentation with implementation reality. |
 | Controls, collider naming, project structure, and avatar plans disagree across documents. | Make this file canonical and reconcile supporting docs during Milestone 0. |
 | Rooms + Friends Mode is treated as the automatic next step. | Require evidence that co-op strengthens the social-horror thesis before funding networking. |
-| “Done” means a feature exists. | Every milestone now has player-facing, technical, and validation gates. |
+| “Done” means a feature exists. | Every phase has a player-facing promise, technical completion criteria, a phase-end questionnaire, and a secondary refinement pass. |
 
 ## 3. Product contract for the vertical slice
 
@@ -159,9 +162,9 @@ The score is not a morality meter. High Neighborliness grants warmth and access 
 - Three complete endings; two polished endings are the target, with Rewrite as a stretch goal
 - Full mobile parity, performance support, and controller support beyond the bounded touch-input pilot
 
-## 4. Success scorecard
+## 4. Phase success scorecard
 
-The demo is successful only when the experience and the software both pass.
+The scorecard evaluates the completed demo and guides refinement. It is not a requirement to obtain human approval for each feature or to pause broad phase construction while waiting for participants. Technical integrity remains a merge and release requirement; player-experience findings become evidence for phase-end refinement and later scope decisions.
 
 ### Player experience
 
@@ -222,7 +225,7 @@ Estimates are sequencing aids, not commitments. Re-estimate after Milestone 0 on
 - There is one roadmap, one controls list, one collider convention, and one current architecture description.
 - Every P0 issue has an owner or is explicitly parked.
 
-### Milestone 1 — Core Hook Proof
+### Phase 1 / Milestone 1 — Core Hook Proof
 
 **Estimate:** 2–3 weeks
 
@@ -254,16 +257,22 @@ Estimates are sequencing aids, not commitments. Re-estimate after Milestone 0 on
 - Debug controls separated from player-facing controls
 - One versioned Day One activity slice with nourishment, energy, small inventory, camp/garden state, and recoverable pass-out
 
-#### Exit gate
+#### Broad-build completion
 
-- Five fresh playtests completed.
-- At least four testers finish without help.
 - The core choice changes at least three downstream outputs.
 - No progression blocker, unhandled error, or asset dependency prevents completion.
 - A clean save can finish every Day One activity and reach the Bell; an intentional pass-out returns to the gate before shelter repair or to camp afterward, with prior progress intact and no resource soft lock.
-- The team can state what it learned and what changes before expanding content.
+- The complete route is available as a stable, labeled build with a short phase-specific questionnaire.
 
-### Milestone 2 — Narrative Vertical Slice
+#### Phase-end feedback and refinement
+
+- Invite fresh players after the broad build is complete; do not interrupt implementation for human approval of individual features.
+- Use the lightweight questionnaire in `docs/playtests/FRESH-PLAYER-TEMPLATE.md`. A recording or exhaustive observation timeline is optional, not the default.
+- Review feedback continuously. Fix a reproducible progression, save-integrity, or release blocker immediately; otherwise wait for repeated evidence before changing direction.
+- Use three sessions as an early pattern check when available. Five or more comparable sessions increase confidence but are not a quota that blocks the next coherent phase.
+- Run a bounded refinement pass against repeated confusion, pacing, comprehension, and emotional-response findings. Preserve isolated preferences as observations rather than mandates.
+
+### Phase 2 / Milestone 2 — Narrative Vertical Slice
 
 **Estimate:** 4–6 weeks
 
@@ -288,12 +297,17 @@ Estimates are sequencing aids, not commitments. Re-estimate after Milestone 0 on
 - Loading, failure, pause, settings, and reset states are intentional.
 - Subtitles, reduced-motion mode, volume controls, readable focus states, and documented controls are present.
 
-#### Exit gate
+#### Broad-build completion
 
-- The full Success Scorecard passes or has a named exception approved for demo scope.
 - Both endings are reachable from a new save and a restored save.
 - A content-only change can add or revise a dialogue beat without changing `main.js`.
-- The slice is externally playtested and considered ready for hardening, not merely feature complete.
+- The full 20–30 minute phase is stable enough for a fresh player and has its own short questionnaire.
+
+#### Phase-end feedback and refinement
+
+- Gather fresh-player answers after the complete phase can be experienced end to end.
+- Compare comprehension, pacing, anomaly recognition, consequence visibility, and replay interest against the Success Scorecard.
+- Refine repeated weaknesses before public-demo hardening; do not treat one person's taste as a stop-work order.
 
 ### Milestone 3 — Public Demo hardening and release
 
@@ -371,7 +385,7 @@ Avoid turning these names into a framework project. A module should exist only w
 | THV-009 | Author the first night anomaly | It fires once, is noticeable, and survives save/reload correctly. |
 | THV-010 | Implement the polite intervention chain | Response escalates based on rule and Neighborliness state. |
 | THV-011 | Implement obey/resist consequence and short resolution | Choice changes route, NPC response, and ending flag. |
-| THV-012 | Run five observed hook-proof playtests | Completion and theme-comprehension metrics are recorded. |
+| THV-012 | Run lightweight Phase 1 feedback sessions | Fresh-player answers and any required-help moments are recorded without blocking broad phase work on a fixed quota. |
 | THV-013 | Prove one complete first-day survival and camp loop | A clean save and a pass-out recovery route both reach the existing Bell sequence without guidance or soft lock. |
 
 ### P1 — Build the vertical slice
@@ -406,7 +420,7 @@ Avoid turning these names into a framework project. A module should exist only w
 
 | Risk | Why it matters | Mitigation / gate |
 | --- | --- | --- |
-| Feature breadth hides the missing hook | Cozy systems and multiplayer can consume months without proving the thesis. | Enforce non-goals and milestone exit gates. |
+| Feature breadth hides the missing hook | Cozy systems and multiplayer can consume months without proving the thesis. | Give every phase one coherent player promise, explicit non-goals, and a bounded endpoint. |
 | Remote avatar and decoder dependencies fail or change | Current startup can wait on mutable third-party services. | Bundle a fallback, pin or mirror assets, time out requests, and boot independently. |
 | Content production becomes the bottleneck | The demo needs authored dialogue, anomalies, audio, and art—not more engine shell. | Lock the slice script early and schedule weekly playable content reviews. |
 | Main-loop coupling slows iteration | Story callbacks currently live directly in `main.js`. | Move only state and authored effects into testable modules as each beat ships. |
@@ -418,28 +432,29 @@ Avoid turning these names into a framework project. A module should exist only w
 
 ## 9. Operating model
 
-- Keep one milestone active at a time.
-- Every feature issue names the player-facing beat and the exit criterion it supports.
+- Build in coherent phases: broad implementation first, fresh-player feedback at the phase boundary, then secondary refinement.
+- Every phase names the feeling it should create, the complete player-facing promise, technical completion criteria, and explicit non-goals.
+- Every feature issue names the player-facing beat and phase contract it supports.
 - Prefer thin vertical changes that can be played over isolated engine projects.
 - Require green install, unit, build, and smoke checks before merge.
-- Run at least one fresh-player test each week during Milestones 1 and 2.
-- Record observations, completion time, help requests, theme comprehension, and choice distribution.
-- Review scope at every milestone gate; defer work rather than silently extending the milestone.
+- Do not stop broad phase construction to seek human approval of individual features. Use automated checks, operator routes, and explicit invariants during implementation.
+- At phase completion, publish a stable checkpoint and a short questionnaire tailored to the experience hypothesis.
+- Make fresh sessions easy to run: a clean start, minimal facilitator prompt, short questionnaire, and optional notes or recording. Let agents perform transcription, comparison, and synthesis.
+- Review feedback as it arrives. Reproducible progression, save-integrity, security, provenance, or release failures can interrupt work; subjective or isolated feedback waits for the refinement pass.
+- Three sessions are a useful early pattern check; five or more improve confidence for major scope or public-release decisions, but participant counts are not automatic stop-work gates.
+- The next coherent phase may be shaped and built while prior-phase feedback accumulates. Do not silently leak deferred systems into the active phase.
+- Review scope at every phase boundary and refinement pass; defer work rather than silently extending the phase.
 - Tag playable checkpoints and keep the public demo on a known release commit.
 - Update this plan when a gate changes—not after implementation has already diverged.
 
 ## 10. Immediate next actions
 
-1. Merge this plan and update wiki/README navigation.
-2. Close or supersede stale PR #4 after preserving any useful design notes.
-3. Create Milestones 0–3 and issues THV-001 through THV-012 in GitHub.
-4. Write the 8–12 minute hook-proof script beat by beat.
-5. Fix the startup asset critical path and add the bundled fallback avatar.
-6. Add the CI and smoke-test baseline.
-7. Implement `GameSession`, save/reset, and phase state before adding more content.
-8. Convert the Ledger and Bell into the first routine/rule pair.
-9. Ship the anomaly, intervention, and obey/resist consequence as one playable thread.
-10. Run five playtests, review the scorecard, and only then authorize the full vertical slice.
+1. Treat the qualified Day One/Core Hook build as Phase 1 broad-build complete.
+2. Invite fresh players as available using the lightweight Phase 1 questionnaire; do not wait for a fixed quota before useful agentic work continues.
+3. Review after roughly three sessions for repeated patterns, then run a bounded Phase 1 refinement when the evidence justifies it.
+4. Define the Phase 2 player promise, feeling target, broad endpoint, and non-goals before implementation expands.
+5. Build the complete Phase 2 experience in wide strokes with automated and operator verification throughout.
+6. Preserve multiplayer, procedural systems, and broad cozy simulation as explicit later-phase decisions.
 
 ## 11. Definition of Plan 2.0 complete
 

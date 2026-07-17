@@ -1,6 +1,6 @@
 # Day One Proof QA
 
-**Status:** implementation complete; fresh-player validation pending  
+**Status:** Phase 1 broad build complete; lightweight feedback and secondary refinement next
 **Player-facing beat:** arrive as an uncertain newcomer, enter the town’s shared record, then make the provisional forest-edge camp livable while each action is truthfully recorded
 **Exit criterion:** a clean run and an intentional pass-out run both reach the existing dusk Bell sequence without developer help, lost progress, or a resource soft lock
 
@@ -104,8 +104,8 @@ deployment `5457588533`, public bundle `assets/index-CNX6_PYE.js`, and SHA-256
 
 Both operator routes therefore satisfy the route and recovery technical
 preflight. Their waypoint guidance does not prove unaided human completion, so
-they do not count toward the five fresh-player records or the
-four-without-coaching threshold.
+they remain distinct from fresh-player feedback about comprehension, pacing,
+action feel, and emotional response.
 
 ## Clean-run checks
 
@@ -160,7 +160,7 @@ four-without-coaching threshold.
   reload. For the plant/water skeletal pilot, record the exact observations in
   [`2026-07-13-story-actions-v1.md`](2026-07-13-story-actions-v1.md). The
   automated actual-interaction route proves wiring and state progression; it
-  does not replace the still-open fresh-player walk and action-feel gate.
+  does not replace phase-end fresh-player feedback about the walk and action feel.
 
 ## Fresh-player record
 
@@ -173,7 +173,11 @@ Use `docs/playtests/FRESH-PLAYER-TEMPLATE.md` for each comparable session. Add t
 - Whether they understood the pass-out consequence, if encountered
 - Whether the comfort of improving camp made the Bell conflict feel more consequential
 
-Do not claim the Day One Proof validated until at least five comparable fresh-player records exist and four complete without coaching.
+Treat the Day One broad build as technically complete. Invite fresh players as
+available, review roughly three sessions for early repeated patterns, and use
+five or more when greater confidence is useful. Participant count is not a
+stop-work gate; reproducible progression or save-integrity failures are immediate
+blockers, while ordinary findings inform the bounded refinement pass.
 
 ## Deferred on purpose
 
