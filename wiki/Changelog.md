@@ -10,9 +10,11 @@
 * Added three compact, provenance-recorded visual studies for the Community
   Ledger, forest-edge camp, and Town Bell to relevant dialogue beats and
   objectives, with text-first and failed-image fallbacks. Desktop players can
-  press `H` for one four-second ground ribbon toward the live objective; it
-  follows only reviewed town corridors, expires without changing progression,
-  and yields to the existing persistent comply/alter routes.
+  press `H` for one four-second windborne point cloud toward the live objective.
+  It gathers at the grounded player's feet, clears fixed town colliders while
+  joining a reviewed corridor, rises to chest height, decays before arrival,
+  and yields to the existing persistent comply/alter routes without changing
+  progression.
 * Added Pizza Lab v0.4 Wayfinder geometry promotion. The full Blender World
   Stage now loads an editable project source with three named sign-board
   assemblies; the add-on and MCP can export their bounded transforms through a

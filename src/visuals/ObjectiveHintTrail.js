@@ -14,12 +14,18 @@ export const OBJECTIVE_HINT_TRAIL_DEFAULTS = Object.freeze({
   duration: OBJECTIVE_HINT_DURATION,
   spacing: 0.09,
   maxMarkers: 96,
-  groundOffset: 0.08,
   targetStopDistance: 2.4,
   retargetSharpness: 4,
   targetLeash: 2.5,
-  airHeight: 0.22,
   wakeLength: 4,
+});
+
+const WIND_HEIGHTS = Object.freeze({
+  pickupDistance: 0.35,
+  riseDistance: 2,
+  pickup: Object.freeze({ bodyBase: 0.12, bodyRange: 0.16, leaderHeight: 0.26, curl: 0.02 }),
+  stream: Object.freeze({ bodyBase: 1.05, bodyRange: 0.26, leaderHeight: 1.5, curl: 0.04 }),
+  handoff: Object.freeze({ bodyBase: 0.74, bodyRange: 0.34, leaderHeight: 1.12, curl: 0.03 }),
 });
 
 const WIND_COLORS = Object.freeze({
@@ -178,6 +184,61 @@ function clamp01(value) {
   return Math.max(0, Math.min(1, value));
 }
 
+function smoothstep01(value) {
+  const t = clamp01(value);
+  return t * t * (3 - 2 * t);
+}
+
+function lerpNumber(start, end, amount) {
+  return start + (end - start) * amount;
+}
+
+function writeHeightBlend(output, start, end, amount, phase) {
+  output.phase = phase;
+  output.bodyBase = lerpNumber(start.bodyBase, end.bodyBase, amount);
+  output.bodyRange = lerpNumber(start.bodyRange, end.bodyRange, amount);
+  output.leaderHeight = lerpNumber(start.leaderHeight, end.leaderHeight, amount);
+  output.curl = lerpNumber(start.curl, end.curl, amount);
+  return output;
+}
+
+/**
+ * Resolve the vertical grammar from spatial route progress, independent of
+ * animation timing. Route Y remains the authored terrain baseline.
+ */
+export function resolveWindHeightProfile({
+  distance,
+  totalDistance,
+  handoffDistance = null,
+} = {}, output = {}) {
+  const total = Number(totalDistance);
+  const position = Number(distance);
+  if (!Number.isFinite(total) || total <= 1e-8 || !Number.isFinite(position)) {
+    return writeHeightBlend(output, WIND_HEIGHTS.pickup, WIND_HEIGHTS.pickup, 0, 'pickup');
+  }
+
+  const routeDistance = clamp01(position / total) * total;
+  const handoff = Number(handoffDistance);
+  const hasHandoff = Number.isFinite(handoff) && handoff > 1e-6 && handoff < total - 1e-6;
+  const mainDistance = hasHandoff ? handoff : total;
+  const pickupEnd = Math.min(WIND_HEIGHTS.pickupDistance, mainDistance * 0.25);
+  const riseEnd = Math.max(pickupEnd + 1e-6, Math.min(WIND_HEIGHTS.riseDistance, mainDistance));
+
+  if (routeDistance <= pickupEnd + 1e-9) {
+    return writeHeightBlend(output, WIND_HEIGHTS.pickup, WIND_HEIGHTS.pickup, 0, 'pickup');
+  }
+  if (routeDistance < riseEnd - 1e-9) {
+    const rise = smoothstep01((routeDistance - pickupEnd) / (riseEnd - pickupEnd));
+    return writeHeightBlend(output, WIND_HEIGHTS.pickup, WIND_HEIGHTS.stream, rise, 'rise');
+  }
+  if (!hasHandoff || routeDistance <= handoff + 1e-9) {
+    return writeHeightBlend(output, WIND_HEIGHTS.stream, WIND_HEIGHTS.stream, 0, 'stream');
+  }
+
+  const descent = smoothstep01((routeDistance - handoff) / (total - handoff));
+  return writeHeightBlend(output, WIND_HEIGHTS.stream, WIND_HEIGHTS.handoff, descent, 'handoff');
+}
+
 export function resolveWindGustFrame({
   totalDistance,
   handoffDistance = null,
@@ -290,10 +351,6 @@ export class ObjectiveHintTrail {
         Math.floor(positiveNumber(options.maxMarkers, OBJECTIVE_HINT_TRAIL_DEFAULTS.maxMarkers)),
       ),
     );
-    this.groundOffset = positiveNumber(
-      options.groundOffset,
-      OBJECTIVE_HINT_TRAIL_DEFAULTS.groundOffset,
-    );
     this.targetStopDistance = positiveNumber(
       options.targetStopDistance,
       OBJECTIVE_HINT_TRAIL_DEFAULTS.targetStopDistance,
@@ -306,7 +363,6 @@ export class ObjectiveHintTrail {
       options.targetLeash,
       OBJECTIVE_HINT_TRAIL_DEFAULTS.targetLeash,
     );
-    this.airHeight = positiveNumber(options.airHeight, OBJECTIVE_HINT_TRAIL_DEFAULTS.airHeight);
     this.wakeLength = positiveNumber(options.wakeLength, OBJECTIVE_HINT_TRAIL_DEFAULTS.wakeLength);
 
     this.root = null;
@@ -332,6 +388,8 @@ export class ObjectiveHintTrail {
     this._smoothedTarget = null;
     this._before = new Vector3();
     this._after = new Vector3();
+    this._heightRequest = { distance: 0, totalDistance: 0, handoffDistance: null };
+    this._heightProfile = {};
   }
 
   init() {
@@ -550,13 +608,19 @@ export class ObjectiveHintTrail {
       const spread = index === 0
         ? 0
         : clumpSway + randomScatter + Math.sin(curlPhase) * curlRadius;
+      this._heightRequest.distance = displayDistance;
+      this._heightRequest.totalDistance = this._flowTotal;
+      this._heightRequest.handoffDistance = this._handoffDistance;
+      const heightProfile = resolveWindHeightProfile(
+        this._heightRequest,
+        this._heightProfile,
+      );
       const lift = index === 0
-        ? this.airHeight + 0.24
-        : this.airHeight
-          + 0.06
-          + marker.heightSeed * (0.16 + cloudEnvelope * 0.14)
-          + (0.5 + Math.cos(curlPhase) * 0.5) * (0.04 + cloudEnvelope * 0.07)
-          + (0.5 + Math.sin(clumpPhase * 0.71) * 0.5) * (0.025 + cloudEnvelope * 0.035);
+        ? heightProfile.leaderHeight
+        : heightProfile.bodyBase
+          + marker.heightSeed * heightProfile.bodyRange
+          + Math.sin(curlPhase) * heightProfile.curl
+          + Math.sin(clumpPhase * 0.71) * heightProfile.curl * 0.35;
       const offset = index * 3;
       this.geometry.attributes.position.array[offset] = marker.position.x + normalX * spread;
       this.geometry.attributes.position.array[offset + 1] = marker.position.y + lift;

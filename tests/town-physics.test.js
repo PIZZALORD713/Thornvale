@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { TOWN_LAYOUT } from '../src/config/town.js';
+import { getTownStaticColliderEnvelopes, TOWN_LAYOUT } from '../src/config/town.js';
 import { CORE_HOOK_V03 } from '../src/content/core-hook-v03.js';
 import { PhysicsWorld } from '../src/core/PhysicsWorld.js';
 import {
@@ -45,6 +45,46 @@ test('each cottage installs porch, detail, and garden-fence physics once', () =>
   ));
   assert.ok(teaPorch, 'tea-house veranda collider should be installed');
   assert.equal(teaPorch.position.y, teaHouse.porchCollider.size.y);
+});
+
+test('fixed landmark collider envelopes are one shared layout-derived contract', () => {
+  const colliders = new Map(
+    getTownStaticColliderEnvelopes(TOWN_LAYOUT).map((entry) => [entry.id, entry]),
+  );
+
+  const fixedLandmarkIds = [
+    'community-ledger',
+    'garden-arch-left',
+    'garden-arch-right',
+    'stone-well',
+    'town-bell',
+    'wayfinder',
+    'welcome-gate-left',
+    'welcome-gate-right',
+  ];
+  assert.ok(fixedLandmarkIds.every((id) => colliders.has(id)));
+  assert.equal(
+    [...colliders.keys()].filter((id) => id.startsWith('cottage-')).length,
+    TOWN_LAYOUT.buildings.reduce(
+      (total, building) => total + 3 + (building.detailColliders?.length || 0),
+      0,
+    ),
+  );
+  assert.ok(
+    [...colliders.keys()].every((id) => !id.includes('porch')),
+    'walkable porch surfaces must not become horizontal route blockers',
+  );
+  assert.deepEqual(colliders.get('wayfinder'), {
+    id: 'wayfinder',
+    position: {
+      x: TOWN_LAYOUT.authoredProps.wayfinder.x,
+      y: 1.05,
+      z: TOWN_LAYOUT.authoredProps.wayfinder.z,
+    },
+    size: { x: 0.42, y: 2.1, z: 0.42 },
+  });
+  assert.equal(colliders.get('welcome-gate-right').position.x, TOWN_LAYOUT.gate.x + 2.05);
+  assert.equal(colliders.get('town-bell').position.y, TOWN_LAYOUT.landmarks.bell.baseY + 0.22);
 });
 
 test('the town bell sits on an elevated walkable hill reached by a three-dimensional ritual lane', () => {

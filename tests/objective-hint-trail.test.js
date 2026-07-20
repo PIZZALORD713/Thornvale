@@ -11,6 +11,7 @@ import {
   OBJECTIVE_HINT_TRAIL_DEFAULTS,
   ObjectiveHintTrail,
   resolveWindGustFrame,
+  resolveWindHeightProfile,
   splitObjectiveHintApproach,
 } from '../src/visuals/ObjectiveHintTrail.js';
 
@@ -71,7 +72,9 @@ test('show clones the route into a bounded ivory, sage, and gold wind field', ()
     positions[0].z > Math.max(...positions.slice(1).map(({ z }) => z)),
     'the centered gold point must lead the clustered body',
   );
-  assert.ok(positions.every(({ y }) => y >= trail.airHeight && y <= trail.airHeight + 0.7));
+  assert.ok(positions.every(({ x, y, z }) => [x, y, z].every(Number.isFinite)));
+  assert.ok(Math.min(...positions.map(({ y }) => y)) >= 0.09);
+  assert.ok(Math.max(...positions.map(({ y }) => y)) <= 1.6);
   assert.deepEqual(trail._markers.map(({ windRole }) => windRole), [
     'gold', 'ivory', 'ivory', 'sage', 'sage',
   ]);
@@ -92,20 +95,22 @@ test('normal gust forms irregular three-dimensional clumps instead of a sampled 
     spacing: 0.09,
     maxMarkers: 64,
   }).init();
-  trail.show({ points: [[0, 0], [0, 12]] });
-  trail.update(0.55);
+  trail.show({ points: [[0, 0], [0, 24]] });
+  trail.update(1);
 
-  const positions = trail._markers
+  const visible = trail._markers
     .map((_, index) => ({
+      index,
       opacity: trail.geometry.attributes.aOpacity.getX(index),
       point: particlePosition(trail, index),
     }))
-    .filter(({ opacity }) => opacity > 0.01)
-    .map(({ point }) => point);
+    .filter(({ opacity }) => opacity > 0.01);
+  const positions = visible.map(({ point }) => point);
+  const body = visible.filter(({ index }) => index > 0).map(({ point }) => point);
   const lateralSpan = Math.max(...positions.map(({ x }) => x))
     - Math.min(...positions.map(({ x }) => x));
-  const verticalSpan = Math.max(...positions.map(({ y }) => y))
-    - Math.min(...positions.map(({ y }) => y));
+  const verticalSpan = Math.max(...body.map(({ y }) => y))
+    - Math.min(...body.map(({ y }) => y));
   const longitudinalSteps = positions.slice(2).map(({ z }, index) => (
     Math.abs(z - positions[index + 1].z)
   ));
@@ -113,11 +118,104 @@ test('normal gust forms irregular three-dimensional clumps instead of a sampled 
   assert.ok(positions.length >= 30, 'the main gust should read as a field, not a few markers');
   assert.ok(lateralSpan > 0.55, 'the gust needs a braided lateral silhouette');
   assert.ok(lateralSpan < 1.05, 'the gust should stay a stream instead of becoming a haze');
-  assert.ok(verticalSpan > 0.28, 'the gust needs visible air volume above the route');
-  assert.ok(verticalSpan < 0.65, 'the gust should stay low and cohesive');
+  assert.ok(verticalSpan > 0.18, 'the gust needs visible air volume above the route');
+  assert.ok(verticalSpan < 0.4, 'the chest-height body should stay cohesive');
+  assert.ok(body.every(({ y }) => y >= 0.98 && y <= 1.38));
+  assert.ok(positions[0].y >= 1.45 && positions[0].y <= 1.55);
   assert.ok(Math.min(...longitudinalSteps) < 0.08, 'particles should gather within clumps');
   assert.ok(Math.max(...longitudinalSteps) > 0.2, 'clumps should leave irregular longitudinal gaps');
   assert.ok(Math.abs(positions[0].x) <= 1e-9, 'only the directional leader stays centered');
+  trail.dispose();
+});
+
+test('height profile rises spatially from pickup to stream and descends only on handoff', () => {
+  const totalDistance = 10;
+  const handoffDistance = 7.6;
+  const sample = (distance) => resolveWindHeightProfile({
+    distance,
+    totalDistance,
+    handoffDistance,
+  });
+  const pickup = sample(0);
+  const rising = sample(1.2);
+  const stream = sample(3);
+  const handoff = sample(handoffDistance);
+  const descending = sample(8.8);
+  const arrival = sample(totalDistance);
+
+  assert.deepEqual(pickup, {
+    phase: 'pickup',
+    bodyBase: 0.12,
+    bodyRange: 0.16,
+    leaderHeight: 0.26,
+    curl: 0.02,
+  });
+  assert.equal(rising.phase, 'rise');
+  assert.ok(rising.leaderHeight > pickup.leaderHeight);
+  assert.ok(rising.leaderHeight < stream.leaderHeight);
+  assert.equal(stream.phase, 'stream');
+  assert.equal(stream.leaderHeight, 1.5);
+  assert.equal(handoff.phase, 'stream');
+  assert.equal(handoff.leaderHeight, stream.leaderHeight);
+  assert.equal(descending.phase, 'handoff');
+  assert.ok(descending.leaderHeight < handoff.leaderHeight);
+  assert.ok(descending.leaderHeight > arrival.leaderHeight);
+  assert.deepEqual(arrival, {
+    phase: 'handoff',
+    bodyBase: 0.74,
+    bodyRange: 0.34,
+    leaderHeight: 1.12,
+    curl: 0.03,
+  });
+});
+
+test('height profile remains finite and continuous on short or invalid routes', () => {
+  const shortSamples = [0, 0.05, 0.15, 0.2, 0.3].map((distance) => (
+    resolveWindHeightProfile({
+      distance,
+      totalDistance: 0.3,
+      handoffDistance: 0.2,
+    })
+  ));
+  for (const profile of shortSamples) {
+    assert.ok(
+      Object.entries(profile)
+        .filter(([key]) => key !== 'phase')
+        .every(([, value]) => Number.isFinite(value)),
+    );
+  }
+  assert.ok(shortSamples[2].leaderHeight >= shortSamples[1].leaderHeight);
+  assert.ok(shortSamples[3].leaderHeight >= shortSamples[4].leaderHeight);
+
+  const invalid = resolveWindHeightProfile({ distance: NaN, totalDistance: 0 });
+  assert.equal(invalid.phase, 'pickup');
+  assert.equal(invalid.leaderHeight, 0.26);
+});
+
+test('the static accessibility cue keeps a boot-height pickup beneath its chest-height lead', () => {
+  const trail = new ObjectiveHintTrail(new Scene(), {
+    reducedMotion: true,
+    spacing: 0.09,
+    maxMarkers: 64,
+  }).init();
+  trail.show({ points: [[0, 0], [0, 8]] });
+
+  const positions = trail._markers.map((_, index) => particlePosition(trail, index));
+  const leader = positions[0];
+  const pickup = positions.filter(({ z }) => z <= 0.05);
+  const establishedBody = positions.slice(1).filter(({ z }) => z >= 2.1);
+
+  assert.ok(leader.y >= 1.45 && leader.y <= 1.6, 'the sparse leader crests near head height');
+  assert.ok(pickup.length >= 2, 'the static cue must visibly originate at the player');
+  assert.ok(
+    pickup.every(({ y }) => y >= 0.09 && y <= 0.32),
+    'the origin pickup stays around the player boots',
+  );
+  assert.ok(establishedBody.length >= 4);
+  assert.ok(
+    establishedBody.every(({ y }) => y >= 0.98 && y <= 1.38),
+    'the established stream sits around waist and chest height',
+  );
   trail.dispose();
 });
 
@@ -395,7 +493,7 @@ test('reduced motion holds every point still for the full cue', () => {
   trail.dispose();
 });
 
-test('normal motion advects the low-air point cloud and fades the gust before expiry', () => {
+test('normal motion advects the spatial point cloud and fades the gust before expiry', () => {
   const trail = new ObjectiveHintTrail(new Scene()).init();
   trail.show({ points: [[0, 0], [0, 6]] });
   const before = Array.from(trail.geometry.attributes.position.array);

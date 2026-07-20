@@ -48,6 +48,33 @@ function pointIndex(points, x, z, tolerance = 1e-6) {
   ));
 }
 
+function segmentIntersectsHorizontalBox(start, end, { x, z, size }, clearance = 0.2) {
+  const bounds = {
+    minX: x - size.x * 0.5 - clearance,
+    maxX: x + size.x * 0.5 + clearance,
+    minZ: z - size.z * 0.5 - clearance,
+    maxZ: z + size.z * 0.5 + clearance,
+  };
+  let minimum = 0;
+  let maximum = 1;
+  for (const axis of ['x', 'z']) {
+    const suffix = axis.toUpperCase();
+    const delta = end[axis] - start[axis];
+    if (Math.abs(delta) <= 1e-9) {
+      if (start[axis] < bounds[`min${suffix}`] || start[axis] > bounds[`max${suffix}`]) {
+        return false;
+      }
+      continue;
+    }
+    const entry = (bounds[`min${suffix}`] - start[axis]) / delta;
+    const exit = (bounds[`max${suffix}`] - start[axis]) / delta;
+    minimum = Math.max(minimum, Math.min(entry, exit));
+    maximum = Math.min(maximum, Math.max(entry, exit));
+    if (minimum > maximum) return false;
+  }
+  return true;
+}
+
 test('every active objective resolves to its configured safe target role', () => {
   const expectedTargets = {
     'meet-steward': 'steward',
@@ -138,6 +165,112 @@ test('resolution, unsupported, mismatched, and unreachable requests never invent
     start,
     target: ledger,
     maxDistance: 0,
+  }), null);
+});
+
+test('guidance begins at the exact player ground snapshot before joining a safe corridor', () => {
+  const start = { x: 2.4, y: 0.17, z: 13.8 };
+  const points = resolveObjectiveHintPath({
+    objective: 'day-one-repair-shelter',
+    start,
+    target: TOWN_LAYOUT.dayOne.shelter,
+  });
+
+  assert.ok(points);
+  assert.deepEqual(points[0], start, 'the visible pickup must begin where the player stands');
+  assert.equal(isObjectiveHintPathSafe(points), true);
+  assert.ok(pathLength(points) <= OBJECTIVE_HINT_MAX_DISTANCE + 1e-6);
+  assert.ok(pathLength(points) >= OBJECTIVE_HINT_MAX_DISTANCE - 1e-6);
+
+  start.x = 400;
+  assert.equal(points[0].x, 2.4, 'the returned route snapshots the accepted player origin');
+});
+
+test('player pickup selects a farther safe corridor snap when the nearest join crosses a cottage', () => {
+  const start = { x: -11.5, y: 0, z: -6 };
+  const points = resolveObjectiveHintPath({
+    objective: 'sign-ledger',
+    start,
+    target: TOWN_LAYOUT.landmarks.ledger,
+    maxDistance: Infinity,
+  });
+
+  assert.ok(points);
+  assert.deepEqual(points[0], start);
+  assert.deepEqual(points[1], { x: -9.2, y: 0, z: -2.8 });
+  assert.equal(isObjectiveHintPathSafe(points), true);
+});
+
+test('player pickup selects joins that clear the welcome gate and Wayfinder posts', () => {
+  const cases = [
+    {
+      name: 'welcome gate',
+      start: { x: 2.8, y: 0, z: 11.9 },
+      blocker: {
+        x: TOWN_LAYOUT.gate.x + 2.05,
+        z: TOWN_LAYOUT.gate.z,
+        size: { x: 0.62, z: 0.62 },
+      },
+    },
+    {
+      name: 'Wayfinder',
+      start: { x: -0.6, y: 0, z: -6.5 },
+      blocker: {
+        x: TOWN_LAYOUT.authoredProps.wayfinder.x,
+        z: TOWN_LAYOUT.authoredProps.wayfinder.z,
+        size: { x: 0.42, z: 0.42 },
+      },
+    },
+  ];
+
+  for (const { name, start, blocker } of cases) {
+    const points = resolveObjectiveHintPath({
+      objective: 'ring-bell-at-dusk',
+      start,
+      target: TOWN_LAYOUT.landmarks.bell,
+      maxDistance: Infinity,
+    });
+
+    assert.ok(points, `${name} should have an alternate reviewed pickup`);
+    assert.deepEqual(points[0], start);
+    assert.equal(
+      segmentIntersectsHorizontalBox(points[0], points[1], blocker),
+      false,
+      `${name} pickup must not cut through its fixed collider envelope`,
+    );
+  }
+});
+
+test('player pickup clears cottage detail and garden-fence colliders beyond the cottage mass', () => {
+  const postOffice = TOWN_LAYOUT.buildings.find(({ id }) => id === 'rose-post-office');
+  const detail = postOffice.detailColliders[2];
+  const start = { x: -16.2, y: 0, z: 8.6 };
+  const points = resolveObjectiveHintPath({
+    objective: 'ring-bell-at-dusk',
+    start,
+    target: TOWN_LAYOUT.landmarks.bell,
+    maxDistance: Infinity,
+  });
+
+  assert.ok(points, 'the post-office edge should still have a reviewed alternate pickup');
+  assert.deepEqual(points[0], start);
+  assert.equal(
+    segmentIntersectsHorizontalBox(points[0], points[1], {
+      x: postOffice.position.x + detail.offsetX,
+      z: postOffice.position.z + detail.offsetZ,
+      size: detail.size,
+    }),
+    false,
+    'boot-height pickup must not pass through the post-office garden detail collider',
+  );
+});
+
+test('player pickup fails closed when no reviewed corridor has a safe join', () => {
+  assert.equal(resolveObjectiveHintPath({
+    objective: 'sign-ledger',
+    start: { x: -20, y: 0, z: -8 },
+    target: TOWN_LAYOUT.landmarks.ledger,
+    maxDistance: Infinity,
   }), null);
 });
 
