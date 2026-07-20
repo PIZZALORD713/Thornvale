@@ -42,6 +42,7 @@ async function decodeDraco(code, bytes) {
   });
   vm.runInContext(code, context, { timeout: 5_000 });
   const createDecoder = vm.runInContext('DracoDecoderModule', context);
+  assert.equal(typeof createDecoder, 'function', 'DracoDecoderModule must remain a global factory');
   const module = await createDecoder({});
   const buffer = new module.DecoderBuffer();
   const decoder = new module.Decoder();
@@ -64,19 +65,24 @@ async function decodeDraco(code, bytes) {
   }
 }
 
-test('production Draco minification preserves fallback decoding', { timeout: 15_000 }, async () => {
+test('identifier-mangled production Draco preserves its global factory and fallback decoding', { timeout: 15_000 }, async () => {
   const original = await readFile(
     new URL('../public/draco/draco_decoder.js', import.meta.url),
     'utf8',
   );
+  const unmangled = await minifyDracoDecoderSource(original, { mangleIdentifiers: false });
   const minified = await minifyDracoDecoderSource(original);
   const bytes = await extractDracoBytes(
     new URL('../public/friendsies/8914/body.glb', import.meta.url),
   );
 
   assert.ok(
-    Buffer.byteLength(original) - Buffer.byteLength(minified) >= 20 * 1024,
-    'production transform should recover at least 20 KiB without changing the source asset',
+    Buffer.byteLength(original) - Buffer.byteLength(minified) >= 60 * 1024,
+    'production transform should recover at least 60 KiB without changing the source asset',
+  );
+  assert.ok(
+    Buffer.byteLength(unmangled) - Buffer.byteLength(minified) >= 38 * 1024,
+    'identifier mangling should recover at least 38 KiB beyond compression alone',
   );
   assert.match(minified, /DracoDecoderModule/);
 
