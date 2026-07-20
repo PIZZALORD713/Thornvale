@@ -60,6 +60,10 @@ import { GameSession } from './game/GameSession.js';
 import { CoreHookDirector } from './game/CoreHookDirector.js';
 import { DayOneDirector } from './game/DayOneDirector.js';
 import { DayOneActionController } from './game/DayOneActionController.js';
+import {
+  hasPlayerFallenOutOfWorld,
+  resolveCurrentRecoveryPoint,
+} from './game/PlayerRecovery.js';
 import { InteractableSystem } from './game/InteractableSystem.js';
 import { buildTown } from './game/TownBuilder.js';
 import { CORE_HOOK_V03 } from './content/core-hook-v03.js';
@@ -614,6 +618,24 @@ function resetPlayerToArrival(position = null) {
   cameraRig.resetPosition();
 }
 
+function recoverPlayerAfterWorldFall() {
+  const position = characterMotor?.getPosition?.();
+  if (!hasPlayerFallenOutOfWorld(position)) return false;
+
+  const recoveryPoint = resolveCurrentRecoveryPoint(
+    gameSession?.snapshot?.(),
+    playerSpawnPoint,
+    DAY_ONE_V01.anchors.campRecovery,
+  );
+  if (!recoveryPoint) return false;
+
+  resetPlayerToArrival(recoveryPoint);
+  hud?.setStatus?.('The path gives way. Thornvale returns you to your last safe place.');
+  postProcessing?.pulse?.(0.28);
+  soundscape?.playInteraction?.('magic');
+  return true;
+}
+
 function waitForRecoveryFrame(delay) {
   if (delay > 0) {
     return new Promise((resolve) => window.setTimeout(resolve, delay));
@@ -1063,6 +1085,7 @@ function animate() {
 
   if (playerController) {
     playerController.update(dt);
+    recoverPlayerAfterWorldFall();
     const velocity = characterMotor.getVelocity();
     const locomotionState = playerController.getLocomotionState();
     playerAnimator?.update(dt, locomotionState, velocity);
