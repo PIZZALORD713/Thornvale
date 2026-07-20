@@ -1,0 +1,912 @@
+{
+  "schemaVersion": 1,
+  "id": "thornvale-world-stage-v1",
+  "coordinateSpace": "three-y-up",
+  "blenderSpace": "z-up-negative-y-front",
+  "layoutSha256": "d95959daa378ec788f221917c488ce5b81741b754d790e3673df6b45a34fc2b2",
+  "sources": [
+    {
+      "id": "cottages",
+      "path": "public/town/cottages/thornvale-cottages.glb",
+      "sha256": "af5afde73586fb7d4d72f6dff6b1d456e113cee1e4bda5e1c45f82497029326c"
+    },
+    {
+      "id": "village-dressing",
+      "path": "public/village/thornvale-village-dressing.glb",
+      "sha256": "bf5540deb62a3b14317350d0e04207a311a49c0e0fe068691e18203a930a22be"
+    },
+    {
+      "id": "arrival-plaza",
+      "path": "public/village/pilot/v1/thornvale-arrival-plaza.glb",
+      "sha256": "45725c402431f00a65082a27e6db0ad04d03cfdd3cf8f104907372639b52549b"
+    }
+  ],
+  "layout": {
+    "authoredProps": {
+      "gardenArch": {
+        "asset": "GardenArch",
+        "rotationY": 1.2,
+        "x": 9.4,
+        "y": 0,
+        "z": 7.35
+      },
+      "stoneWell": {
+        "asset": "StoneWell",
+        "rotationY": 0.18,
+        "x": -8.4,
+        "y": 0,
+        "z": 2.4
+      },
+      "wayfinder": {
+        "asset": "VillageWayfinder",
+        "rotationY": 0,
+        "x": 0,
+        "y": 0,
+        "z": -6.4
+      }
+    },
+    "buildings": [
+      {
+        "doorMaterial": "mint",
+        "frontSign": 1,
+        "id": "berry-bakery",
+        "label": "Berry Bakery",
+        "porchCollider": {
+          "offsetZ": 2.63,
+          "size": {
+            "x": 1.8,
+            "y": 0.2,
+            "z": 0.75
+          }
+        },
+        "position": {
+          "x": 14,
+          "y": 1.6,
+          "z": -11
+        },
+        "roofMaterial": "blush",
+        "size": {
+          "x": 6,
+          "y": 3.2,
+          "z": 4.5
+        },
+        "wallMaterial": "cream"
+      },
+      {
+        "doorMaterial": "teal",
+        "frontSign": 1,
+        "id": "lavender-library",
+        "label": "Lavender Library",
+        "porchCollider": {
+          "offsetZ": 3.38,
+          "size": {
+            "x": 1.8,
+            "y": 0.2,
+            "z": 0.75
+          }
+        },
+        "position": {
+          "x": -15,
+          "y": 2,
+          "z": -9
+        },
+        "roofMaterial": "lavender",
+        "size": {
+          "x": 5,
+          "y": 4,
+          "z": 6
+        },
+        "wallMaterial": "vanilla"
+      },
+      {
+        "detailColliders": [
+          {
+            "offsetX": -2.18,
+            "offsetZ": -3.33,
+            "size": {
+              "x": 0.3,
+              "y": 2.5,
+              "z": 0.3
+            },
+            "y": 1.35
+          },
+          {
+            "offsetX": 2.18,
+            "offsetZ": -3.33,
+            "size": {
+              "x": 0.3,
+              "y": 2.5,
+              "z": 0.3
+            },
+            "y": 1.35
+          },
+          {
+            "offsetX": -2.52,
+            "offsetZ": 0,
+            "size": {
+              "x": 0.22,
+              "y": 2.3,
+              "z": 1.9
+            },
+            "y": 1.24
+          }
+        ],
+        "doorMaterial": "lavender",
+        "frontSign": -1,
+        "id": "mint-tea-house",
+        "label": "Mint Tea House",
+        "porchCollider": {
+          "offsetZ": -2.75,
+          "size": {
+            "x": 5.5,
+            "y": 0.22,
+            "z": 1.45
+          }
+        },
+        "position": {
+          "x": 14,
+          "y": 1.4,
+          "z": 12
+        },
+        "roofMaterial": "coral",
+        "size": {
+          "x": 4,
+          "y": 2.8,
+          "z": 4
+        },
+        "wallMaterial": "mint"
+      },
+      {
+        "detailColliders": [
+          {
+            "offsetX": -2.32,
+            "offsetZ": -3.58,
+            "size": {
+              "x": 0.32,
+              "y": 2.5,
+              "z": 0.32
+            },
+            "y": 1.39
+          },
+          {
+            "offsetX": 2.32,
+            "offsetZ": -3.58,
+            "size": {
+              "x": 0.32,
+              "y": 2.5,
+              "z": 0.32
+            },
+            "y": 1.39
+          },
+          {
+            "offsetX": -1.62,
+            "offsetZ": -3.6,
+            "size": {
+              "x": 1.8,
+              "y": 0.84,
+              "z": 0.62
+            },
+            "y": 0.42
+          }
+        ],
+        "doorMaterial": "cocoa",
+        "frontSign": -1,
+        "id": "rose-post-office",
+        "label": "Rose Post Office",
+        "porchCollider": {
+          "offsetZ": -3.08,
+          "size": {
+            "x": 5.5,
+            "y": 0.22,
+            "z": 1.35
+          }
+        },
+        "position": {
+          "x": -14.5,
+          "y": 1.8,
+          "z": 13
+        },
+        "roofMaterial": "periwinkle",
+        "size": {
+          "x": 6,
+          "y": 3.6,
+          "z": 5
+        },
+        "wallMaterial": "blush"
+      }
+    ],
+    "dayOne": {
+      "camp": {
+        "x": -24.2,
+        "y": 0,
+        "z": 6.25
+      },
+      "campRecovery": {
+        "x": -29.3,
+        "y": 0.9,
+        "z": 3.8
+      },
+      "campfire": {
+        "x": -24.5,
+        "y": 0.2,
+        "z": 2.4
+      },
+      "fishingSpot": {
+        "x": 16.4,
+        "y": 0.25,
+        "z": 4
+      },
+      "garden": {
+        "x": -27,
+        "y": 0,
+        "z": 6.8
+      },
+      "shelter": {
+        "x": -31.5,
+        "y": 0,
+        "z": 4.8
+      },
+      "woodlot": {
+        "x": -32.3,
+        "y": 0,
+        "z": -0.5
+      }
+    },
+    "gate": {
+      "x": 0,
+      "y": 0,
+      "z": 11.7
+    },
+    "grassExclusions": [
+      {
+        "id": "day-one-camp-sign",
+        "radius": 0.9,
+        "site": "camp",
+        "x": -23.5,
+        "z": 5.03
+      },
+      {
+        "id": "day-one-campfire",
+        "radius": 1.35,
+        "site": "campfire",
+        "x": -24.5,
+        "z": 2.4
+      },
+      {
+        "id": "day-one-garden",
+        "radius": 1.8,
+        "site": "garden",
+        "x": -27,
+        "z": 6.8
+      },
+      {
+        "id": "day-one-shelter",
+        "radius": 2.35,
+        "site": "shelter",
+        "x": -31.5,
+        "z": 4.8
+      },
+      {
+        "id": "day-one-woodlot",
+        "radius": 1.65,
+        "site": "woodlot",
+        "x": -32.3,
+        "z": -0.5
+      },
+      {
+        "id": "day-one-recovery",
+        "radius": 0.85,
+        "site": "campRecovery",
+        "x": -29.3,
+        "z": 3.8
+      }
+    ],
+    "landmarks": {
+      "bell": {
+        "baseY": 2.4000000000000004,
+        "x": 3,
+        "y": 2.9000000000000004,
+        "z": -36.5
+      },
+      "ledger": {
+        "x": -2,
+        "y": 0.8,
+        "z": 3
+      }
+    },
+    "meadowRadius": 64,
+    "natureRadius": 38,
+    "pathAprons": [
+      {
+        "depth": 3.1,
+        "id": "bell-hill-apron",
+        "profile": "ritual-lane",
+        "rotationY": 0,
+        "width": 4.2,
+        "x": 3,
+        "y": 2.4000000000000004,
+        "z": -36.5
+      }
+    ],
+    "paths": [
+      {
+        "id": "arrival",
+        "points": [
+          [
+            0,
+            16
+          ],
+          [
+            0.4,
+            12
+          ],
+          [
+            -0.7,
+            7.5
+          ],
+          [
+            0,
+            2.2
+          ]
+        ],
+        "profile": "village-lane",
+        "width": 2.25
+      },
+      {
+        "id": "berry-bakery",
+        "points": [
+          [
+            0.5,
+            0.5
+          ],
+          [
+            3.8,
+            -1.8
+          ],
+          [
+            8.6,
+            -4.8
+          ],
+          [
+            14,
+            -7.85
+          ]
+        ],
+        "profile": "garden-lane",
+        "width": 1.6
+      },
+      {
+        "id": "lavender-library",
+        "points": [
+          [
+            -0.6,
+            0.7
+          ],
+          [
+            -4.2,
+            -0.6
+          ],
+          [
+            -9.2,
+            -2.8
+          ],
+          [
+            -15,
+            -5.1
+          ]
+        ],
+        "profile": "garden-lane",
+        "width": 1.6
+      },
+      {
+        "id": "mint-tea-house",
+        "points": [
+          [
+            0.2,
+            1.8
+          ],
+          [
+            3.3,
+            4.3
+          ],
+          [
+            8.2,
+            6.9
+          ],
+          [
+            14,
+            9.1
+          ]
+        ],
+        "profile": "garden-lane",
+        "width": 1.55
+      },
+      {
+        "id": "rose-post-office",
+        "points": [
+          [
+            -0.5,
+            2.1
+          ],
+          [
+            -3.5,
+            5.2
+          ],
+          [
+            -8.6,
+            7.8
+          ],
+          [
+            -14.5,
+            9.6
+          ]
+        ],
+        "profile": "garden-lane",
+        "width": 1.55
+      },
+      {
+        "id": "pond",
+        "points": [
+          [
+            4,
+            1.2
+          ],
+          [
+            8.5,
+            0.9
+          ],
+          [
+            13,
+            2.2
+          ],
+          [
+            16.4,
+            4
+          ]
+        ],
+        "profile": "waterside-steps",
+        "width": 1.1
+      },
+      {
+        "id": "forest-edge-camp",
+        "points": [
+          [
+            -14.5,
+            9.6
+          ],
+          [
+            -18,
+            8.7
+          ],
+          [
+            -19.8,
+            6
+          ],
+          [
+            -22.8,
+            3.7
+          ],
+          [
+            -25.8,
+            3.6
+          ],
+          [
+            -28,
+            4
+          ],
+          [
+            -29.3,
+            3.8
+          ]
+        ],
+        "profile": "forest-footpath",
+        "width": 1
+      },
+      {
+        "id": "bell-hill-ritual",
+        "points": [
+          [
+            0.9,
+            0,
+            -3.7
+          ],
+          [
+            3.2,
+            0,
+            -7.3
+          ],
+          [
+            4.1,
+            0,
+            -13
+          ],
+          [
+            2.8,
+            0.0034101297475953515,
+            -20
+          ],
+          [
+            2.7,
+            0.8337073001092171,
+            -24.8
+          ],
+          [
+            2.9,
+            1.583131810634951,
+            -27.8
+          ],
+          [
+            3,
+            2.1601041666666676,
+            -30.6
+          ],
+          [
+            3,
+            2.4000000000000004,
+            -33.4
+          ],
+          [
+            3,
+            2.4000000000000004,
+            -36.5
+          ]
+        ],
+        "profile": "ritual-lane",
+        "width": 2
+      },
+      {
+        "id": "bell-kept-meadow",
+        "points": [
+          [
+            3,
+            2.4000000000000004,
+            -38.2
+          ],
+          [
+            3.4,
+            2.376825212804943,
+            -41.4
+          ],
+          [
+            2.8,
+            1.9203741640249827,
+            -44.7
+          ],
+          [
+            3.2,
+            1.0831598606667967,
+            -48.2
+          ],
+          [
+            3.6,
+            0,
+            -52
+          ]
+        ],
+        "profile": "meadow-track",
+        "width": 0.9
+      },
+      {
+        "id": "north-garden-walk",
+        "points": [
+          [
+            -14.5,
+            9.6
+          ],
+          [
+            -8,
+            12.6
+          ],
+          [
+            0,
+            15.4
+          ],
+          [
+            8,
+            12.5
+          ],
+          [
+            14,
+            9.1
+          ]
+        ],
+        "profile": "meadow-track",
+        "width": 1.15
+      },
+      {
+        "id": "south-orchard-walk",
+        "points": [
+          [
+            -15,
+            -5.1
+          ],
+          [
+            -8.5,
+            -11.5
+          ],
+          [
+            0,
+            -14.6
+          ],
+          [
+            8.3,
+            -12.2
+          ],
+          [
+            14,
+            -7.85
+          ]
+        ],
+        "profile": "meadow-track",
+        "width": 1.15
+      }
+    ],
+    "physicsGroundHalfExtent": 72,
+    "plaza": {
+      "radius": 5.05,
+      "scaleZ": 0.88,
+      "x": 0,
+      "y": 0.8,
+      "z": 0.8
+    },
+    "pond": {
+      "x": 20,
+      "y": 0,
+      "z": 4
+    },
+    "spawn": {
+      "x": 0,
+      "y": 2,
+      "z": 14
+    },
+    "storyRoutes": {
+      "alter": [
+        [
+          0.4,
+          0.16,
+          3
+        ],
+        [
+          -3.8,
+          0.16,
+          4.3
+        ],
+        [
+          -8.2,
+          0.16,
+          4.8
+        ],
+        [
+          -12.2,
+          0.16,
+          6.2
+        ],
+        [
+          -17.5,
+          0.16,
+          5.2
+        ],
+        [
+          -21.6,
+          0.16,
+          4.4
+        ],
+        [
+          -25.8,
+          0.16,
+          3.6
+        ]
+      ],
+      "comply": [
+        [
+          0.4,
+          0.16,
+          3
+        ],
+        [
+          4,
+          0.16,
+          4.4
+        ],
+        [
+          8.2,
+          0.16,
+          6.6
+        ],
+        [
+          11,
+          0.16,
+          8.1
+        ],
+        [
+          14,
+          0.42,
+          9.1
+        ]
+      ]
+    },
+    "terrain": {
+      "bellHill": {
+        "baseY": -0.03,
+        "height": 2.43,
+        "id": "bell-hill",
+        "plateauRadius": 0.2,
+        "radiusX": 14.5,
+        "radiusZ": 18,
+        "segmentsX": 40,
+        "segmentsZ": 48,
+        "walkable": true,
+        "x": 3,
+        "z": -37
+      },
+      "bellPrecinct": {
+        "flowerDrifts": [
+          {
+            "count": 14,
+            "radius": 2.4,
+            "x": -7.5,
+            "z": -39.5
+          },
+          {
+            "count": 14,
+            "radius": 2.4,
+            "x": 13.5,
+            "z": -39.5
+          },
+          {
+            "count": 16,
+            "radius": 3,
+            "x": -9,
+            "z": -50.5
+          },
+          {
+            "count": 16,
+            "radius": 3,
+            "x": 15,
+            "z": -50.5
+          }
+        ],
+        "groveTrees": [
+          {
+            "scale": 1.18,
+            "x": -22,
+            "z": -43
+          },
+          {
+            "scale": 1.34,
+            "x": -18,
+            "z": -51
+          },
+          {
+            "scale": 1.52,
+            "x": -12,
+            "z": -57
+          },
+          {
+            "scale": 1.24,
+            "x": -6,
+            "z": -60
+          },
+          {
+            "scale": 1.24,
+            "x": 12,
+            "z": -60
+          },
+          {
+            "scale": 1.52,
+            "x": 18,
+            "z": -57
+          },
+          {
+            "scale": 1.34,
+            "x": 24,
+            "z": -51
+          },
+          {
+            "scale": 1.18,
+            "x": 28,
+            "z": -43
+          }
+        ],
+        "id": "bell-precinct",
+        "lanterns": [
+          {
+            "rotation": 0.18,
+            "x": -2.4,
+            "z": -34
+          },
+          {
+            "rotation": -0.18,
+            "x": 8.4,
+            "z": -34
+          }
+        ],
+        "witnessStones": [
+          {
+            "scale": 0.92,
+            "x": -5.2,
+            "z": -42.4
+          },
+          {
+            "scale": 0.82,
+            "x": -1.2,
+            "z": -45
+          },
+          {
+            "scale": 0.96,
+            "x": 3,
+            "z": -46
+          },
+          {
+            "scale": 0.82,
+            "x": 7.2,
+            "z": -45
+          },
+          {
+            "scale": 0.92,
+            "x": 11.2,
+            "z": -42.4
+          }
+        ]
+      },
+      "decorativeHills": [
+        {
+          "scaleX": 10,
+          "scaleY": 4.2,
+          "scaleZ": 8,
+          "x": -35,
+          "y": -2.8,
+          "z": -15
+        },
+        {
+          "scaleX": 11,
+          "scaleY": 4.6,
+          "scaleZ": 9,
+          "x": 35,
+          "y": -2.8,
+          "z": -12
+        },
+        {
+          "scaleX": 10,
+          "scaleY": 4.1,
+          "scaleZ": 8,
+          "x": -32,
+          "y": -2.8,
+          "z": 26
+        },
+        {
+          "scaleX": 12,
+          "scaleY": 5,
+          "scaleZ": 9,
+          "x": 33,
+          "y": -2.8,
+          "z": 27
+        },
+        {
+          "scaleX": 17,
+          "scaleY": 5.8,
+          "scaleZ": 11,
+          "x": -34,
+          "y": -3.4,
+          "z": -63
+        },
+        {
+          "scaleX": 24,
+          "scaleY": 7.2,
+          "scaleZ": 12,
+          "x": 3,
+          "y": -4.2,
+          "z": -71
+        },
+        {
+          "scaleX": 17,
+          "scaleY": 5.8,
+          "scaleZ": 11,
+          "x": 40,
+          "y": -3.4,
+          "z": -63
+        }
+      ]
+    }
+  }
+}

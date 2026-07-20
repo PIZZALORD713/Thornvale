@@ -1,5 +1,6 @@
 import { DAY_ONE_V01 } from '../content/day-one-v01.js';
 import PIZZA_LAB_TOWN_STAGE_V1 from '../content/generated/pizza-lab-town-stage-v1.json' with { type: 'json' };
+import THORNVALE_WORLD_STAGE_V1 from '../content/generated/thornvale-world-stage-v1.json' with { type: 'json' };
 import { sampleMoundHeight } from '../utils/terrain-surface.js';
 
 function deepFreeze(value) {
@@ -172,7 +173,7 @@ const bellPrecinct = {
   ],
 };
 
-export const TOWN_LAYOUT = deepFreeze({
+export const LEGACY_TOWN_LAYOUT = deepFreeze({
   // The Bell is a destination inside Thornvale, not the terminal edge of it.
   // Keep decorative density bounded separately while giving the rear precinct
   // real walkable land and enough collision margin for the follow camera.
@@ -390,6 +391,16 @@ export const TOWN_LAYOUT = deepFreeze({
     gardenArch: { asset: 'GardenArch', x: 9.4, y: 0, z: 7.35, rotationY: 1.2 },
     stoneWell: { asset: 'StoneWell', x: -8.4, y: 0, z: 2.4, rotationY: 0.18 },
   },
+});
+
+// World Stage v1 snapshots the complete static composition contract. The
+// legacy construction above remains an explicit rollback/equivalence oracle
+// until the Blender-authored candidate passes its observational gates.
+export const TOWN_LAYOUT = deepFreeze({
+  ...THORNVALE_WORLD_STAGE_V1.layout,
+  // Day One deliberately keeps its authored object identity because the
+  // director and its visible interaction stations share this exact contract.
+  dayOne: DAY_ONE_V01.anchors,
 });
 
 // Presentation variants must not change these story-facing interaction keys.

@@ -6,7 +6,7 @@ import { callTool, TOOL_DEFINITIONS, validateToolArguments } from '../tools/pizz
 import { validatePizzaLabCandidate } from '../scripts/promote-pizza-lab-stage.mjs';
 import { TOWN_LAYOUT } from '../src/config/town.js';
 
-test('Pizza Lab exposes only the bounded v0.2 command surface', () => {
+test('Pizza Lab exposes only the bounded v0.3 command surface', () => {
   assert.deepEqual(TOOL_DEFINITIONS.map((tool) => tool.name), [
     'pizza_scene_inspect',
     'pizza_scene_validate',
@@ -15,6 +15,7 @@ test('Pizza Lab exposes only the bounded v0.2 command surface', () => {
     'pizza_terrain_contract',
     'pizza_stage_load',
     'pizza_stage_publish',
+    'pizza_world_stage_load',
   ]);
   assert.equal(TOOL_DEFINITIONS.some((tool) => /python|delete|export|create/i.test(tool.name)), false);
 });
@@ -50,7 +51,7 @@ test('ThornVale adapter preserves current axes and terrain authority', async () 
   assert.match(adapter.terrain.authority, /src\/config\/town\.js/);
 });
 
-test('headless v0.2 rejects mutations that cannot be durably saved', async () => {
+test('headless v0.3 rejects mutations that cannot be durably saved', async () => {
   const previous = process.env.PIZZA_LAB_MODE;
   process.env.PIZZA_LAB_MODE = 'headless';
   try {
@@ -60,6 +61,7 @@ test('headless v0.2 rejects mutations that cannot be durably saved', async () =>
     await assert.rejects(callTool('pizza_transaction_undo', { undoToken: 'token' }), /headless mode is read-only/);
     await assert.rejects(callTool('pizza_stage_load', { replace: true }), /headless mode is read-only/);
     await assert.rejects(callTool('pizza_stage_publish', {}), /headless mode is read-only/);
+    await assert.rejects(callTool('pizza_world_stage_load', { replace: true }), /headless mode is read-only/);
   } finally {
     if (previous === undefined) delete process.env.PIZZA_LAB_MODE;
     else process.env.PIZZA_LAB_MODE = previous;

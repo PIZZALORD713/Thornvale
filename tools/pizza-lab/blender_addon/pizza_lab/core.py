@@ -13,10 +13,11 @@ from typing import Any
 import bpy
 
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 GAME_ID = "pizza_lab_game_id"
 ROLE = "pizza_lab_role"
 STAGE_COLLECTION = "PIZZA_LAB_STAGE"
+EDITABLE = "pizza_lab_editable"
 
 
 class PizzaLabError(RuntimeError):
@@ -59,6 +60,7 @@ def _object_summary(obj: bpy.types.Object) -> dict[str, Any]:
         "name": obj.name,
         "type": obj.type,
         "role": str(obj.get(ROLE) or "unspecified"),
+        "editable": bool(obj.get(EDITABLE, False)),
         "transform": _transform(obj),
         "parent": _object_id(obj.parent) if obj.parent else None,
         "hidden": bool(obj.hide_get()),
@@ -103,6 +105,8 @@ def transform_object(payload: dict[str, Any], _: dict[str, Any]) -> dict[str, An
     if not game_id:
         raise PizzaLabError("gameId is required")
     obj = _find_object(game_id)
+    if obj.get(EDITABLE) is not True:
+        raise PizzaLabError(f"Object {game_id!r} is locked by the active Pizza Lab publish policy")
     if obj.rotation_mode in {"QUATERNION", "AXIS_ANGLE"}:
         raise PizzaLabError(f"Object {game_id!r} must use an Euler rotation mode")
     before = _transform(obj)
@@ -132,6 +136,8 @@ def transform_object(payload: dict[str, Any], _: dict[str, Any]) -> dict[str, An
 def undo_transform(payload: dict[str, Any], _: dict[str, Any]) -> dict[str, Any]:
     decoded = _decode_undo(str(payload.get("undoToken") or ""))
     obj = _find_object(str(decoded["gameId"]))
+    if obj.get(EDITABLE) is not True:
+        raise PizzaLabError(f"Object {decoded['gameId']!r} is locked by the active Pizza Lab publish policy")
     current = _transform(obj)
     before = decoded["before"]
     obj.location = _vector(before.get("location"), "undo location")
@@ -171,7 +177,7 @@ def terrain_contract(_: dict[str, Any], adapter: dict[str, Any]) -> dict[str, An
         "mode": "preview-only",
         "authority": terrain.get("authority"),
         "source": terrain.get("source"),
-        "message": "Pizza Lab does not publish arbitrary terrain meshes in v0.1.",
+        "message": "World Stage renders the shared terrain contract but does not publish arbitrary terrain meshes in v0.3.",
     }
 
 
@@ -264,6 +270,7 @@ def load_stage(payload: dict[str, Any], adapter: dict[str, Any]) -> dict[str, An
         root[GAME_ID] = f"thornvale.authoredProps.{placement_id}"
         root[ROLE] = "staged-placement" if placement.get("editable") else "locked-context"
         root["pizza_lab_asset_root"] = asset_name
+        root[EDITABLE] = bool(placement.get("editable"))
         root.hide_select = not bool(placement.get("editable"))
         staged.append({
             "id": placement_id,
@@ -315,6 +322,18 @@ def save_scene(payload: dict[str, Any], adapter: dict[str, Any]) -> dict[str, An
     return {"saved": True, "path": str(requested)}
 
 
+def load_world_stage(payload: dict[str, Any], adapter: dict[str, Any]) -> dict[str, Any]:
+    from .world_stage import build_world_stage
+
+    project_root = Path(adapter.get("_projectRoot") or ".").resolve()
+    input_path = (project_root / "output/pizza-lab/world-stage-v1.input.json").resolve()
+    return build_world_stage(
+        input_path,
+        project_root,
+        replace=bool(payload.get("replace", False)),
+    )
+
+
 COMMANDS = {
     "scene.inspect": inspect_scene,
     "scene.validate": validate_scene,
@@ -323,6 +342,7 @@ COMMANDS = {
     "terrain.contract": terrain_contract,
     "stage.load": load_stage,
     "stage.publish": publish_stage,
+    "world-stage.load": load_world_stage,
     "scene.save": save_scene,
 }
 

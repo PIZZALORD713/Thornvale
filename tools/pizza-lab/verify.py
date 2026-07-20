@@ -23,6 +23,7 @@ def main() -> int:
     cube.name = "PizzaLabFixture"
     cube["pizza_lab_game_id"] = "fixture-prop"
     cube["pizza_lab_role"] = "visual"
+    cube["pizza_lab_editable"] = True
 
     inspected = execute("scene.inspect", {}, adapter)
     assert inspected["result"]["objects"][0]["gameId"] == "fixture-prop"

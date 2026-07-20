@@ -47,7 +47,7 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: 'pizza_terrain_contract',
-    description: 'Inspect the project terrain-authority contract. Terrain mutation is unavailable in v0.1.',
+    description: 'Inspect the project terrain-authority contract. Terrain mutation is unavailable in v0.3.',
     inputSchema: { type: 'object', additionalProperties: false, properties: {} },
   },
   {
@@ -63,6 +63,14 @@ export const TOOL_DEFINITIONS = [
     description: 'Atomically publish editable Blender placements to the reviewed source candidate.',
     inputSchema: { type: 'object', additionalProperties: false, properties: {} },
   },
+  {
+    name: 'pizza_world_stage_load',
+    description: 'Build the complete resolved ThornVale World Stage in the active Blender scene.',
+    inputSchema: {
+      type: 'object', additionalProperties: false,
+      properties: { replace: { type: 'boolean', default: false } },
+    },
+  },
 ];
 
 const COMMANDS = new Map([
@@ -73,6 +81,7 @@ const COMMANDS = new Map([
   ['pizza_terrain_contract', 'terrain.contract'],
   ['pizza_stage_load', 'stage.load'],
   ['pizza_stage_publish', 'stage.publish'],
+  ['pizza_world_stage_load', 'world-stage.load'],
 ]);
 
 function assertObject(value, label) {
@@ -155,8 +164,9 @@ export async function callTool(name, args) {
     || name === 'pizza_transaction_undo'
     || name === 'pizza_stage_load'
     || name === 'pizza_stage_publish'
+    || name === 'pizza_world_stage_load'
   )) {
-    throw new Error('Pizza Lab v0.2 headless mode is read-only; use interactive mode for mutations');
+    throw new Error('Pizza Lab v0.3 headless mode is read-only; use interactive mode for mutations');
   }
   const request = { command: COMMANDS.get(name), payload };
   return process.env.PIZZA_LAB_MODE === 'headless' ? headlessRequest(request) : interactiveRequest(request);
@@ -177,7 +187,7 @@ async function handle(message) {
       respond(message.id, null, new Error(`Unsupported MCP protocol version: ${requested}`));
       return;
     }
-    respond(message.id, { protocolVersion: requested, capabilities: { tools: {} }, serverInfo: { name: 'pizza-lab', version: '0.2.0' } });
+    respond(message.id, { protocolVersion: requested, capabilities: { tools: {} }, serverInfo: { name: 'pizza-lab', version: '0.3.0' } });
   } else if (message.method === 'tools/list') {
     respond(message.id, { tools: TOOL_DEFINITIONS });
   } else if (message.method === 'tools/call') {
