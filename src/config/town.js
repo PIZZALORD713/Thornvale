@@ -140,20 +140,59 @@ const bellLandmark = {
   baseY: bellBaseY,
 };
 const hillRoutePoint = (x, z) => [x, Math.max(0, sampleMoundHeight(bellHill, x, z)), z];
+const bellPrecinct = {
+  id: 'bell-precinct',
+  witnessStones: [
+    { x: -5.2, z: -42.4, scale: 0.92 },
+    { x: -1.2, z: -45.0, scale: 0.82 },
+    { x: 3.0, z: -46.0, scale: 0.96 },
+    { x: 7.2, z: -45.0, scale: 0.82 },
+    { x: 11.2, z: -42.4, scale: 0.92 },
+  ],
+  lanterns: [
+    { x: -2.4, z: -34.0, rotation: 0.18 },
+    { x: 8.4, z: -34.0, rotation: -0.18 },
+  ],
+  groveTrees: [
+    { x: -22, z: -43, scale: 1.18 },
+    { x: -18, z: -51, scale: 1.34 },
+    { x: -12, z: -57, scale: 1.52 },
+    { x: -6, z: -60, scale: 1.24 },
+    { x: 12, z: -60, scale: 1.24 },
+    { x: 18, z: -57, scale: 1.52 },
+    { x: 24, z: -51, scale: 1.34 },
+    { x: 28, z: -43, scale: 1.18 },
+  ],
+  flowerDrifts: [
+    { x: -7.5, z: -39.5, radius: 2.4, count: 14 },
+    { x: 13.5, z: -39.5, radius: 2.4, count: 14 },
+    { x: -9.0, z: -50.5, radius: 3.0, count: 16 },
+    { x: 15.0, z: -50.5, radius: 3.0, count: 16 },
+  ],
+};
 
 export const TOWN_LAYOUT = deepFreeze({
-  meadowRadius: 38,
+  // The Bell is a destination inside Thornvale, not the terminal edge of it.
+  // Keep decorative density bounded separately while giving the rear precinct
+  // real walkable land and enough collision margin for the follow camera.
+  meadowRadius: 64,
+  physicsGroundHalfExtent: 72,
+  natureRadius: 38,
   spawn: { x: 0, y: 2, z: 14 },
   plaza: { x: 0, y: 0.8, z: 0.8, radius: 5.05, scaleZ: 0.88 },
   gate: { x: 0, y: 0, z: 11.7 },
   pond: { x: 20, y: 0, z: 4 },
   terrain: {
     bellHill,
+    bellPrecinct,
     decorativeHills: [
       { x: -35, y: -2.8, z: -15, scaleX: 10, scaleY: 4.2, scaleZ: 8 },
       { x: 35, y: -2.8, z: -12, scaleX: 11, scaleY: 4.6, scaleZ: 9 },
       { x: -32, y: -2.8, z: 26, scaleX: 10, scaleY: 4.1, scaleZ: 8 },
       { x: 33, y: -2.8, z: 27, scaleX: 12, scaleY: 5, scaleZ: 9 },
+      { x: -34, y: -3.4, z: -63, scaleX: 17, scaleY: 5.8, scaleZ: 11 },
+      { x: 3, y: -4.2, z: -71, scaleX: 24, scaleY: 7.2, scaleZ: 12 },
+      { x: 40, y: -3.4, z: -63, scaleX: 17, scaleY: 5.8, scaleZ: 11 },
     ],
   },
   // Day One authored anchors are shared by presentation and the authoritative
@@ -276,6 +315,18 @@ export const TOWN_LAYOUT = deepFreeze({
         hillRoutePoint(3, -30.6),
         hillRoutePoint(3, -33.4),
         hillRoutePoint(bellLandmark.x, bellLandmark.z),
+      ],
+    },
+    {
+      id: 'bell-kept-meadow',
+      profile: 'meadow-track',
+      width: 0.9,
+      points: [
+        hillRoutePoint(3, -38.2),
+        hillRoutePoint(3.4, -41.4),
+        hillRoutePoint(2.8, -44.7),
+        hillRoutePoint(3.2, -48.2),
+        [3.6, 0, -52.0],
       ],
     },
     {

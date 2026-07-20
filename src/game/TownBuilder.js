@@ -16,6 +16,7 @@ import { TOWN_INTERACTION_CONTRACT, TOWN_LAYOUT } from '../config/town.js';
 import {
   createAmbientLife,
   createBellLandmark,
+  createBellPrecinct,
   createCottage,
   createCottageAmbientDetails,
   createCottagePlot,
@@ -342,6 +343,7 @@ export async function buildTown(physicsWorld, scene, {
     // meadow as a resilient visual fallback.
     includeRouteWildflowers: !hasFriendsiesRouteFlowers,
   }));
+  townRoot.add(createBellPrecinct(worldAnimator, TOWN_LAYOUT));
   townRoot.add(createPond(worldAnimator, TOWN_LAYOUT));
   townRoot.add(createPlazaFurniture(worldAnimator, TOWN_LAYOUT));
 

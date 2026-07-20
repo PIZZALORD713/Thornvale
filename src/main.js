@@ -25,6 +25,7 @@ import { InputManager } from './core/InputManager.js';
 import { CharacterMotor } from './physics/CharacterMotor.js';
 import { CameraRig } from './game/camera/CameraRig.js';
 import { configureCameraRig } from './config/camera.js';
+import { TOWN_LAYOUT } from './config/town.js';
 import { resolveControlMode, resolveTouchControlStyle } from './config/controls.js';
 import {
   isAppleMobilePlatform,
@@ -243,7 +244,7 @@ async function init() {
   setLoading(0.35, 'Growing clover paths…');
 
   // Collision-only ground. TownBuilder supplies the authored visual terrain.
-  physicsWorld.createGround(55, null);
+  physicsWorld.createGround(TOWN_LAYOUT.physicsGroundHalfExtent, null);
 
   const town = await buildTown(physicsWorld, scene, {
     reducedMotion,

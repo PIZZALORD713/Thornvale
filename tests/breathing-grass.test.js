@@ -122,7 +122,8 @@ test('the meadow mask protects paths, plaza, cottages, pond, and interaction lan
   }
   for (const path of TOWN_LAYOUT.paths) {
     for (const point of path.points) {
-      assert.equal(isGrassPlacementAllowed(point[0], point[1]), false, path.id);
+      const z = point.length >= 3 ? point[2] : point[1];
+      assert.equal(isGrassPlacementAllowed(point[0], z), false, path.id);
     }
   }
   for (const exclusion of TOWN_LAYOUT.grassExclusions) {

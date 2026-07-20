@@ -328,6 +328,9 @@ export function createGroundDressing(
     [-19, 19, 12, 6, 0.08],
     [21, 19, 9, 5.5, -0.08],
     [0, -27, 15, 5.5, 0],
+    [3, -55, 18, 8.5, 0],
+    [-17, -49, 10, 6.5, 0.08],
+    [23, -49, 10, 6.5, -0.08],
   ];
   for (let i = 0; i < patchData.length; i += 1) {
     const [x, z, sx, sz, rotation] = patchData[i];
@@ -1519,9 +1522,10 @@ function createRockInstances(layout) {
   const root = decorate(new Group());
   root.name = 'particle_rock_accents';
   const positions = [];
+  const natureRadius = Math.max(12, Number(layout.natureRadius) || layout.meadowRadius);
   for (let i = 0; i < 26; i += 1) {
     const angle = (i / 26) * Math.PI * 2 + (random() - 0.5) * 0.2;
-    const radius = layout.meadowRadius - 11 + random() * 7;
+    const radius = natureRadius - 11 + random() * 7;
     positions.push([Math.cos(angle) * radius, Math.sin(angle) * radius]);
   }
   const rocks = decorate(new InstancedMesh(geo.rock, mat.stone, positions.length));
@@ -1568,6 +1572,109 @@ export function createNature(
   }));
   root.add(createMushroomInstances(layout));
   root.add(createRockInstances(layout));
+  return root;
+}
+
+export function createBellPrecinct(animator, layout = TOWN_LAYOUT) {
+  const precinct = layout.terrain?.bellPrecinct;
+  const root = decorate(new Group());
+  root.name = 'cozy_bell_precinct';
+  if (!precinct) return root;
+
+  const mat = materials();
+  const geo = geometry();
+  const bell = layout.landmarks.bell;
+  const stones = decorate(new InstancedMesh(
+    geo.rock,
+    mat.stoneLight,
+    precinct.witnessStones.length,
+  ));
+  stones.name = 'cozy_bell_witness_stones';
+  const dummy = new Object3D();
+  precinct.witnessStones.forEach(({ x, z, scale = 1 }, index) => {
+    dummy.position.set(x, sampleTownGroundHeight(layout, x, z) + 0.16 * scale, z);
+    dummy.scale.set(scale * 1.4, scale * 0.58, scale * 0.72);
+    dummy.rotation.set(0.04 * (index - 2), Math.atan2(bell.x - x, bell.z - z), 0.02);
+    dummy.updateMatrix();
+    stones.setMatrixAt(index, dummy.matrix);
+  });
+  stones.instanceMatrix.needsUpdate = true;
+  root.add(stones);
+
+  const lanternLights = [];
+  precinct.lanterns.forEach(({ x, z, rotation = 0 }, index) => {
+    const groundY = sampleTownGroundHeight(layout, x, z);
+    const { root: lantern, light } = createLantern(new Vector3(x, groundY, z), index + 20);
+    lantern.name = `cozy_bell_lantern_${index}`;
+    lantern.rotation.y = rotation;
+    root.add(lantern);
+    lanternLights.push(light);
+    animator?.registerSway?.(lantern.getObjectByName('cozy_lantern_glow'), {
+      speed: 0.66,
+      amount: 0.016,
+      phase: index + 4.2,
+      axis: 'z',
+    });
+  });
+  animator?.registerGlow?.(mat.windowGlow, lanternLights, {
+    dayIntensity: 0.16,
+    nightIntensity: 2.8,
+    lightIntensity: 0.68,
+    pulse: 0.05,
+  });
+
+  precinct.groveTrees.forEach(({ x, z, scale }, index) => {
+    const tree = createTree(
+      new Vector3(x, sampleTownGroundHeight(layout, x, z), z),
+      scale,
+      index + 40,
+      animator,
+    );
+    tree.name = `particle_bell_grove_tree_${index}`;
+    root.add(tree);
+  });
+
+  const random = seededRandom(260719);
+  const flowerPositions = [];
+  for (const drift of precinct.flowerDrifts) {
+    for (let index = 0; index < drift.count; index += 1) {
+      const angle = random() * Math.PI * 2;
+      const radius = Math.sqrt(random()) * drift.radius;
+      flowerPositions.push(new Vector3(
+        drift.x + Math.cos(angle) * radius,
+        0,
+        drift.z + Math.sin(angle) * radius,
+      ));
+    }
+  }
+  const stems = decorate(new InstancedMesh(geo.flowerStem, mat.leafDark, flowerPositions.length));
+  stems.name = 'particle_bell_precinct_flower_stems';
+  const heads = decorate(new InstancedMesh(geo.flowerHead, mat.vanilla, flowerPositions.length));
+  heads.name = 'particle_bell_precinct_flower_heads';
+  const flowerColors = [
+    new Color(TOWN_PALETTE.vanilla),
+    new Color(TOWN_PALETTE.blush),
+    new Color(TOWN_PALETTE.lavender),
+  ];
+  flowerPositions.forEach((position, index) => {
+    const scale = 0.7 + random() * 0.55;
+    const groundY = sampleTownGroundHeight(layout, position.x, position.z);
+    dummy.position.set(position.x, groundY + 0.17 * scale, position.z);
+    dummy.scale.setScalar(scale);
+    dummy.rotation.set(0, random() * Math.PI, 0);
+    dummy.updateMatrix();
+    stems.setMatrixAt(index, dummy.matrix);
+    dummy.position.y = groundY + 0.38 * scale;
+    dummy.rotation.set(random() * 0.12, random() * Math.PI, random() * 0.12);
+    dummy.updateMatrix();
+    heads.setMatrixAt(index, dummy.matrix);
+    heads.setColorAt(index, flowerColors[index % flowerColors.length]);
+  });
+  stems.instanceMatrix.needsUpdate = true;
+  heads.instanceMatrix.needsUpdate = true;
+  if (heads.instanceColor) heads.instanceColor.needsUpdate = true;
+  root.add(stems, heads);
+
   return root;
 }
 

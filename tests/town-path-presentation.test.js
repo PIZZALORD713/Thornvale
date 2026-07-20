@@ -37,6 +37,7 @@ test('soft town routes retain varied walked-meadow profiles instead of one dirt 
   const routeIds = [
     'pond',
     'forest-edge-camp',
+    'bell-kept-meadow',
     'north-garden-walk',
     'south-orchard-walk',
   ];

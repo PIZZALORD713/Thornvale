@@ -64,10 +64,10 @@ export class DayNightSystem {
     this.sun.shadow.mapSize.set(2048, 2048);
     this.sun.shadow.camera.near = 0.5;
     this.sun.shadow.camera.far = 90;
-    this.sun.shadow.camera.left = -32;
-    this.sun.shadow.camera.right = 32;
-    this.sun.shadow.camera.top = 32;
-    this.sun.shadow.camera.bottom = -32;
+    this.sun.shadow.camera.left = -64;
+    this.sun.shadow.camera.right = 64;
+    this.sun.shadow.camera.top = 64;
+    this.sun.shadow.camera.bottom = -64;
     this.sun.shadow.bias = -0.00012;
     this.sun.shadow.normalBias = 0.025;
 

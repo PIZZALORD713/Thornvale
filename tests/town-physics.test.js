@@ -13,7 +13,10 @@ import {
   createMoundSurfaceGrid,
   sampleMoundHeight,
 } from '../src/utils/terrain-surface.js';
-import { createGroundDressing } from '../src/visuals/CozyTownKit.js';
+import {
+  createBellPrecinct,
+  createGroundDressing,
+} from '../src/visuals/CozyTownKit.js';
 
 test('each cottage installs porch, detail, and garden-fence physics once', () => {
   const boxes = [];
@@ -89,9 +92,68 @@ test('the town bell sits on an elevated walkable hill reached by a three-dimensi
   assert.ok(maximumGrade <= 0.26, `Bell route grade ${maximumGrade} exceeds 15 degrees`);
 });
 
+test('the Bell hill belongs to a playable precinct instead of terminating at the world edge', () => {
+  const hill = TOWN_LAYOUT.terrain.bellHill;
+  const precinct = TOWN_LAYOUT.terrain.bellPrecinct;
+  const rearHillZ = hill.z - hill.radiusZ;
+  const rearLandMargin = TOWN_LAYOUT.meadowRadius - Math.hypot(hill.x, rearHillZ);
+
+  assert.ok(rearLandMargin >= 8, `Bell hill needs 8m of rear meadow, received ${rearLandMargin}`);
+  assert.ok(
+    TOWN_LAYOUT.physicsGroundHalfExtent >= TOWN_LAYOUT.meadowRadius + 8,
+    'collision ground must include the visible meadow plus camera clearance',
+  );
+  assert.ok(TOWN_LAYOUT.natureRadius <= 38, 'map expansion must not hollow out the town dressing');
+  assert.equal(precinct.witnessStones.length, 5);
+  assert.equal(precinct.lanterns.length, 2);
+  assert.ok(precinct.groveTrees.length >= 7);
+  assert.ok(
+    precinct.groveTrees.every(({ x }) => Math.abs(x - TOWN_LAYOUT.landmarks.bell.x) >= 4),
+    'the rear grove must preserve the Bell sightline through its center',
+  );
+
+  const visual = createBellPrecinct({
+    registerSway() {},
+    registerGlow() {},
+  }, TOWN_LAYOUT);
+  assert.equal(visual.name, 'cozy_bell_precinct');
+  assert.equal(visual.getObjectByName('cozy_bell_witness_stones')?.count, 5);
+  assert.equal(visual.children.filter(({ name }) => name.startsWith('cozy_bell_lantern_')).length, 2);
+  assert.equal(
+    visual.children.filter(({ name }) => name.startsWith('particle_bell_grove_tree_')).length,
+    precinct.groveTrees.length,
+  );
+  visual.traverse((object) => {
+    assert.notEqual(object.userData.cameraCollision, true, `${object.name} became a camera blocker`);
+  });
+});
+
 test('the visible Bell hill and physics collider share one finite authored surface', () => {
   const hill = TOWN_LAYOUT.terrain.bellHill;
   const expected = createMoundSurfaceGrid(hill);
+  const positionTolerance = 1e-5;
+  let boundaryVertexCount = 0;
+  for (let offset = 0; offset < expected.vertices.length; offset += 3) {
+    const x = expected.vertices[offset];
+    const y = expected.vertices[offset + 1];
+    const z = expected.vertices[offset + 2];
+    const normalizedRadius = Math.hypot(
+      (x - hill.x) / hill.radiusX,
+      (z - hill.z) / hill.radiusZ,
+    );
+    assert.ok(
+      normalizedRadius <= 1 + positionTolerance,
+      `Bell hill vertex ${normalizedRadius} escapes the oval footprint`,
+    );
+    if (Math.abs(normalizedRadius - 1) <= positionTolerance) {
+      boundaryVertexCount += 1;
+      assert.ok(
+        Math.abs(y - hill.baseY) <= positionTolerance,
+        `Bell hill boundary must meet the meadow at ${hill.baseY}m, received ${y}m`,
+      );
+    }
+  }
+  assert.ok(boundaryVertexCount >= 32, 'the Bell hill needs a continuous sculpted oval boundary');
   const calls = [];
   const physicsWorld = {
     createStaticTrimesh(position, vertices, indices, options) {
