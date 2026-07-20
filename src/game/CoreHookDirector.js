@@ -314,9 +314,7 @@ export class CoreHookDirector {
   async _interactSteward() {
     const events = this.content.events;
     if (!this.session.hasEvent(events.stewardMet)) {
-      const welcomeGesture = this.content.gestures?.happyHandGesture;
-      this._playStewardAction(welcomeGesture, 'joy');
-      await this._ui('say', this.content.dialogue.welcome);
+      await this._sayDialogue(this.content.dialogue.welcome, 'joy');
 
       const change = this.content.neighborliness.welcome;
       this.session.transact((draft) => {
@@ -327,7 +325,6 @@ export class CoreHookDirector {
         draft.neighborliness = clampScore(draft.neighborliness + change.amount);
       });
 
-      this._stopStewardAction(welcomeGesture);
       await this._moveSteward('routine');
       await this._setNeighborliness(change);
       await this._setCurrentObjective();
@@ -335,8 +332,7 @@ export class CoreHookDirector {
     }
 
     if (!this.session.hasEvent(events.correctionHeard)) {
-      this._playStewardAction(this.content.gestures?.thoughtfulHeadShake, 'idle');
-      await this._ui('say', this.content.dialogue.correction);
+      await this._sayDialogue(this.content.dialogue.correction);
       this.session.markEvent(events.correctionHeard);
     }
 
@@ -365,9 +361,8 @@ export class CoreHookDirector {
         pushUnique(draft.eventsSeen, events.ledgerSigned);
         draft.neighborliness = clampScore(draft.neighborliness + change.amount);
       });
-      await this._ui('say', this.content.dialogue.ledgerAccepted);
+      await this._sayDialogue(this.content.dialogue.ledgerAccepted, 'joy');
 
-      this._playStewardAction(this.content.gestures?.acknowledging, 'joy');
       this._interactionFeedback(this.content.ids.ledger, 'kindness', 0.28);
       await this._setNeighborliness(change);
       await this._setCurrentObjective();
@@ -411,8 +406,7 @@ export class CoreHookDirector {
 
     this.deps.worldAnimator?.ringBell?.();
     this._interactionFeedback(this.content.ids.bell, 'bell', 0.5);
-    await this._ui('say', this.content.dialogue.firstBell);
-    this._playStewardAction(this.content.gestures?.relievedSigh, 'joy');
+    await this._sayDialogue(this.content.dialogue.firstBell, 'joy');
     await this._setNeighborliness(change);
     await this._applyStoryTime('night');
     await this._setObjective(this.content.objectives.returnToLumen);
@@ -479,7 +473,10 @@ export class CoreHookDirector {
     await this._safeCall(this.deps.setRoute, choice);
     await this._moveSteward(outcome.stewardAnchor);
     this.deps.stewardActor?.play?.(choice === 'comply' ? 'joy' : 'idle');
-    await this._ui('say', this.content.dialogue[outcome.response]);
+    await this._sayDialogue(
+      this.content.dialogue[outcome.response],
+      choice === 'comply' ? 'joy' : 'idle',
+    );
     await this._setNeighborliness(change);
     await this._setObjective(this.content.objectives[outcome.objective]);
     this.deps.postProcessing?.pulse?.(choice === 'comply' ? 0.65 : 0.42);
@@ -672,6 +669,45 @@ export class CoreHookDirector {
       throw new TypeError(`CoreHookDirector requires StoryUI.${method}()`);
     }
     return Promise.resolve(callback.call(this.storyUI, value));
+  }
+
+  /**
+   * Bind declarative dialogue beats to Lumen's semantic performance without
+   * making animation, timing, or UI progression authoritative story state.
+   * Older one-block dialogue remains valid and simply renders without a beat
+   * callback.
+   */
+  async _sayDialogue(dialogue, fallbackRole = 'idle') {
+    const value = dialogue && typeof dialogue === 'object' ? dialogue : {};
+    const beats = Array.isArray(value.beats) ? value.beats : [];
+    if (beats.length === 0) return this._ui('say', value);
+
+    let activeGesture = null;
+    const authoredBeatChange = typeof value.onBeatChange === 'function'
+      ? value.onBeatChange
+      : null;
+    const onBeatChange = (beat, index, metadata) => {
+      const nextGesture = typeof beat?.gesture === 'string' ? beat.gesture : null;
+      if (activeGesture && activeGesture !== nextGesture) {
+        this._stopStewardAction(activeGesture);
+        activeGesture = null;
+      }
+      if (nextGesture && nextGesture !== activeGesture) {
+        this._playStewardAction(nextGesture, beat?.fallbackRole || fallbackRole);
+        activeGesture = nextGesture;
+      }
+      try {
+        authoredBeatChange?.(beat, index, metadata);
+      } catch (error) {
+        this._reportError(error, 'dialogue-beat');
+      }
+    };
+
+    try {
+      return await this._ui('say', { ...value, onBeatChange });
+    } finally {
+      if (activeGesture) this._stopStewardAction(activeGesture);
+    }
   }
 
   async _withBlocking(callback) {

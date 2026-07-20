@@ -56,9 +56,11 @@ are recorded in `assets-src/friendsies-animations/story-actions-v1/` and
 
 ### Normal motion
 
-- Lumen requests the four semantic clips at the authored welcome, correction,
-  Ledger, and Bell beats. If a clip cannot play, the existing idle/joy role is
-  used without blocking story state.
+- Lumen requests the four semantic clips from declarative spoken beats: happy
+  hand at the welcome, acknowledging after the Ledger signature, then relieved
+  sigh and thoughtful head shake during the correction. The Bell ribbon is not
+  a Lumen performance. If a clip cannot play, the existing idle/joy role is used
+  without blocking story state.
 - Plant and water play their skeletal clips at a time scale that fits the
   authoritative 3.1 and 3.2 second action windows. The presenter cancels the
   clip on completion, cancellation, error, or disposal and returns to idle.
@@ -118,12 +120,14 @@ playfeel.
 | Rollback selectors | `story=off&quality=low` boots all `assets=baseline/pilot` × `traits=off/v1` combinations; baseline resolves the three `cozy_*` landmark roots, pilot resolves the three `authored_pilot_*` roots, and `friendsies_trait_echo_v1` appears only for `traits=v1` | PASS; HTML datasets, runtime selectors, and town-root metadata agree, with zero console errors or warnings in all four sessions |
 | Console and network | The normal route and four selector routes have no unexpected errors or warnings; only deliberately forced requests and their isolated warnings appear in fallback cases | PASS for recorded routes; reduced-motion console was not separately recaptured |
 
-The Lumen correction, Ledger, and Bell gesture silhouettes under the complete
-day/dusk/night story route remain a manual narrative-presentation observation.
-The clips are structurally verified, requested in authored order by the passing
-Core Hook suite, isolated by the same fallback contract, and do not own story
-progression. This remaining presentation note is not an asset publication or
-permission blocker.
+The Ledger acknowledgement and two correction gesture silhouettes under the
+complete day/dusk/night story route remain manual narrative-presentation
+observations. The old Bell-gesture observation was retired when Conversation
+Performance v1 moved the relieved sigh onto Lumen's first correction beat and
+made the ribbon gesture-free. The clips are structurally verified, requested in
+authored beat order by the passing Core Hook suite, isolated by the same
+fallback contract, and do not own story progression. This remaining
+presentation note is not an asset publication or permission blocker.
 
 ## Performance and player-learning gates
 
@@ -149,5 +153,5 @@ permission blocker.
 - Standalone derived-motion or outside-project redistribution: not granted
 - Asset-family release gate: pass; `releaseBlocked: false`
 - Safest next gate: complete the genuine walked clean/pass-out playtests, the
-  three remaining Lumen story-gesture observations, and reference-device frame
-  profiling as Milestone 1 playfeel evidence
+  Ledger acknowledgement and two correction-gesture observations, and
+  reference-device frame profiling as Milestone 1 playfeel evidence

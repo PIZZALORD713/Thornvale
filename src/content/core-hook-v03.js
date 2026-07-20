@@ -184,14 +184,40 @@ export const CORE_HOOK_V03 = deepFreeze({
       speaker: 'Steward Lumen',
       portraitTokenId: 8914,
       portrait: '8914',
-      body: [
-        'Oh, there you are. We kept your place warm.',
-        "I’m Lumen, Thornvale’s steward. Nothing complicated is expected of a new neighbor.",
-        'There is a provisional plot along the west clover path, where the meadow meets the old forest. We left a camp cot and seed bed for you.',
-        'Before you settle in, enter your name in the Community Ledger. It keeps a little account of every task, so no neighbor has to remember alone.',
-        'Then gather what you need, make yourself a meal, tend the seed bed, and settle the shelter.',
-        'When the lanterns bloom, follow the warm pavers to the hill, ring the bell once, and return to me.',
-        'Only once, and only at dusk. Routines keep everyone from worrying.',
+      beats: [
+        {
+          id: 'lumen-welcome.arrival',
+          text: 'Oh, there you are. We kept your place warm.',
+          gesture: STORY_ACTIONS_V1.lumen.happyHandGesture,
+        },
+        {
+          id: 'lumen-welcome.introduction',
+          text: "I’m Lumen, Thornvale’s steward. Nothing complicated is expected of a new neighbor.",
+        },
+        {
+          id: 'lumen-welcome.plot',
+          text: 'There is a provisional plot along the west clover path, where the meadow meets the old forest. We left a camp cot and seed bed for you.',
+        },
+        {
+          id: 'lumen-welcome.ledger-invitation',
+          text: 'Before you settle in, enter your name in the Community Ledger.',
+        },
+        {
+          id: 'lumen-welcome.ledger-purpose',
+          text: 'It keeps a little account of every task, so no neighbor has to remember alone.',
+        },
+        {
+          id: 'lumen-welcome.afternoon',
+          text: 'Then gather what you need, make yourself a meal, tend the seed bed, and settle the shelter.',
+        },
+        {
+          id: 'lumen-welcome.bell-courtesy',
+          text: 'When the lanterns bloom, follow the warm pavers to the hill, ring the bell once, and return to me.',
+        },
+        {
+          id: 'lumen-welcome.rule',
+          text: 'Only once, and only at dusk. Routines keep everyone from worrying.',
+        },
       ],
     },
     ledgerAccepted: {
@@ -199,18 +225,34 @@ export const CORE_HOOK_V03 = deepFreeze({
       speaker: 'Steward Lumen',
       portraitTokenId: 8914,
       portrait: '8914',
-      body: [
-        'Lovely. Now the town can keep the day with you.',
-        'Wood gathered, supper made, seed tended, shelter mended—the Ledger will note each kindness as it happens.',
-        'Follow the west clover path to your plot. We will see how quickly it begins to feel like yours.',
+      beats: [
+        {
+          id: 'lumen-ledger-accepted.shared-day',
+          text: 'Lovely. Now the town can keep the day with you.',
+          gesture: STORY_ACTIONS_V1.lumen.acknowledging,
+        },
+        {
+          id: 'lumen-ledger-accepted.account',
+          text: 'Wood gathered, supper made, seed tended, shelter mended—the Ledger will note each kindness as it happens.',
+        },
+        {
+          id: 'lumen-ledger-accepted.west-path',
+          text: 'Follow the west clover path to your plot. We will see how quickly it begins to feel like yours.',
+        },
       ],
     },
     firstBell: {
       id: 'lumen-first-bell',
       speaker: 'A ribbon tied to the Bell',
-      body: [
-        'Perfectly on time.',
-        'Your afternoon is entered under your name. Return to Steward Lumen while Thornvale settles.',
+      beats: [
+        {
+          id: 'lumen-first-bell.on-time',
+          text: 'Perfectly on time.',
+        },
+        {
+          id: 'lumen-first-bell.return',
+          text: 'Your afternoon is entered under your name. Return to Steward Lumen while Thornvale settles.',
+        },
       ],
     },
     correction: {
@@ -219,11 +261,25 @@ export const CORE_HOOK_V03 = deepFreeze({
       portraitTokenId: 8914,
       portrait: '8914',
       tone: 'gentle',
-      body: [
-        "There you are. I was afraid you’d be embarrassed.",
-        'The Ledger says you rang early. It has never needed to lie.',
-        'New neighbors sometimes remember alone. Thornvale remembers together.',
-        'Confirm the correction, and we can put this little worry behind us.',
+      beats: [
+        {
+          id: 'lumen-correction.concern',
+          text: "There you are. I was afraid you’d be embarrassed.",
+          gesture: STORY_ACTIONS_V1.lumen.relievedSigh,
+        },
+        {
+          id: 'lumen-correction.ledger-certainty',
+          text: 'The Ledger says you rang early. It has never needed to lie.',
+        },
+        {
+          id: 'lumen-correction.communal-memory',
+          text: 'New neighbors sometimes remember alone. Thornvale remembers together.',
+          gesture: STORY_ACTIONS_V1.lumen.thoughtfulHeadShake,
+        },
+        {
+          id: 'lumen-correction.courteous-demand',
+          text: 'Confirm the correction, and we can put this little worry behind us.',
+        },
       ],
     },
     complyResponse: {
@@ -231,9 +287,15 @@ export const CORE_HOOK_V03 = deepFreeze({
       speaker: 'Steward Lumen',
       portraitTokenId: 8914,
       portrait: '8914',
-      body: [
-        'There. You needn’t carry the lonely version anymore.',
-        'Welcome home, neighbor.',
+      beats: [
+        {
+          id: 'lumen-comply-response.release',
+          text: 'There. You needn’t carry the lonely version anymore.',
+        },
+        {
+          id: 'lumen-comply-response.welcome-home',
+          text: 'Welcome home, neighbor.',
+        },
       ],
     },
     alterResponse: {
@@ -241,9 +303,15 @@ export const CORE_HOOK_V03 = deepFreeze({
       speaker: 'Steward Lumen',
       portraitTokenId: 8914,
       portrait: '8914',
-      body: [
-        'Of course. We never force a neighbor to agree.',
-        'We only practice until remembering feels less frightening.',
+      beats: [
+        {
+          id: 'lumen-alter-response.permission',
+          text: 'Of course. We never force a neighbor to agree.',
+        },
+        {
+          id: 'lumen-alter-response.practice',
+          text: 'We only practice until remembering feels less frightening.',
+        },
       ],
     },
   },

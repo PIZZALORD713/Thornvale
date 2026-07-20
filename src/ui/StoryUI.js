@@ -36,6 +36,13 @@ function asText(value) {
   return String(value ?? '');
 }
 
+function asDialogueBeatText(beat) {
+  if (beat && typeof beat === 'object' && !Array.isArray(beat)) {
+    return asText(beat.text ?? beat.body ?? beat.message ?? '');
+  }
+  return asText(beat);
+}
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, Number(value) || 0));
 }
@@ -184,19 +191,61 @@ export class StoryUI {
     }
 
     const speaker = asText(config.speaker ?? config.title ?? 'Steward Lumen');
-    return this._present({
+    const fallbackBeat = config.body ?? config.text ?? config.message ?? '';
+    const beats = Array.isArray(config.beats) && config.beats.length > 0
+      ? config.beats.slice()
+      : [fallbackBeat];
+    const finalActionLabel = config.actionLabel ?? config.continueLabel ?? 'Continue';
+    const nextActionLabel = config.nextLabel ?? 'Next';
+    const finalKeyHint = config.keyHint ?? 'Continue with';
+    const nextKeyHint = config.nextKeyHint ?? `${asText(nextActionLabel).trim() || 'Next'} with`;
+    const actionKey = config.key ?? 'Enter';
+    const onBeatChange = typeof config.onBeatChange === 'function' ? config.onBeatChange : null;
+    let beatIndex = 0;
+
+    const notifyBeatChange = () => {
+      if (!onBeatChange) return;
+      try {
+        onBeatChange(beats[beatIndex], beatIndex, { total: beats.length });
+      } catch (error) {
+        console.error('[StoryUI] onBeatChange callback failed.', error);
+      }
+    };
+
+    const promise = this._present({
       kind: 'dialogue',
       tone: config.tone ?? 'steward',
       portrait: normalizeStoryPortrait(config.portrait ?? config.token, speaker),
       eyebrow: config.eyebrow ?? 'A neighbor speaks',
       title: speaker,
-      body: config.body ?? config.text ?? config.message ?? '',
+      body: asDialogueBeatText(beats[beatIndex]),
       detail: config.detail ?? config.note,
-      actionLabel: config.actionLabel ?? config.continueLabel ?? 'Continue',
+      actionLabel: beats.length > 1 ? nextActionLabel : finalActionLabel,
       actionValue: config.actionValue ?? 'continue',
-      keyHint: config.keyHint ?? 'Continue with',
-      key: config.key ?? 'Enter',
+      keyHint: beats.length > 1 ? nextKeyHint : finalKeyHint,
+      key: actionKey,
     });
+
+    this._actionCallback = () => {
+      if (beatIndex >= beats.length - 1) {
+        this._finish(this._actionValue);
+        return;
+      }
+
+      beatIndex += 1;
+      this.elements.storyBody.textContent = asDialogueBeatText(beats[beatIndex]);
+      this.elements.storyActionLabel.textContent = beatIndex === beats.length - 1
+        ? asText(finalActionLabel)
+        : asText(nextActionLabel);
+      this._setKeyHint(
+        beatIndex === beats.length - 1 ? finalKeyHint : nextKeyHint,
+        actionKey,
+      );
+      notifyBeatChange();
+    };
+
+    notifyBeatChange();
+    return promise;
   }
 
   showRecord(value = {}) {

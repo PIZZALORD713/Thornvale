@@ -79,6 +79,12 @@ function createHarness({
     },
     async say(value) {
       calls.push(`say:${value.id}`);
+      if (Array.isArray(value.beats)) {
+        value.beats.forEach((beat, index) => {
+          calls.push(`dialogue-beat:${value.id}:${beat.id || index}`);
+          value.onBeatChange?.(beat, index, { total: value.beats.length });
+        });
+      }
       if (sayHandler) return sayHandler(value);
       return 'continue';
     },
@@ -545,12 +551,16 @@ test('Lumen performs all four semantic story actions in authored order', async (
     `action:${STORY_ACTIONS_V1.lumen.happyHandGesture}`,
   );
   const welcomeDialogue = harness.calls.indexOf('say:lumen-welcome');
+  const welcomeBeat = harness.calls.indexOf(
+    'dialogue-beat:lumen-welcome:lumen-welcome.arrival',
+  );
   const welcomeCancel = harness.calls.indexOf(
     `cancel-action:${STORY_ACTIONS_V1.lumen.happyHandGesture}`,
   );
   const routineMove = harness.calls.indexOf('move:routine:false');
-  assert.ok(welcomeAction < welcomeDialogue, 'the welcome gesture starts while Lumen is stationary');
-  assert.ok(welcomeDialogue < welcomeCancel, 'dialogue keeps the gesture nonblocking');
+  assert.ok(welcomeDialogue < welcomeBeat, 'the spoken exchange opens before its first beat');
+  assert.ok(welcomeBeat < welcomeAction, 'the authored beat starts Lumen’s matching gesture');
+  assert.ok(welcomeAction < welcomeCancel, 'the gesture remains presentation-only and cancellable');
   assert.ok(welcomeCancel < routineMove, 'the one-shot ends before Lumen starts walking');
 });
 
