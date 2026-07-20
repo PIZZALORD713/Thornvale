@@ -13,6 +13,10 @@
     "friendsies:probe": "node scripts/probe-friendsies-trait.mjs",
     "animations:build": "node scripts/build-story-actions-v1.mjs",
     "animations:verify": "node scripts/build-story-actions-v1.mjs --verify",
+    "pizza-lab:mcp": "node tools/pizza-lab/mcp/server.mjs",
+    "pizza-lab:blender": "scripts/pizza-lab-blender.sh",
+    "pizza-lab:test": "node --test tests/pizza-lab.test.js",
+    "pizza-lab:verify": "/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender --background --factory-startup --python tools/pizza-lab/verify.py",
     "assets:audit": "node scripts/check-asset-budgets.mjs",
     "assets:release": "node scripts/check-asset-budgets.mjs --dist --release",
     "check": "npm run test && npm run build && npm run assets:audit -- --dist"

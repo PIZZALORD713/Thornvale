@@ -1,6 +1,8 @@
 node_modules/
 dist/
 *.log
+__pycache__/
 .playwright-cli/
 output/playwright/
+output/pizza-lab/
 .vs/

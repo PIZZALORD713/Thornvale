@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+* Added the bounded Pizza Lab v0.1 production-tool pilot: a typed MCP server,
+  authenticated localhost Blender add-on, and shared Blender 4.5.9 headless
+  command core can inspect and validate scenes, preview or explicitly apply an
+  object transform by stable game ID, and undo that transform. ThornVale axes,
+  write roots, and terrain authority live in a project adapter; arbitrary Python,
+  creation, deletion, publishing, and terrain mutation remain unavailable until
+  later gates. The add-on is installed only in a separate Pizza Lab profile.
 * Moved Community Ledger enrollment directly after Lumen’s welcome. Day One
   chores now unlock after signing, update a readable truthful Ledger account,
   and advance to dusk only when the account is complete. After the first Bell,

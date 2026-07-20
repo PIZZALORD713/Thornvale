@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "thornvale",
+  "projectRoot": "../../..",
+  "blender": {
+    "minimumVersion": "4.5.0",
+    "preferredVersion": "4.5.9 LTS",
+    "units": "meters",
+    "upAxis": "+Z",
+    "authoredFront": "-Y"
+  },
+  "runtime": {
+    "format": "glTF 2.0",
+    "upAxis": "+Y",
+    "front": "+Z"
+  },
+  "requiredExportRoots": [],
+  "allowedWriteRoots": ["assets-src/pizza-lab"],
+  "terrain": {
+    "authority": "src/config/town.js and src/utils/terrain-surface.js",
+    "source": "src/config/town.js"
+  }
+}
