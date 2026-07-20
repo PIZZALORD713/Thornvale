@@ -193,7 +193,9 @@ export async function buildTown(physicsWorld, scene, {
     traitEchoes,
   ] = await Promise.all([
     loadAuthoredCottages(buildingData, mat),
-    loadAuthoredVillageProps(TOWN_LAYOUT, mat),
+    loadAuthoredVillageProps(TOWN_LAYOUT, mat, {
+      assetVariant: selectedAssetVariant,
+    }),
     loadAuthoredPilotLandmarks(TOWN_LAYOUT, mat, {
       assetVariant: selectedAssetVariant,
     }),

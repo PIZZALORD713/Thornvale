@@ -192,6 +192,8 @@ def _import_assets(
     sources = {source["id"]: source for source in data["sources"]}
     placements_by_source: dict[str, list[dict[str, Any]]] = {}
     for placement in data["assets"]:
+        if placement["id"] == "thornvale.authoredProps.wayfinder":
+            continue
         placements_by_source.setdefault(placement["source"], []).append(placement)
 
     staged = 0
@@ -244,6 +246,78 @@ def _import_assets(
             if obj not in claimed and obj not in roots:
                 bpy.data.objects.remove(obj, do_unlink=True)
     return staged
+
+
+def _load_wayfinder_authoring(
+    data: dict[str, Any],
+    project_root: Path,
+    collection: bpy.types.Collection,
+) -> int:
+    source = data.get("authoringAssets", {}).get("wayfinder") or {}
+    source_path = (project_root / str(source.get("path") or "")).resolve()
+    if source_path != (
+        project_root
+        / "assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend"
+    ).resolve():
+        raise PizzaLabError("Wayfinder authoring source is not allowlisted")
+    import hashlib
+
+    actual_hash = hashlib.sha256(source_path.read_bytes()).hexdigest()
+    if actual_hash != source.get("sha256"):
+        raise PizzaLabError("Wayfinder authoring source hash does not match World Stage input")
+    with bpy.data.libraries.load(str(source_path), link=False) as (data_from, data_to):
+        data_to.objects = list(data_from.objects)
+    loaded = [obj for obj in data_to.objects if obj is not None]
+    roots = [obj for obj in loaded if obj.name == source.get("root")]
+    if len(roots) != 1:
+        raise PizzaLabError(f"Expected one editable VillageWayfinder root, found {len(roots)}")
+    root = roots[0]
+    placement = next(
+        item for item in data["assets"]
+        if item["id"] == "thornvale.authoredProps.wayfinder"
+    )
+    root.location = _runtime_point(placement["position"])
+    root.rotation_mode = "XYZ"
+    root.rotation_euler = (0, 0, float(placement.get("rotationY", 0)))
+    root.scale = (1, 1, 1)
+    hierarchy = [root, *list(root.children_recursive)]
+    names = {obj.name for obj in hierarchy}
+    missing = sorted(set(source.get("requiredComponents") or []) - names)
+    if missing:
+        raise PizzaLabError(f"Wayfinder authoring source is missing components: {missing}")
+    for obj in hierarchy:
+        _move_to(obj, collection)
+        is_root = obj == root
+        semantic_id = str(obj.get("pizza_lab_semantic_id") or "")
+        is_board_assembly = semantic_id in {
+            "thornvale.asset.village-wayfinder.board.01",
+            "thornvale.asset.village-wayfinder.board.02",
+            "thornvale.asset.village-wayfinder.board.03",
+        }
+        game_id = (
+            placement["id"]
+            if is_root
+            else semantic_id or f"{placement['id']}.component.{obj.name}"
+        )
+        editable = is_root or is_board_assembly
+        _tag(
+            obj,
+            game_id,
+            (
+                "editable-wayfinder-root"
+                if is_root
+                else "editable-wayfinder-board"
+                if is_board_assembly
+                else "locked-wayfinder-component"
+            ),
+            editable=editable,
+            authority="blender-wayfinder-candidate" if editable else "authoring-source-locked",
+            publish_set="wayfinder-asset-v1" if editable else "wayfinder-context-v1",
+        )
+        obj["pizza_lab_asset_root"] = "VillageWayfinder"
+        obj["pizza_lab_component_name"] = obj.name
+        obj["pizza_lab_authoring_source_sha256"] = actual_hash
+    return 1
 
 
 def build_world_stage(input_path: Path, project_root: Path, *, replace: bool = False) -> dict[str, Any]:
@@ -404,6 +478,7 @@ def build_world_stage(input_path: Path, project_root: Path, *, replace: bool = F
         _tag(obj, obj.name, "bell-precinct-flower-drift-guide")
 
     asset_count = _import_assets(data, project_root, editable_assets, context_assets)
+    asset_count += _load_wayfinder_authoring(data, project_root, editable_assets)
     bpy.context.scene.unit_settings.system = "METRIC"
     bpy.context.scene.unit_settings.scale_length = 1.0
     bpy.context.scene["pizza_lab_adapter"] = "thornvale"

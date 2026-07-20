@@ -15,6 +15,10 @@ import { createMoundSurfaceGrid } from '../src/utils/terrain-surface.js';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST_PATH = resolve(ROOT, 'assets-src/pizza-lab/world-stage/thornvale-world-stage-v1.json');
 const OUTPUT_PATH = resolve(ROOT, 'output/pizza-lab/world-stage-v1.input.json');
+const WAYFINDER_AUTHORING_PATH = resolve(
+  ROOT,
+  'assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend',
+);
 
 const COTTAGE_ROOTS = Object.freeze({
   'berry-bakery': 'Cottage_berry_bakery',
@@ -206,6 +210,8 @@ async function main() {
     const actual = createHash('sha256').update(bytes).digest('hex');
     if (actual !== source.sha256) throw new Error(`Asset drift for ${source.id}`);
   }
+  const wayfinderSource = await readFile(WAYFINDER_AUTHORING_PATH);
+  const wayfinderSourceSha256 = createHash('sha256').update(wayfinderSource).digest('hex');
 
   const hill = createMoundSurfaceGrid(TOWN_LAYOUT.terrain.bellHill);
   const input = {
@@ -225,6 +231,22 @@ async function main() {
       gameplayAuthority: 'locked-runtime',
     },
     sources: manifest.sources,
+    authoringAssets: {
+      wayfinder: {
+        path: 'assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend',
+        sha256: wayfinderSourceSha256,
+        root: 'VillageWayfinder',
+        requiredComponents: [
+          'Wayfinder_BoardAssembly_01',
+          'Wayfinder_BoardAssembly_02',
+          'Wayfinder_BoardAssembly_03',
+          'Wayfinder_Board_01',
+          'Wayfinder_Board_02',
+          'Wayfinder_Board_03',
+          'Wayfinder_Post',
+        ],
+      },
+    },
     assets: assetPlacements(),
     terrain: {
       meadow: { id: 'terrain.meadow', radius: TOWN_LAYOUT.meadowRadius, y: 0 },

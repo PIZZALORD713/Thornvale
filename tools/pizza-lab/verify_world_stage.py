@@ -37,11 +37,27 @@ def main() -> int:
 
     validation = execute("scene.validate", {}, adapter)["result"]
     assert validation["valid"], validation["errors"]
-    editable = [obj for obj in bpy.context.scene.objects if obj.get("pizza_lab_editable") is True]
-    assert [obj.get("pizza_lab_game_id") for obj in editable] == ["thornvale.authoredProps.wayfinder"]
+    editable = sorted(
+        (obj for obj in bpy.context.scene.objects if obj.get("pizza_lab_editable") is True),
+        key=lambda obj: str(obj.get("pizza_lab_game_id")),
+    )
+    assert [obj.get("pizza_lab_game_id") for obj in editable] == [
+        "thornvale.asset.village-wayfinder.board.01",
+        "thornvale.asset.village-wayfinder.board.02",
+        "thornvale.asset.village-wayfinder.board.03",
+        "thornvale.authoredProps.wayfinder",
+    ]
 
-    wayfinder = editable[0]
+    wayfinder = next(obj for obj in editable if obj.get("pizza_lab_game_id") == "thornvale.authoredProps.wayfinder")
     assert all(abs(actual - expected) < 1e-6 for actual, expected in zip(wayfinder.location, [0, 6.4, 0]))
+    board = next(obj for obj in editable if obj.get("pizza_lab_game_id") == "thornvale.asset.village-wayfinder.board.01")
+    board_preview = execute("object.transform", {
+        "gameId": "thornvale.asset.village-wayfinder.board.01",
+        "scale": [1.1, 1, 1.1],
+        "apply": False,
+    }, adapter)["result"]
+    assert board_preview["applied"] is False
+    assert all(abs(actual - expected) < 1e-6 for actual, expected in zip(board.scale, [1, 1, 1]))
     preview = execute("object.transform", {
         "gameId": "thornvale.authoredProps.wayfinder",
         "location": [1.25, 7.2, 0],

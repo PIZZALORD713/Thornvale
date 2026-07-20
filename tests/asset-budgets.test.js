@@ -24,10 +24,10 @@ const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 test('asset manifest covers runtime media and stays within pilot budgets', async () => {
   const report = await runAssetAudit({ rootDir: REPOSITORY_ROOT });
 
-  assert.equal(report.runtimeAssetCount, 27);
-  assert.equal(report.sourceAssetCount, 0);
+  assert.equal(report.runtimeAssetCount, 28);
+  assert.equal(report.sourceAssetCount, 1);
   assert.equal(report.externalRuntimeDependencyCount, 1);
-  assert.equal(report.activeTownBytes, 972_084);
+  assert.equal(report.activeTownBytes, 1_000_248);
   assert.equal(report.pilotArrivalBytes, 326_584);
   assert.deepEqual(report.characterBytes, {
     '0001': 295_916,
@@ -36,7 +36,9 @@ test('asset manifest covers runtime media and stays within pilot budgets', async
   });
   assert.equal(report.cc0RuntimeBytes, 0);
   assert.equal(report.compressedAudioBytes, 0);
-  assert.deepEqual(report.sourceBatchBytes, {});
+  assert.deepEqual(report.sourceBatchBytes, {
+    'pizza-lab-wayfinder-v1': 113_719,
+  });
   assert.equal(report.releaseReady, true);
   assert.deepEqual(report.releaseBlockedFamilies, []);
 });

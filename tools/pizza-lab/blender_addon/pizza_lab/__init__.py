@@ -12,7 +12,7 @@ from .core import execute, load_adapter
 bl_info = {
     "name": "Pizza Lab",
     "author": "Pizza Lab",
-    "version": (0, 3, 0),
+    "version": (0, 4, 0),
     "blender": (4, 5, 0),
     "location": "View3D > Sidebar > Pizza Lab",
     "description": "Authenticated, typed Blender control for Codex and headless production",
@@ -113,6 +113,25 @@ class PIZZALAB_OT_LoadWorldStage(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class PIZZALAB_OT_ExportWayfinderCandidate(bpy.types.Operator):
+    bl_idname = "pizza_lab.export_wayfinder_candidate"
+    bl_label = "Export Wayfinder Candidate"
+
+    def execute(self, context):
+        prefs = context.preferences.addons[__package__].preferences
+        try:
+            result = execute(
+                "asset.wayfinder-candidate.export",
+                {},
+                load_adapter(prefs.adapter_path),
+            )["result"]
+        except Exception as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
+        self.report({"INFO"}, f"Exported Wayfinder {result['sha256'][:12]}")
+        return {"FINISHED"}
+
+
 class PIZZALAB_PT_Panel(bpy.types.Panel):
     bl_label = "Pizza Lab"
     bl_idname = "PIZZALAB_PT_panel"
@@ -128,6 +147,7 @@ class PIZZALAB_PT_Panel(bpy.types.Panel):
         row.operator("pizza_lab.stop", icon="PAUSE")
         layout.separator()
         layout.operator("pizza_lab.load_world_stage", icon="WORLD_DATA")
+        layout.operator("pizza_lab.export_wayfinder_candidate", icon="EXPORT")
         layout.operator("pizza_lab.load_stage", icon="IMPORT")
         layout.operator("pizza_lab.publish_stage", icon="EXPORT")
         selected = context.active_object
@@ -142,6 +162,7 @@ CLASSES = (
     PIZZALAB_OT_Stop,
     PIZZALAB_OT_LoadStage,
     PIZZALAB_OT_LoadWorldStage,
+    PIZZALAB_OT_ExportWayfinderCandidate,
     PIZZALAB_OT_PublishStage,
     PIZZALAB_PT_Panel,
 )

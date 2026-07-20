@@ -153,6 +153,16 @@
       "runtimeDistributionScope": "Canonical fRiENDSiES assets and Thornvale derivatives may be inspected, cached, streamed, bundled, hosted, separated, recombined, optimized, transformed, rendered, and published for any integrated Thornvale character, item, equipment, prop, environment, UI, documentation, testing, or promotional use; standalone asset packs, bulk raw collection mirrors or dumps, sublicensing for unrelated products, and use outside Thornvale remain excluded",
       "rawSourceRedistribution": false,
       "releaseBlocked": false
+    },
+    "thornvale-wayfinder-pizza-lab-v1": {
+      "creator": "Thornvale project",
+      "status": "project-authored",
+      "licenseOrPermission": "No root license selected; default copyright applies; see NOTICE.md",
+      "sourcePage": null,
+      "sourceRetrievedOn": null,
+      "provenance": "public/village/pilot/wayfinder/v1/PROVENANCE.md",
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
     }
   },
   "externalRuntimeDependencies": [
@@ -335,7 +345,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:0001"],
+      "budgetGroups": [
+        "friendsies-character:0001"
+      ],
       "runtimeContexts": [
         "environment:trait-echo-v1:welcome-flower"
       ],
@@ -354,7 +366,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:6602"],
+      "budgetGroups": [
+        "friendsies-character:6602"
+      ],
       "bytes": 170296,
       "sha256": "d7233348ebd29b3f743600cfa292aee5a65faf89231b9b95a26bce50a5760112",
       "source": {
@@ -370,7 +384,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:6602"],
+      "budgetGroups": [
+        "friendsies-character:6602"
+      ],
       "bytes": 236084,
       "sha256": "aef864bd3b45024ce8499b0a398215e75b825ee337ebdb63c9a0a5d927500208",
       "source": {
@@ -386,7 +402,9 @@
       "runtime": true,
       "kind": "character-texture",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:6602"],
+      "budgetGroups": [
+        "friendsies-character:6602"
+      ],
       "bytes": 10979,
       "sha256": "24d367fdee20235f189bd2e6227c2130c44948121135de2a8b9d9f15e2122200",
       "source": {
@@ -402,7 +420,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:6602"],
+      "budgetGroups": [
+        "friendsies-character:6602"
+      ],
       "bytes": 101836,
       "sha256": "58fbd2ea47f3985fbd9e2f873cd785df79dbdd4cce8f0ee3ce83daecc8a60eea",
       "source": {
@@ -418,7 +438,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:6602"],
+      "budgetGroups": [
+        "friendsies-character:6602"
+      ],
       "bytes": 101904,
       "sha256": "778e3cf66d58a5cae3a2427450040c0aae706436bb83deac63633cc6a47f4f54",
       "source": {
@@ -434,7 +456,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:6602"],
+      "budgetGroups": [
+        "friendsies-character:6602"
+      ],
       "bytes": 151340,
       "sha256": "b7b9d795b2a010cbb94adeb38c33646e846f621fe95a7d48686cfccc255c0511",
       "source": {
@@ -450,7 +474,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:6602"],
+      "budgetGroups": [
+        "friendsies-character:6602"
+      ],
       "bytes": 116408,
       "sha256": "da151889550b213de19b4194551c49b529af65d2ff284754ea5e979bae223ffa",
       "source": {
@@ -466,7 +492,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:8914"],
+      "budgetGroups": [
+        "friendsies-character:8914"
+      ],
       "bytes": 355768,
       "sha256": "ee6e2fd607578b539fb00a7b67616bfdcef420671e772b827591fef7ec347175",
       "source": {
@@ -482,7 +510,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:8914"],
+      "budgetGroups": [
+        "friendsies-character:8914"
+      ],
       "bytes": 346284,
       "sha256": "2bd4f3c4873c0ad98b933d0ca1723a86a5e2fa297e8fbbb5c4343e91b258a803",
       "source": {
@@ -498,7 +528,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:8914"],
+      "budgetGroups": [
+        "friendsies-character:8914"
+      ],
       "runtimeContexts": [
         "character:8914:hand",
         "environment:trait-echo-v1:civic-torch"
@@ -518,7 +550,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:8914"],
+      "budgetGroups": [
+        "friendsies-character:8914"
+      ],
       "bytes": 295652,
       "sha256": "717ddd9e9dc4e8268279d84bcacc5c9f4f06df4f964f4c76ee2df99b5efc663f",
       "source": {
@@ -534,7 +568,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:8914"],
+      "budgetGroups": [
+        "friendsies-character:8914"
+      ],
       "bytes": 71404,
       "sha256": "5e7e1529e4c4d75cd580703b835e7655856f10a56fae9fc8417095a90d21c55e",
       "source": {
@@ -550,7 +586,9 @@
       "runtime": true,
       "kind": "character-model",
       "family": "friendsies-project",
-      "budgetGroups": ["friendsies-character:8914"],
+      "budgetGroups": [
+        "friendsies-character:8914"
+      ],
       "runtimeContexts": [
         "character:8914:sprout",
         "environment:trait-echo-v1:civic-crown"
@@ -570,7 +608,9 @@
       "runtime": true,
       "kind": "environment-model",
       "family": "thornvale-cottages",
-      "budgetGroups": ["active-town-glb"],
+      "budgetGroups": [
+        "active-town-glb"
+      ],
       "bytes": 564844,
       "sha256": "af5afde73586fb7d4d72f6dff6b1d456e113cee1e4bda5e1c45f82497029326c",
       "source": {
@@ -586,7 +626,9 @@
       "runtime": true,
       "kind": "environment-model",
       "family": "thornvale-village",
-      "budgetGroups": ["active-town-glb"],
+      "budgetGroups": [
+        "active-town-glb"
+      ],
       "bytes": 407240,
       "sha256": "bf5540deb62a3b14317350d0e04207a311a49c0e0fe068691e18203a930a22be",
       "source": {
@@ -602,7 +644,9 @@
       "runtime": true,
       "kind": "environment-model",
       "family": "thornvale-arrival-pilot",
-      "budgetGroups": ["pilot-arrival-glb"],
+      "budgetGroups": [
+        "pilot-arrival-glb"
+      ],
       "bytes": 326584,
       "sha256": "45725c402431f00a65082a27e6db0ad04d03cfdd3cf8f104907372639b52549b",
       "source": {
@@ -610,6 +654,41 @@
         "path": "scripts/build-village-dressing.py",
         "sha256": "8f8ad2f88f097d4e75e001f3026212a38a9023e68b64159bd281942868c382f9",
         "transform": "The deterministic generator creates the Blender scene and exports the WelcomeGate, CommunityLedger, and TownBell pilot roots."
+      }
+    },
+    {
+      "id": "thornvale-wayfinder-pizza-lab-v1-source",
+      "path": "assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend",
+      "runtime": false,
+      "kind": "source-model",
+      "family": "thornvale-wayfinder-pizza-lab-v1",
+      "storage": "git",
+      "intakeBatch": "pizza-lab-wayfinder-v1",
+      "bytes": 113719,
+      "sha256": "7622200d4ebd1eb4ccdf04b976030a1e61daed0e76c8877f478f12a8fdf1ba02",
+      "source": {
+        "originalFilename": "build-village-dressing.py",
+        "path": "scripts/build-village-dressing.py",
+        "sha256": "8f8ad2f88f097d4e75e001f3026212a38a9023e68b64159bd281942868c382f9",
+        "transform": "Blender 4.5.9 LTS rebuild of the canonical Wayfinder with three named board assemblies and recorded transform overrides."
+      }
+    },
+    {
+      "id": "thornvale-wayfinder-pizza-lab-v1",
+      "path": "public/village/pilot/wayfinder/v1/thornvale-wayfinder.glb",
+      "runtime": true,
+      "kind": "environment-model",
+      "family": "thornvale-wayfinder-pizza-lab-v1",
+      "budgetGroups": [
+        "active-town-glb"
+      ],
+      "bytes": 28164,
+      "sha256": "a8c0f393bf598bdf82f9e9e517ce441df6e248b23af77eb300e375257d7d5d42",
+      "source": {
+        "originalFilename": "thornvale-wayfinder-authoring.blend",
+        "path": "assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend",
+        "sha256": "7622200d4ebd1eb4ccdf04b976030a1e61daed0e76c8877f478f12a8fdf1ba02",
+        "transform": "Fresh canonical generator rebuild, allowlisted transforms on three sign-board assemblies, material consolidation, and Draco-compressed Blender 4.5.9 LTS GLB export."
       }
     }
   ]

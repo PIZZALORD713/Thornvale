@@ -1,3 +1,5 @@
+import PIZZA_LAB_WAYFINDER_V1 from '../content/generated/pizza-lab-wayfinder-v1.json' with { type: 'json' };
+
 export const ASSET_VARIANTS = Object.freeze({
   BASELINE: 'baseline',
   PILOT: 'pilot',
@@ -15,6 +17,12 @@ export const DEFAULT_TRAIT_ECHO_VARIANT = TRAIT_ECHO_VARIANTS.V1;
 export const TOWN_ASSET_PATHS = Object.freeze({
   cottages: '/town/cottages/thornvale-cottages.glb',
   villageDressing: '/village/thornvale-village-dressing.glb',
+  wayfinderPilot: Object.freeze({
+    version: PIZZA_LAB_WAYFINDER_V1.version,
+    url: PIZZA_LAB_WAYFINDER_V1.url,
+    root: PIZZA_LAB_WAYFINDER_V1.root,
+    sha256: PIZZA_LAB_WAYFINDER_V1.sha256,
+  }),
   arrivalPlazaPilot: Object.freeze({
     version: '1.0.0',
     url: '/village/pilot/v1/thornvale-arrival-plaza.glb',

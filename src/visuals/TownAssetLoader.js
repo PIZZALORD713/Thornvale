@@ -1,5 +1,6 @@
 import { Box3, Group, Vector3 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import {
   ASSET_VARIANTS,
   DEFAULT_ASSET_VARIANT,
@@ -39,10 +40,20 @@ function prepareAsset(root, townMaterials, { cameraCollision = true } = {}) {
   return root;
 }
 
-async function loadScene(url) {
+async function loadScene(url, { draco = false } = {}) {
   const loader = new GLTFLoader();
-  const gltf = await loader.loadAsync(url);
-  return gltf.scene;
+  let dracoLoader = null;
+  if (draco) {
+    dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('/draco/');
+    loader.setDRACOLoader(dracoLoader);
+  }
+  try {
+    const gltf = await loader.loadAsync(url);
+    return gltf.scene;
+  } finally {
+    dracoLoader?.dispose();
+  }
 }
 
 function getPilotPlacements(layout) {
@@ -125,14 +136,40 @@ export async function loadAuthoredCottages(buildings, townMaterials) {
   }
 }
 
-export async function loadAuthoredVillageProps(layout, townMaterials) {
+export async function loadAuthoredVillageProps(layout, townMaterials, {
+  assetVariant = DEFAULT_ASSET_VARIANT,
+  sceneLoader = loadScene,
+  baselineUrl = DRESSING_URL,
+  candidateUrl = TOWN_ASSET_PATHS.wayfinderPilot.url,
+} = {}) {
   const root = new Group();
   root.name = 'authored_village_dressing';
 
+  let source = null;
   try {
-    const source = await loadScene(DRESSING_URL);
-    for (const [id, placement] of Object.entries(layout.authoredProps)) {
-      const template = source.getObjectByName(placement.asset);
+    source = await sceneLoader(baselineUrl);
+  } catch (error) {
+    console.warn('[TownAssetLoader] Blender village dressing unavailable.', error);
+  }
+
+  let wayfinderCandidate = null;
+  if (normalizeAssetVariant(assetVariant) === ASSET_VARIANTS.PILOT) {
+    try {
+      const candidate = await sceneLoader(candidateUrl, { draco: true });
+      const template = candidate.getObjectByName(TOWN_ASSET_PATHS.wayfinderPilot.root);
+      if (!template) throw new Error(`Missing Wayfinder pilot root ${TOWN_ASSET_PATHS.wayfinderPilot.root}`);
+      validatePilotGeometry(template, TOWN_ASSET_PATHS.wayfinderPilot.root);
+      wayfinderCandidate = template;
+    } catch (error) {
+      console.warn('[TownAssetLoader] Pizza Lab Wayfinder unavailable; using its baseline root.', error);
+    }
+  }
+
+  for (const [id, placement] of Object.entries(layout.authoredProps)) {
+    try {
+      const template = id === 'wayfinder' && wayfinderCandidate
+        ? wayfinderCandidate
+        : source?.getObjectByName(placement.asset);
       if (!template) throw new Error(`Missing village prop node ${placement.asset}`);
       const prop = prepareAsset(template.clone(true), townMaterials, {
         cameraCollision: false,
@@ -141,11 +178,16 @@ export async function loadAuthoredVillageProps(layout, townMaterials) {
       prop.position.set(placement.x, placement.y, placement.z);
       prop.rotation.set(0, placement.rotationY || 0, 0);
       prop.scale.setScalar(1);
+      if (id === 'wayfinder' && wayfinderCandidate) {
+        prop.userData.assetVariant = ASSET_VARIANTS.PILOT;
+        prop.userData.assetVersion = TOWN_ASSET_PATHS.wayfinderPilot.version;
+        prop.userData.assetHash = TOWN_ASSET_PATHS.wayfinderPilot.sha256;
+      }
       prop.updateMatrixWorld(true);
       root.add(prop);
+    } catch (error) {
+      console.warn(`[TownAssetLoader] Authored village prop ${id} unavailable.`, error);
     }
-  } catch (error) {
-    console.warn('[TownAssetLoader] Blender village dressing unavailable.', error);
   }
   return root;
 }

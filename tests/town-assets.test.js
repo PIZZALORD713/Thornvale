@@ -12,7 +12,10 @@ import {
 } from '../src/config/assets.js';
 import { TOWN_INTERACTION_CONTRACT, TOWN_LAYOUT } from '../src/config/town.js';
 import { bindAuthoredBellMotion } from '../src/game/TownBuilder.js';
-import { loadAuthoredPilotLandmarks } from '../src/visuals/TownAssetLoader.js';
+import {
+  loadAuthoredPilotLandmarks,
+  loadAuthoredVillageProps,
+} from '../src/visuals/TownAssetLoader.js';
 import { WorldAnimator } from '../src/visuals/WorldAnimator.js';
 
 async function readGlbDocument(path) {
@@ -265,6 +268,27 @@ test('the versioned arrival/plaza pilot stays within its runtime contract', asyn
   assert.ok(file.byteLength <= 800 * 1024, 'pilot kit exceeds its 800 KiB budget');
 });
 
+test('the Pizza Lab Wayfinder pilot stays inside its standalone Draco contract', async () => {
+  const document = await readGlbDocument(
+    '../public/village/pilot/wayfinder/v1/thornvale-wayfinder.glb',
+  );
+  assert.deepEqual(document.extensionsUsed, ['KHR_draco_mesh_compression']);
+  assert.deepEqual(document.extensionsRequired, ['KHR_draco_mesh_compression']);
+  assertRootHasGeometry(document, 'VillageWayfinder');
+  assert.equal(document.nodes?.length, 11);
+  assert.equal(document.meshes?.length, 10);
+  assert.equal(document.materials?.length, 10);
+  assert.equal(document.images?.length || 0, 0);
+  const geometry = countGlbGeometry(document);
+  assert.deepEqual(geometry, { primitives: 10, triangles: 1488 });
+  const file = await readFile(new URL(
+    '../public/village/pilot/wayfinder/v1/thornvale-wayfinder.glb',
+    import.meta.url,
+  ));
+  assert.ok(file.byteLength <= 31_000);
+  assert.equal(TOWN_ASSET_PATHS.wayfinderPilot.root, 'VillageWayfinder');
+});
+
 test('the authored pilot is default while explicit and unknown values retain baseline rollback', () => {
   assert.equal(DEFAULT_ASSET_VARIANT, ASSET_VARIANTS.PILOT);
   assert.equal(resolveAssetVariant(''), DEFAULT_ASSET_VARIANT);
@@ -315,6 +339,78 @@ test('pilot roots fall back independently without moving surviving authored root
     TOWN_LAYOUT.landmarks.bell.baseY,
     TOWN_LAYOUT.landmarks.bell.z,
   ]);
+});
+
+function villageSource() {
+  const source = new Group();
+  for (const name of ['VillageWayfinder', 'GardenArch', 'StoneWell']) {
+    const root = new Group();
+    root.name = name;
+    root.add(new Mesh(new BoxGeometry(1, 1, 1)));
+    source.add(root);
+  }
+  return source;
+}
+
+test('pilot mode replaces only the Wayfinder while preserving game-owned placement', async () => {
+  const candidate = new Group();
+  const candidateRoot = new Group();
+  candidateRoot.name = 'VillageWayfinder';
+  candidateRoot.add(new Mesh(new BoxGeometry(2, 2, 2)));
+  candidate.add(candidateRoot);
+  const requests = [];
+  const result = await loadAuthoredVillageProps(TOWN_LAYOUT, null, {
+    assetVariant: ASSET_VARIANTS.PILOT,
+    sceneLoader: async (url, options) => {
+      requests.push({ url, options });
+      return url === TOWN_ASSET_PATHS.wayfinderPilot.url ? candidate : villageSource();
+    },
+  });
+  assert.equal(requests.length, 2);
+  assert.deepEqual(requests[1], {
+    url: TOWN_ASSET_PATHS.wayfinderPilot.url,
+    options: { draco: true },
+  });
+  const wayfinder = result.getObjectByName('authored_wayfinder');
+  assert.deepEqual(wayfinder.position.toArray(), [
+    TOWN_LAYOUT.authoredProps.wayfinder.x,
+    TOWN_LAYOUT.authoredProps.wayfinder.y,
+    TOWN_LAYOUT.authoredProps.wayfinder.z,
+  ]);
+  assert.equal(wayfinder.userData.assetVersion, TOWN_ASSET_PATHS.wayfinderPilot.version);
+  assert.ok(result.getObjectByName('authored_gardenArch'));
+  assert.ok(result.getObjectByName('authored_stoneWell'));
+});
+
+test('baseline mode skips Wayfinder pilot and candidate failure falls back per root', async () => {
+  let baselineRequests = 0;
+  const baseline = await loadAuthoredVillageProps(TOWN_LAYOUT, null, {
+    assetVariant: ASSET_VARIANTS.BASELINE,
+    sceneLoader: async () => {
+      baselineRequests += 1;
+      return villageSource();
+    },
+  });
+  assert.equal(baselineRequests, 1);
+  assert.equal(baseline.getObjectByName('authored_wayfinder').userData.assetVersion, undefined);
+
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  let fallback;
+  try {
+    fallback = await loadAuthoredVillageProps(TOWN_LAYOUT, null, {
+      assetVariant: ASSET_VARIANTS.PILOT,
+      sceneLoader: async (url) => {
+        if (url === TOWN_ASSET_PATHS.wayfinderPilot.url) throw new Error('candidate unavailable');
+        return villageSource();
+      },
+    });
+  } finally {
+    console.warn = originalWarn;
+  }
+  assert.ok(fallback.getObjectByName('authored_wayfinder'));
+  assert.ok(fallback.getObjectByName('authored_gardenArch'));
+  assert.ok(fallback.getObjectByName('authored_stoneWell'));
 });
 
 test('pilot roots with non-finite geometry bounds are rejected', async () => {

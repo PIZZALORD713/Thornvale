@@ -23,6 +23,9 @@
     "pizza-lab:world:input": "node scripts/build-world-stage-input.mjs",
     "pizza-lab:world:build": "npm run pizza-lab:world:input && /Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender --background --factory-startup --python-exit-code 1 --python tools/pizza-lab/create_world_stage.py",
     "pizza-lab:world:verify": "/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender --background output/pizza-lab/thornvale-world-stage-v1.blend --python-exit-code 1 --python tools/pizza-lab/verify_world_stage.py",
+    "pizza-lab:wayfinder:seed": "/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender --background --factory-startup --python-exit-code 1 --python tools/pizza-lab/seed_wayfinder_authoring.py -- --acknowledge-overwrite",
+    "pizza-lab:wayfinder:export": "/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender --background output/pizza-lab/thornvale-world-stage-v1.blend --python-exit-code 1 --python tools/pizza-lab/export_wayfinder_from_stage.py",
+    "pizza-lab:wayfinder:promote": "node scripts/promote-pizza-lab-wayfinder.mjs",
     "assets:audit": "node scripts/check-asset-budgets.mjs",
     "assets:release": "node scripts/check-asset-budgets.mjs --dist --release",
     "check": "npm run test && npm run build && npm run assets:audit -- --dist"

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+* Added Pizza Lab v0.4 Wayfinder geometry promotion. The full Blender World
+  Stage now loads an editable project source with three named sign-board
+  assemblies; the add-on and MCP can export their bounded transforms through a
+  clean Blender rebuild into a Draco candidate. Independent promotion gates
+  source hashes, hierarchy, materials, triangles, bounds, provenance, and size,
+  while the existing pilot/baseline selector and per-root fallback preserve the
+  game-owned placement, collider, camera, grass, and interaction contracts.
 * Extended Pizza Lab to a complete bounded Blender-to-browser placement loop.
   Blender can stage the existing village-dressing GLB at current runtime
   coordinates, expose only the Wayfinder as editable, and atomically publish a

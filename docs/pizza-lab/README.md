@@ -1,4 +1,4 @@
-# Pizza Lab v0.3
+# Pizza Lab v0.4
 
 Pizza Lab is ThornVale's reusable Blender copilot foundation. It gives Codex a
 small typed MCP surface for an open Blender application and uses the same command
@@ -12,14 +12,15 @@ implementation in headless Blender 4.5.9 LTS.
 | `pizza_scene_validate` | None |
 | `pizza_object_transform` | Only with `apply: true` |
 | `pizza_transaction_undo` | Restores the token's exact prior transform |
-| `pizza_terrain_contract` | None; terrain is context-only in v0.3 |
+| `pizza_terrain_contract` | None; terrain is context-only in v0.4 |
 | `pizza_stage_load` | Rebuilds only the owned Blender staging collection |
 | `pizza_stage_publish` | Writes the allowlisted placement candidate |
 | `pizza_world_stage_load` | Rebuilds the complete resolved World Stage |
+| `pizza_wayfinder_candidate_export` | Durably exports the three editable sign assemblies |
 
-General creation, deletion, arbitrary Python, terrain mutation, and GLB publishing are
-intentionally unavailable in this pilot. Placement publication is limited to the
-allowlisted Wayfinder candidate.
+General creation, deletion, arbitrary Python, and terrain mutation remain
+unavailable. GLB export is limited to one versioned Wayfinder family with three
+allowlisted board assemblies.
 
 ## Install the Blender add-on
 
@@ -68,7 +69,51 @@ already open Blender session, **Load Full World Stage** or
 `PL_CONTRACT_PROXIES`, and `PL_GUIDES` are locked reference collections. MCP
 also rejects transforms on locked objects, even when addressed by a stable ID.
 
-## Current publishable trial
+## Wayfinder geometry round trip
+
+The full World Stage loads the Wayfinder from
+`assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend`. Its root
+retains the existing placement workflow. Its three child empties are the only
+geometry controls:
+
+- `Wayfinder_BoardAssembly_01`
+- `Wayfinder_BoardAssembly_02`
+- `Wayfinder_BoardAssembly_03`
+
+Move an assembly on Blender X/Z to change its lateral position or height,
+rotate it only on Blender Z, or scale it inside the reviewed envelope. The post,
+stones, plants, materials, and mesh topology are locked.
+
+Use **Export Wayfinder Candidate** or call
+`pizza_wayfinder_candidate_export`. The command snapshots those three
+transforms, starts a clean headless Blender process, rebuilds the asset from the
+canonical generator, applies only the snapshot, and writes an ignored candidate
+under `output/pizza-lab/wayfinder-v1/`. Promotion independently rechecks hashes,
+the exact root/material/triangle contract, Draco compression, grounding, bounds,
+and transform limits before updating the versioned pilot:
+
+```bash
+npm run pizza-lab:wayfinder:export
+npm run pizza-lab:wayfinder:promote
+npm run check
+```
+
+Reload the development browser after promotion; the generated descriptor and
+public GLB then project the saved Blender assembly transforms.
+
+The browser’s existing `?assets=` selector controls the complete rollback:
+
+- `?assets=pilot` (and the default) loads the standalone Pizza Lab Wayfinder.
+- `?assets=baseline` skips it and uses `VillageWayfinder` from the baseline
+  village-dressing GLB.
+- If the pilot file fails, only the Wayfinder falls back; Garden Arch and Stone
+  Well retain their baseline authored roots.
+
+`TOWN_LAYOUT.authoredProps.wayfinder` still drives position and rotation.
+`TownBuilder` still owns the collider and camera proxy. The asset candidate
+cannot move those contracts.
+
+## Placement-only trial
 
 The older three-prop stage remains available for a smaller placement-only trial:
 
@@ -77,9 +122,8 @@ npm run pizza-lab:stage
 npm run pizza-lab:blender -- output/pizza-lab/thornvale-town-stage.blend
 ```
 
-Only the `VillageWayfinder` root is currently selectable and publishable in
-either scene. Move it on Blender X/Y, rotate around Blender Z, and keep Blender
-Z=0 with unit scale.
+The smaller stage exposes only the `VillageWayfinder` root. Move it on Blender
+X/Y, rotate around Blender Z, and keep Blender Z=0 with unit scale.
 
 Use **Publish Placement Candidate** in the Pizza Lab sidebar—or let Codex call
 `pizza_stage_publish`—then promote and verify it:
@@ -106,9 +150,10 @@ Do not commit the token. Enable the entry only for an active session and stop th
 Blender sidebar bridge afterward.
 
 For headless calls, set `PIZZA_LAB_MODE=headless`, `PIZZA_LAB_BLENDER`, and,
-when inspecting a file, `PIZZA_LAB_BLEND_FILE`. Headless v0.3 supports inspect,
+when inspecting a file, `PIZZA_LAB_BLEND_FILE`. Headless v0.4 supports inspect,
 validate, terrain-contract inspection, and transform dry-runs. It rejects apply
-and undo because no approved atomic output/save contract exists yet.
+and undo because no approved generic save contract exists. The Wayfinder export
+command is admitted headlessly because it has a narrow, validated atomic output.
 
 ## Object identity
 
@@ -123,6 +168,8 @@ npm run pizza-lab:test
 npm run pizza-lab:verify
 npm run pizza-lab:world:build
 npm run pizza-lab:world:verify
+npm run pizza-lab:wayfinder:export
+npm run pizza-lab:wayfinder:promote
 npm run check
 ```
 
@@ -131,13 +178,9 @@ dry-run, apply, undo, validation, and the terrain boundary, imports the real
 village GLB, and round-trips runtime/Blender coordinates. It compares canonical
 transforms, not `.blend` bytes.
 
-## Current boundary and next gate
+## Current boundary
 
-The full spatial context is present, but changing a Wayfinder child mesh (for
-example sign-board size or height), publishing a modified source GLB, or editing
-terrain is not yet admitted by v0.3. The next bounded gate is a versioned
-Wayfinder asset-family candidate: export the isolated root, validate geometry and
-source provenance, compare collider/clearance behavior, retain the current GLB as
-rollback, and prove the browser result. Other objects become editable only after
-their visual, physics, interaction, story, and ambient consumers have equivalent
-promotion gates.
+Pizza Lab v0.4 publishes board-assembly transforms, not arbitrary mesh edits,
+materials, terrain, or additional roots. Other objects become editable only
+after their visual, physics, interaction, story, and ambient consumers have
+equivalent promotion gates.

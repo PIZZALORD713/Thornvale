@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
 import { callTool, TOOL_DEFINITIONS, validateToolArguments } from '../tools/pizza-lab/mcp/server.mjs';
 import { validatePizzaLabCandidate } from '../scripts/promote-pizza-lab-stage.mjs';
+import { validatePizzaLabWayfinderCandidate } from '../scripts/promote-pizza-lab-wayfinder.mjs';
 import { TOWN_LAYOUT } from '../src/config/town.js';
 
-test('Pizza Lab exposes only the bounded v0.3 command surface', () => {
+test('Pizza Lab exposes only the bounded v0.4 command surface', () => {
   assert.deepEqual(TOOL_DEFINITIONS.map((tool) => tool.name), [
     'pizza_scene_inspect',
     'pizza_scene_validate',
@@ -16,8 +18,9 @@ test('Pizza Lab exposes only the bounded v0.3 command surface', () => {
     'pizza_stage_load',
     'pizza_stage_publish',
     'pizza_world_stage_load',
+    'pizza_wayfinder_candidate_export',
   ]);
-  assert.equal(TOOL_DEFINITIONS.some((tool) => /python|delete|export|create/i.test(tool.name)), false);
+  assert.equal(TOOL_DEFINITIONS.some((tool) => /python|delete|create/i.test(tool.name)), false);
 });
 
 test('transform schema requires stable IDs and finite vectors', () => {
@@ -51,7 +54,7 @@ test('ThornVale adapter preserves current axes and terrain authority', async () 
   assert.match(adapter.terrain.authority, /src\/config\/town\.js/);
 });
 
-test('headless v0.3 rejects mutations that cannot be durably saved', async () => {
+test('headless v0.4 rejects mutations that cannot be durably saved', async () => {
   const previous = process.env.PIZZA_LAB_MODE;
   process.env.PIZZA_LAB_MODE = 'headless';
   try {
@@ -88,4 +91,53 @@ test('stage promotion accepts only the hashed, grounded wayfinder contract', asy
       wayfinder: { ...candidate.placements.wayfinder, x: 14, z: -11 },
     },
   }, candidate.source.sha256, TOWN_LAYOUT), /berry-bakery clearance/);
+});
+
+test('Wayfinder promotion revalidates hashes, Draco geometry, and board envelopes', async () => {
+  const read = (path) => readFile(new URL(path, import.meta.url));
+  const [candidateBytes, authoringSource, generator, baseSource, worldStage, generatedText] = await Promise.all([
+    read('../public/village/pilot/wayfinder/v1/thornvale-wayfinder.glb'),
+    read('../assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend'),
+    read('../scripts/build-village-dressing.py'),
+    read('../public/village/thornvale-village-dressing.glb'),
+    read('../assets-src/pizza-lab/world-stage/thornvale-world-stage-v1.json'),
+    readFile(new URL('../src/content/generated/pizza-lab-wayfinder-v1.json', import.meta.url), 'utf8'),
+  ]);
+  const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
+  const generated = JSON.parse(generatedText);
+  const world = JSON.parse(worldStage.toString('utf8'));
+  const candidate = {
+    schemaVersion: 1,
+    id: 'thornvale-wayfinder-candidate-v1',
+    family: 'thornvale-wayfinder-pizza-lab-v1',
+    root: 'VillageWayfinder',
+    baseSource: { path: 'public/village/thornvale-village-dressing.glb', sha256: digest(baseSource) },
+    generator: { path: 'scripts/build-village-dressing.py', sha256: digest(generator) },
+    worldStage: {
+      path: 'assets-src/pizza-lab/world-stage/thornvale-world-stage-v1.json',
+      sha256: digest(worldStage),
+      layoutSha256: world.layoutSha256,
+    },
+    authoringSource: {
+      path: 'assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend',
+      sha256: digest(authoringSource),
+    },
+    candidate: {
+      path: 'output/pizza-lab/wayfinder-v1/thornvale-wayfinder-candidate.glb',
+      sha256: digest(candidateBytes),
+      bytes: generated.bytes,
+      nodes: generated.nodes,
+      meshes: generated.meshes,
+      primitives: generated.primitives,
+      materials: generated.materials,
+      vertices: generated.vertices,
+      triangles: generated.triangles,
+    },
+    boardOverrides: generated.boardOverrides,
+  };
+  const files = { candidate: candidateBytes, authoringSource, generator, baseSource, worldStage };
+  assert.equal(validatePizzaLabWayfinderCandidate(candidate, files).triangles, 1488);
+  const invalid = structuredClone(candidate);
+  invalid.boardOverrides['01'].after.scale = [2, 1, 1];
+  assert.throws(() => validatePizzaLabWayfinderCandidate(invalid, files), /scale exceeds/);
 });

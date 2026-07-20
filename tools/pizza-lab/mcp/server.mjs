@@ -71,6 +71,11 @@ export const TOOL_DEFINITIONS = [
       properties: { replace: { type: 'boolean', default: false } },
     },
   },
+  {
+    name: 'pizza_wayfinder_candidate_export',
+    description: 'Export the three editable Wayfinder board assemblies as a validated, durable GLB candidate.',
+    inputSchema: { type: 'object', additionalProperties: false, properties: {} },
+  },
 ];
 
 const COMMANDS = new Map([
@@ -82,6 +87,7 @@ const COMMANDS = new Map([
   ['pizza_stage_load', 'stage.load'],
   ['pizza_stage_publish', 'stage.publish'],
   ['pizza_world_stage_load', 'world-stage.load'],
+  ['pizza_wayfinder_candidate_export', 'asset.wayfinder-candidate.export'],
 ]);
 
 function assertObject(value, label) {
@@ -187,7 +193,7 @@ async function handle(message) {
       respond(message.id, null, new Error(`Unsupported MCP protocol version: ${requested}`));
       return;
     }
-    respond(message.id, { protocolVersion: requested, capabilities: { tools: {} }, serverInfo: { name: 'pizza-lab', version: '0.3.0' } });
+    respond(message.id, { protocolVersion: requested, capabilities: { tools: {} }, serverInfo: { name: 'pizza-lab', version: '0.4.0' } });
   } else if (message.method === 'tools/list') {
     respond(message.id, { tools: TOOL_DEFINITIONS });
   } else if (message.method === 'tools/call') {

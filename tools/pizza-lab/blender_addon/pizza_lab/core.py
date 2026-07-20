@@ -13,7 +13,7 @@ from typing import Any
 import bpy
 
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 GAME_ID = "pizza_lab_game_id"
 ROLE = "pizza_lab_role"
 STAGE_COLLECTION = "PIZZA_LAB_STAGE"
@@ -334,6 +334,12 @@ def load_world_stage(payload: dict[str, Any], adapter: dict[str, Any]) -> dict[s
     )
 
 
+def export_wayfinder_candidate(_: dict[str, Any], adapter: dict[str, Any]) -> dict[str, Any]:
+    from .wayfinder_candidate import export_wayfinder_candidate as export_candidate
+
+    return export_candidate(adapter)
+
+
 COMMANDS = {
     "scene.inspect": inspect_scene,
     "scene.validate": validate_scene,
@@ -343,6 +349,7 @@ COMMANDS = {
     "stage.load": load_stage,
     "stage.publish": publish_stage,
     "world-stage.load": load_world_stage,
+    "asset.wayfinder-candidate.export": export_wayfinder_candidate,
     "scene.save": save_scene,
 }
 
