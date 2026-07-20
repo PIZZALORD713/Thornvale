@@ -1,4 +1,5 @@
 import { DAY_ONE_V01 } from '../content/day-one-v01.js';
+import PIZZA_LAB_TOWN_STAGE_V1 from '../content/generated/pizza-lab-town-stage-v1.json' with { type: 'json' };
 import { sampleMoundHeight } from '../utils/terrain-surface.js';
 
 function deepFreeze(value) {
@@ -385,7 +386,7 @@ export const TOWN_LAYOUT = deepFreeze({
     ],
   },
   authoredProps: {
-    wayfinder: { asset: 'VillageWayfinder', x: 0, y: 0, z: -6.4, rotationY: 0 },
+    wayfinder: PIZZA_LAB_TOWN_STAGE_V1.placements.wayfinder,
     gardenArch: { asset: 'GardenArch', x: 9.4, y: 0, z: 7.35, rotationY: 1.2 },
     stoneWell: { asset: 'StoneWell', x: -8.4, y: 0, z: 2.4, rotationY: 0.18 },
   },

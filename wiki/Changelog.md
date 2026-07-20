@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+* Extended Pizza Lab to a complete bounded Blender-to-browser placement loop.
+  Blender can stage the existing village-dressing GLB at current runtime
+  coordinates, expose only the Wayfinder as editable, and atomically publish a
+  placement candidate. A separate validator checks the exact source hash,
+  grounding, meadow bounds, cottage clearance, and protected anchors before
+  promoting the placement into `TOWN_LAYOUT`; the Wayfinder visual, collider,
+  camera proxy, and grass clearance therefore update together on browser reload.
 * Added the bounded Pizza Lab v0.1 production-tool pilot: a typed MCP server,
   authenticated localhost Blender add-on, and shared Blender 4.5.9 headless
   command core can inspect and validate scenes, preview or explicitly apply an

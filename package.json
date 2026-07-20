@@ -15,8 +15,10 @@
     "animations:verify": "node scripts/build-story-actions-v1.mjs --verify",
     "pizza-lab:mcp": "node tools/pizza-lab/mcp/server.mjs",
     "pizza-lab:blender": "scripts/pizza-lab-blender.sh",
+    "pizza-lab:stage": "/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender --background --factory-startup --python-exit-code 1 --python tools/pizza-lab/create_stage.py",
     "pizza-lab:test": "node --test tests/pizza-lab.test.js",
-    "pizza-lab:verify": "/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender --background --factory-startup --python tools/pizza-lab/verify.py",
+    "pizza-lab:verify": "/Applications/Blender-4.5-LTS.app/Contents/MacOS/Blender --background --factory-startup --python-exit-code 1 --python tools/pizza-lab/verify.py",
+    "pizza-lab:promote": "node scripts/promote-pizza-lab-stage.mjs",
     "assets:audit": "node scripts/check-asset-budgets.mjs",
     "assets:release": "node scripts/check-asset-budgets.mjs --dist --release",
     "check": "npm run test && npm run build && npm run assets:audit -- --dist"

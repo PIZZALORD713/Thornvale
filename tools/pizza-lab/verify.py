@@ -12,7 +12,7 @@ import bpy
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "blender_addon"))
 
-from pizza_lab.core import execute, load_adapter  # noqa: E402
+from pizza_lab.core import _blender_to_runtime, execute, load_adapter  # noqa: E402
 
 
 def main() -> int:
@@ -44,6 +44,26 @@ def main() -> int:
     validation = execute("scene.validate", {}, adapter)
     assert validation["result"]["valid"] is True
     assert execute("terrain.contract", {}, adapter)["result"]["mode"] == "preview-only"
+
+    stage = execute("stage.load", {"replace": True}, adapter)
+    assert len(stage["result"]["objects"]) == 3
+    staged_wayfinder = next(
+        obj for obj in bpy.context.scene.objects
+        if obj.get("pizza_lab_game_id") == "thornvale.authoredProps.wayfinder"
+    )
+    assert all(
+        abs(actual - expected) < 1e-6
+        for actual, expected in zip(staged_wayfinder.location, [0.0, 6.4, 0.0])
+    ), list(staged_wayfinder.location)
+    staged_wayfinder.location = [2.5, 8.0, 0.0]
+    staged_wayfinder.rotation_euler.z = 0.5
+    assert _blender_to_runtime(staged_wayfinder) == {
+        "x": 2.5, "y": 0.0, "z": -8.0, "rotationY": 0.5,
+    }
+    staged_wayfinder.location = [0.0, 6.4, 0.0]
+    staged_wayfinder.rotation_euler.z = 0.0
+    published = execute("stage.publish", {}, adapter)
+    assert published["result"]["published"] is True
     print("PIZZA_LAB_VERIFY=passed")
     return 0
 

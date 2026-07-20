@@ -16,6 +16,10 @@
   },
   "requiredExportRoots": [],
   "allowedWriteRoots": ["assets-src/pizza-lab"],
+  "staging": {
+    "manifest": "assets-src/pizza-lab/staging/thornvale-town-v1.json",
+    "sourceAsset": "public/village/thornvale-village-dressing.glb"
+  },
   "terrain": {
     "authority": "src/config/town.js and src/utils/terrain-surface.js",
     "source": "src/config/town.js"

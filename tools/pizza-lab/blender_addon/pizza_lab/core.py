@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import math
+import os
 from pathlib import Path
 from typing import Any
 
 import bpy
 
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 GAME_ID = "pizza_lab_game_id"
 ROLE = "pizza_lab_role"
+STAGE_COLLECTION = "PIZZA_LAB_STAGE"
 
 
 class PizzaLabError(RuntimeError):
@@ -172,6 +175,134 @@ def terrain_contract(_: dict[str, Any], adapter: dict[str, Any]) -> dict[str, An
     }
 
 
+def _runtime_to_blender(placement: dict[str, Any]) -> tuple[list[float], float]:
+    x = float(placement["x"])
+    y = float(placement["y"])
+    z = float(placement["z"])
+    yaw = float(placement.get("rotationY", 0))
+    if not all(math.isfinite(value) for value in (x, y, z, yaw)):
+        raise PizzaLabError("Stage placement contains a non-finite value")
+    return [x, -z, y], yaw
+
+
+def _blender_to_runtime(obj: bpy.types.Object) -> dict[str, float]:
+    if obj.rotation_mode in {"QUATERNION", "AXIS_ANGLE"}:
+        raise PizzaLabError(f"Staged object {_object_id(obj)!r} must use an Euler rotation mode")
+    if abs(obj.rotation_euler.x) > 1e-6 or abs(obj.rotation_euler.y) > 1e-6:
+        raise PizzaLabError(f"Staged object {_object_id(obj)!r} cannot be tilted")
+    scale = list(obj.scale)
+    if any(value <= 0 for value in scale) or max(scale) - min(scale) > 1e-6 or abs(scale[0] - 1) > 1e-6:
+        raise PizzaLabError(f"Staged object {_object_id(obj)!r} must retain unit scale")
+
+    def clean(value: float) -> float:
+        rounded = round(float(value), 6)
+        return 0.0 if rounded == 0 else rounded
+
+    return {
+        "x": clean(obj.location.x),
+        "y": clean(obj.location.z),
+        "z": clean(-obj.location.y),
+        "rotationY": clean(obj.rotation_euler.z),
+    }
+
+
+def _stage_config(adapter: dict[str, Any]) -> tuple[Path, Path, dict[str, Any]]:
+    config = adapter.get("staging") or {}
+    project_root = Path(adapter.get("_projectRoot") or ".").resolve()
+    manifest = (project_root / str(config.get("manifest") or "")).resolve()
+    source = (project_root / str(config.get("sourceAsset") or "")).resolve()
+    if manifest != (project_root / "assets-src/pizza-lab/staging/thornvale-town-v1.json").resolve():
+        raise PizzaLabError("Adapter staging manifest is not allowlisted")
+    if source != (project_root / "public/village/thornvale-village-dressing.glb").resolve():
+        raise PizzaLabError("Adapter staging source is not allowlisted")
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise PizzaLabError(f"Unable to read staging manifest: {exc}") from exc
+    expected_hash = str(data.get("source", {}).get("sha256") or "")
+    actual_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    if actual_hash != expected_hash:
+        raise PizzaLabError("Staging GLB hash does not match the manifest")
+    return manifest, source, data
+
+
+def load_stage(payload: dict[str, Any], adapter: dict[str, Any]) -> dict[str, Any]:
+    existing = bpy.data.collections.get(STAGE_COLLECTION)
+    if existing and not payload.get("replace", False):
+        raise PizzaLabError("Pizza Lab stage already exists; pass replace=true to rebuild it")
+    if existing:
+        for obj in list(existing.objects):
+            bpy.data.objects.remove(obj, do_unlink=True)
+        bpy.data.collections.remove(existing)
+
+    _, source, manifest = _stage_config(adapter)
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=str(source))
+    imported = [obj for obj in bpy.data.objects if obj not in before]
+    collection = bpy.data.collections.new(STAGE_COLLECTION)
+    bpy.context.scene.collection.children.link(collection)
+    for obj in imported:
+        if collection not in obj.users_collection:
+            collection.objects.link(obj)
+        for owner in list(obj.users_collection):
+            if owner != collection:
+                owner.objects.unlink(obj)
+
+    placements = manifest.get("placements") or {}
+    staged = []
+    for placement_id, placement in sorted(placements.items()):
+        asset_name = str(placement.get("asset") or "")
+        matches = [obj for obj in imported if obj.name == asset_name]
+        if len(matches) != 1:
+            raise PizzaLabError(f"Expected one imported root {asset_name!r}, found {len(matches)}")
+        root = matches[0]
+        location, yaw = _runtime_to_blender(placement)
+        root.location = location
+        root.rotation_mode = "XYZ"
+        root.rotation_euler = [0, 0, yaw]
+        root.scale = [1, 1, 1]
+        root[GAME_ID] = f"thornvale.authoredProps.{placement_id}"
+        root[ROLE] = "staged-placement" if placement.get("editable") else "locked-context"
+        root["pizza_lab_asset_root"] = asset_name
+        root.hide_select = not bool(placement.get("editable"))
+        staged.append({
+            "id": placement_id,
+            "gameId": root[GAME_ID],
+            "asset": asset_name,
+            "editable": bool(placement.get("editable")),
+            "transform": _transform(root),
+        })
+
+    bpy.context.view_layer.update()
+    return {"collection": STAGE_COLLECTION, "source": str(source), "objects": staged}
+
+
+def publish_stage(_: dict[str, Any], adapter: dict[str, Any]) -> dict[str, Any]:
+    manifest_path, _, manifest = _stage_config(adapter)
+    changes = []
+    for placement_id, placement in sorted((manifest.get("placements") or {}).items()):
+        if not placement.get("editable"):
+            continue
+        game_id = f"thornvale.authoredProps.{placement_id}"
+        obj = _find_object(game_id)
+        if obj.get("pizza_lab_asset_root") != placement.get("asset"):
+            raise PizzaLabError(f"Asset root changed for {placement_id!r}")
+        runtime = _blender_to_runtime(obj)
+        before = {key: placement.get(key, 0) for key in ("x", "y", "z", "rotationY")}
+        placement.update(runtime)
+        changes.append({"id": placement_id, "before": before, "after": runtime})
+
+    encoded = json.dumps(manifest, indent=2, sort_keys=False) + "\n"
+    temporary = manifest_path.with_name(f".{manifest_path.name}.tmp-{os.getpid()}")
+    try:
+        temporary.write_text(encoded, encoding="utf-8")
+        os.replace(temporary, manifest_path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    return {"published": True, "candidate": str(manifest_path), "changes": changes}
+
+
 def save_scene(payload: dict[str, Any], adapter: dict[str, Any]) -> dict[str, Any]:
     requested = Path(str(payload.get("path") or "")).expanduser().resolve()
     if not str(payload.get("path") or "").strip():
@@ -190,6 +321,8 @@ COMMANDS = {
     "object.transform": transform_object,
     "transaction.undo": undo_transform,
     "terrain.contract": terrain_contract,
+    "stage.load": load_stage,
+    "stage.publish": publish_stage,
     "scene.save": save_scene,
 }
 

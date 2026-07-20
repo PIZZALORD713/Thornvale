@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "adapter": "thornvale",
+  "coordinateSpace": "three-y-up",
+  "source": {
+    "path": "public/village/thornvale-village-dressing.glb",
+    "sha256": "bf5540deb62a3b14317350d0e04207a311a49c0e0fe068691e18203a930a22be"
+  },
+  "placements": {
+    "gardenArch": {
+      "asset": "GardenArch",
+      "editable": false,
+      "x": 9.4,
+      "y": 0,
+      "z": 7.35,
+      "rotationY": 1.2
+    },
+    "stoneWell": {
+      "asset": "StoneWell",
+      "editable": false,
+      "x": -8.4,
+      "y": 0,
+      "z": 2.4,
+      "rotationY": 0.18
+    },
+    "wayfinder": {
+      "asset": "VillageWayfinder",
+      "editable": true,
+      "x": 0.0,
+      "y": 0.0,
+      "z": -6.4,
+      "rotationY": 0.0
+    }
+  }
+}

@@ -6,12 +6,13 @@ import bpy
 from bpy.props import IntProperty, StringProperty
 
 from .bridge import Bridge
+from .core import execute, load_adapter
 
 
 bl_info = {
     "name": "Pizza Lab",
     "author": "Pizza Lab",
-    "version": (0, 1, 0),
+    "version": (0, 2, 0),
     "blender": (4, 5, 0),
     "location": "View3D > Sidebar > Pizza Lab",
     "description": "Authenticated, typed Blender control for Codex and headless production",
@@ -67,6 +68,36 @@ class PIZZALAB_OT_Stop(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class PIZZALAB_OT_LoadStage(bpy.types.Operator):
+    bl_idname = "pizza_lab.load_stage"
+    bl_label = "Load ThornVale Stage"
+
+    def execute(self, context):
+        prefs = context.preferences.addons[__package__].preferences
+        try:
+            result = execute("stage.load", {"replace": True}, load_adapter(prefs.adapter_path))
+        except Exception as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
+        self.report({"INFO"}, f"Loaded {len(result['result']['objects'])} staged objects")
+        return {"FINISHED"}
+
+
+class PIZZALAB_OT_PublishStage(bpy.types.Operator):
+    bl_idname = "pizza_lab.publish_stage"
+    bl_label = "Publish Placement Candidate"
+
+    def execute(self, context):
+        prefs = context.preferences.addons[__package__].preferences
+        try:
+            result = execute("stage.publish", {}, load_adapter(prefs.adapter_path))
+        except Exception as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
+        self.report({"INFO"}, f"Published {len(result['result']['changes'])} placement candidate")
+        return {"FINISHED"}
+
+
 class PIZZALAB_PT_Panel(bpy.types.Panel):
     bl_label = "Pizza Lab"
     bl_idname = "PIZZALAB_PT_panel"
@@ -80,13 +111,23 @@ class PIZZALAB_PT_Panel(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator("pizza_lab.start", icon="PLAY")
         row.operator("pizza_lab.stop", icon="PAUSE")
+        layout.separator()
+        layout.operator("pizza_lab.load_stage", icon="IMPORT")
+        layout.operator("pizza_lab.publish_stage", icon="EXPORT")
         selected = context.active_object
         if selected:
             layout.label(text=f"Object: {selected.name}")
             layout.label(text=f"Game ID: {selected.get('pizza_lab_game_id', 'not assigned')}")
 
 
-CLASSES = (PIZZALAB_Preferences, PIZZALAB_OT_Start, PIZZALAB_OT_Stop, PIZZALAB_PT_Panel)
+CLASSES = (
+    PIZZALAB_Preferences,
+    PIZZALAB_OT_Start,
+    PIZZALAB_OT_Stop,
+    PIZZALAB_OT_LoadStage,
+    PIZZALAB_OT_PublishStage,
+    PIZZALAB_PT_Panel,
+)
 
 
 def register():

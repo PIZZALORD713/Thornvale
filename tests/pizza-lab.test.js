@@ -3,14 +3,18 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
 import { callTool, TOOL_DEFINITIONS, validateToolArguments } from '../tools/pizza-lab/mcp/server.mjs';
+import { validatePizzaLabCandidate } from '../scripts/promote-pizza-lab-stage.mjs';
+import { TOWN_LAYOUT } from '../src/config/town.js';
 
-test('Pizza Lab exposes only the bounded v0.1 command surface', () => {
+test('Pizza Lab exposes only the bounded v0.2 command surface', () => {
   assert.deepEqual(TOOL_DEFINITIONS.map((tool) => tool.name), [
     'pizza_scene_inspect',
     'pizza_scene_validate',
     'pizza_object_transform',
     'pizza_transaction_undo',
     'pizza_terrain_contract',
+    'pizza_stage_load',
+    'pizza_stage_publish',
   ]);
   assert.equal(TOOL_DEFINITIONS.some((tool) => /python|delete|export|create/i.test(tool.name)), false);
 });
@@ -46,7 +50,7 @@ test('ThornVale adapter preserves current axes and terrain authority', async () 
   assert.match(adapter.terrain.authority, /src\/config\/town\.js/);
 });
 
-test('headless v0.1 rejects mutations that cannot be durably saved', async () => {
+test('headless v0.2 rejects mutations that cannot be durably saved', async () => {
   const previous = process.env.PIZZA_LAB_MODE;
   process.env.PIZZA_LAB_MODE = 'headless';
   try {
@@ -54,8 +58,32 @@ test('headless v0.1 rejects mutations that cannot be durably saved', async () =>
       gameId: 'fixture-prop', location: [1, 2, 3], apply: true,
     }), /headless mode is read-only/);
     await assert.rejects(callTool('pizza_transaction_undo', { undoToken: 'token' }), /headless mode is read-only/);
+    await assert.rejects(callTool('pizza_stage_load', { replace: true }), /headless mode is read-only/);
+    await assert.rejects(callTool('pizza_stage_publish', {}), /headless mode is read-only/);
   } finally {
     if (previous === undefined) delete process.env.PIZZA_LAB_MODE;
     else process.env.PIZZA_LAB_MODE = previous;
   }
+});
+
+test('stage promotion accepts only the hashed, grounded wayfinder contract', async () => {
+  const candidate = JSON.parse(await readFile(new URL(
+    '../assets-src/pizza-lab/staging/thornvale-town-v1.json', import.meta.url,
+  ), 'utf8'));
+  const placement = validatePizzaLabCandidate(candidate, candidate.source.sha256, TOWN_LAYOUT);
+  assert.deepEqual(placement, {
+    asset: 'VillageWayfinder', x: 0, y: 0, z: -6.4, rotationY: 0,
+  });
+  assert.throws(() => validatePizzaLabCandidate({
+    ...candidate,
+    placements: { ...candidate.placements, wayfinder: { ...candidate.placements.wayfinder, y: 1 } },
+  }, candidate.source.sha256), /grounded/);
+  assert.throws(() => validatePizzaLabCandidate(candidate, 'wrong-hash'), /source hash/);
+  assert.throws(() => validatePizzaLabCandidate({
+    ...candidate,
+    placements: {
+      ...candidate.placements,
+      wayfinder: { ...candidate.placements.wayfinder, x: 14, z: -11 },
+    },
+  }, candidate.source.sha256, TOWN_LAYOUT), /berry-bakery clearance/);
 });

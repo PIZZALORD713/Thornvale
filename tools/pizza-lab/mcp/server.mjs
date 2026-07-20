@@ -50,6 +50,19 @@ export const TOOL_DEFINITIONS = [
     description: 'Inspect the project terrain-authority contract. Terrain mutation is unavailable in v0.1.',
     inputSchema: { type: 'object', additionalProperties: false, properties: {} },
   },
+  {
+    name: 'pizza_stage_load',
+    description: 'Load the allowlisted ThornVale staging GLB and current placements into Blender.',
+    inputSchema: {
+      type: 'object', additionalProperties: false,
+      properties: { replace: { type: 'boolean', default: false } },
+    },
+  },
+  {
+    name: 'pizza_stage_publish',
+    description: 'Atomically publish editable Blender placements to the reviewed source candidate.',
+    inputSchema: { type: 'object', additionalProperties: false, properties: {} },
+  },
 ];
 
 const COMMANDS = new Map([
@@ -58,6 +71,8 @@ const COMMANDS = new Map([
   ['pizza_object_transform', 'object.transform'],
   ['pizza_transaction_undo', 'transaction.undo'],
   ['pizza_terrain_contract', 'terrain.contract'],
+  ['pizza_stage_load', 'stage.load'],
+  ['pizza_stage_publish', 'stage.publish'],
 ]);
 
 function assertObject(value, label) {
@@ -79,6 +94,7 @@ export function validateToolArguments(name, args = {}) {
     }
   }
   if ('apply' in args && typeof args.apply !== 'boolean') throw new Error('apply must be boolean');
+  if ('replace' in args && typeof args.replace !== 'boolean') throw new Error('replace must be boolean');
   return args;
 }
 
@@ -137,8 +153,10 @@ export async function callTool(name, args) {
   if (process.env.PIZZA_LAB_MODE === 'headless' && (
     (name === 'pizza_object_transform' && payload.apply === true)
     || name === 'pizza_transaction_undo'
+    || name === 'pizza_stage_load'
+    || name === 'pizza_stage_publish'
   )) {
-    throw new Error('Pizza Lab v0.1 headless mode is read-only; use interactive mode for mutations');
+    throw new Error('Pizza Lab v0.2 headless mode is read-only; use interactive mode for mutations');
   }
   const request = { command: COMMANDS.get(name), payload };
   return process.env.PIZZA_LAB_MODE === 'headless' ? headlessRequest(request) : interactiveRequest(request);
@@ -159,7 +177,7 @@ async function handle(message) {
       respond(message.id, null, new Error(`Unsupported MCP protocol version: ${requested}`));
       return;
     }
-    respond(message.id, { protocolVersion: requested, capabilities: { tools: {} }, serverInfo: { name: 'pizza-lab', version: '0.1.0' } });
+    respond(message.id, { protocolVersion: requested, capabilities: { tools: {} }, serverInfo: { name: 'pizza-lab', version: '0.2.0' } });
   } else if (message.method === 'tools/list') {
     respond(message.id, { tools: TOOL_DEFINITIONS });
   } else if (message.method === 'tools/call') {
