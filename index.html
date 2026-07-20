@@ -199,7 +199,7 @@
         top: var(--safe-top);
         left: var(--safe-left);
         display: flex;
-        max-width: min(390px, calc(100vw - 36px));
+        max-width: min(430px, calc(100vw - 36px));
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
@@ -1608,8 +1608,8 @@
       }
 
       @keyframes storyObjectivePop {
-        0%, 100% { transform: translate3d(-50%, 0, 0) scale(1); }
-        43% { transform: translate3d(-50%, -4px, 0) scale(1.025); }
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        43% { transform: translate3d(0, -4px, 0) scale(1.025); }
       }
 
       @keyframes storyGlowDrift {
@@ -4168,6 +4168,22 @@
         }
       }
 
+      @media (min-width: 621px) {
+        #storyObjective {
+          position: relative;
+          inset: auto;
+          top: auto;
+          left: auto;
+          width: min(430px, calc(100vw - var(--safe-left) - var(--safe-right)));
+          min-width: 0;
+          flex: 0 0 auto;
+          transform: translate3d(0, -9px, 0) scale(0.97);
+        }
+
+        #storyObjective:not(.is-visible) { display: none; }
+        #storyObjective.is-visible { transform: none; }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -4309,26 +4325,6 @@
       </div>
     </div>
 
-    <div
-      id="storyObjective"
-      aria-hidden="true"
-    >
-      <span class="story-objective-glyph" aria-hidden="true">
-        <img
-          id="storyObjectiveCueImage"
-          class="story-objective-cue-image"
-          alt=""
-          decoding="async"
-          hidden
-        />
-      </span>
-      <span class="story-objective-copy">
-        <span id="storyObjectiveLabel" class="story-objective-label">The town asks</span>
-        <strong id="storyObjectiveText">Follow the clover path</strong>
-      </span>
-      <span class="story-objective-flower" aria-hidden="true"></span>
-    </div>
-
     <p
       id="storyObjectiveAnnouncement"
       class="sr-only"
@@ -4430,6 +4426,26 @@
           <span class="status-kicker">A note from the town</span>
             <span id="statusLine" role="status" aria-live="polite">Waking up Thornvale…</span>
           </span>
+        </div>
+
+        <div
+          id="storyObjective"
+          aria-hidden="true"
+        >
+          <span class="story-objective-glyph" aria-hidden="true">
+            <img
+              id="storyObjectiveCueImage"
+              class="story-objective-cue-image"
+              alt=""
+              decoding="async"
+              hidden
+            />
+          </span>
+          <span class="story-objective-copy">
+            <span id="storyObjectiveLabel" class="story-objective-label">The town asks</span>
+            <strong id="storyObjectiveText">Follow the clover path</strong>
+          </span>
+          <span class="story-objective-flower" aria-hidden="true"></span>
         </div>
 
         <div id="kindnessCounter" class="hidden" role="status" aria-live="polite">
