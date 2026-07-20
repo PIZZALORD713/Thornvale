@@ -1,4 +1,5 @@
 import { STORY_ACTIONS_V1 } from './story-actions-v1.js';
+import { KEY_OBJECT_CUES_V1 } from './key-object-cues-v1.js';
 import { TOWN_LAYOUT } from '../config/town.js';
 
 function deepFreeze(value) {
@@ -104,6 +105,7 @@ export const CORE_HOOK_V03 = deepFreeze({
       text: 'Meet the steward who kept the gate open for you.',
       title: 'A place kept warm',
       detail: 'Meet the steward who kept the gate open for you.',
+      target: { kind: 'interactable', id: 'steward-8914' },
     },
     signLedger: {
       id: 'sign-ledger',
@@ -111,6 +113,8 @@ export const CORE_HOOK_V03 = deepFreeze({
       text: 'Enter your name in the Community Ledger.',
       title: 'A town courtesy',
       detail: 'Enter your name in the Community Ledger.',
+      cue: KEY_OBJECT_CUES_V1.ledger,
+      target: { kind: 'interactable', id: 'ledger' },
     },
     firstAfternoon: {
       id: 'settle-first-afternoon',
@@ -118,6 +122,12 @@ export const CORE_HOOK_V03 = deepFreeze({
       text: 'Make the provisional forest-edge camp livable before dusk.',
       title: 'Your first afternoon',
       detail: 'Make the provisional forest-edge camp livable before dusk.',
+      cue: KEY_OBJECT_CUES_V1.camp,
+      target: {
+        kind: 'anchor',
+        id: 'day-one-camp-recovery',
+        position: TOWN_LAYOUT.dayOne.campRecovery,
+      },
     },
     ringBell: {
       id: 'ring-bell-at-dusk',
@@ -125,6 +135,8 @@ export const CORE_HOOK_V03 = deepFreeze({
       text: 'Follow the warm pavers uphill and ring the town bell once.',
       title: 'The second courtesy',
       detail: 'When the lanterns bloom, follow the warm pavers uphill and ring once.',
+      cue: KEY_OBJECT_CUES_V1.bell,
+      target: { kind: 'interactable', id: 'bell' },
     },
     returnToLumen: {
       id: 'return-to-lumen',
@@ -132,6 +144,7 @@ export const CORE_HOOK_V03 = deepFreeze({
       text: 'Return to Steward Lumen in the plaza and tell him the Bell was rung.',
       title: 'Report the courtesy',
       detail: 'Return to Steward Lumen in the plaza and tell him the Bell was rung.',
+      target: { kind: 'interactable', id: 'steward-8914' },
     },
     inspectLedger: {
       id: 'inspect-ledger',
@@ -139,6 +152,8 @@ export const CORE_HOOK_V03 = deepFreeze({
       text: 'Check the Community Ledger.',
       title: 'The bell rang twice',
       detail: 'Check the Community Ledger.',
+      cue: KEY_OBJECT_CUES_V1.ledger,
+      target: { kind: 'interactable', id: 'ledger' },
     },
     hearCorrection: {
       id: 'hear-correction',
@@ -146,6 +161,8 @@ export const CORE_HOOK_V03 = deepFreeze({
       text: 'Ask Steward Lumen why the Ledger remembers differently.',
       title: 'A neighborly correction',
       detail: 'Ask Steward Lumen why the Ledger remembers differently.',
+      cue: KEY_OBJECT_CUES_V1.ledger,
+      target: { kind: 'interactable', id: 'steward-8914' },
     },
     complyComplete: {
       id: 'comply-complete',
@@ -153,6 +170,7 @@ export const CORE_HOOK_V03 = deepFreeze({
       text: 'Your forest-edge plot is recognized. Thornvale remembers you as Home.',
       title: 'Home, as recorded',
       detail: 'Your forest-edge plot is recognized. Thornvale remembers you as Home.',
+      target: { kind: 'route-destination', route: 'comply', arrivalRadius: 1.35 },
     },
     alterComplete: {
       id: 'alter-complete',
@@ -160,6 +178,7 @@ export const CORE_HOOK_V03 = deepFreeze({
       text: 'A thorn-hidden trail has opened behind the Ledger.',
       title: 'A path the town forgot',
       detail: 'A thorn-hidden trail has opened behind the Ledger.',
+      target: { kind: 'route-destination', route: 'alter', arrivalRadius: 1.35 },
     },
   },
 
@@ -197,10 +216,12 @@ export const CORE_HOOK_V03 = deepFreeze({
         {
           id: 'lumen-welcome.plot',
           text: 'There is a provisional plot along the west clover path, where the meadow meets the old forest. We left a camp cot and seed bed for you.',
+          cue: KEY_OBJECT_CUES_V1.camp,
         },
         {
           id: 'lumen-welcome.ledger-invitation',
           text: 'Before you settle in, enter your name in the Community Ledger.',
+          cue: KEY_OBJECT_CUES_V1.ledger,
         },
         {
           id: 'lumen-welcome.ledger-purpose',
@@ -213,6 +234,7 @@ export const CORE_HOOK_V03 = deepFreeze({
         {
           id: 'lumen-welcome.bell-courtesy',
           text: 'When the lanterns bloom, follow the warm pavers to the hill, ring the bell once, and return to me.',
+          cue: KEY_OBJECT_CUES_V1.bell,
         },
         {
           id: 'lumen-welcome.rule',
@@ -230,6 +252,7 @@ export const CORE_HOOK_V03 = deepFreeze({
           id: 'lumen-ledger-accepted.shared-day',
           text: 'Lovely. Now the town can keep the day with you.',
           gesture: STORY_ACTIONS_V1.lumen.acknowledging,
+          cue: KEY_OBJECT_CUES_V1.ledger,
         },
         {
           id: 'lumen-ledger-accepted.account',
@@ -238,6 +261,7 @@ export const CORE_HOOK_V03 = deepFreeze({
         {
           id: 'lumen-ledger-accepted.west-path',
           text: 'Follow the west clover path to your plot. We will see how quickly it begins to feel like yours.',
+          cue: KEY_OBJECT_CUES_V1.camp,
         },
       ],
     },
@@ -248,6 +272,7 @@ export const CORE_HOOK_V03 = deepFreeze({
         {
           id: 'lumen-first-bell.on-time',
           text: 'Perfectly on time.',
+          cue: KEY_OBJECT_CUES_V1.bell,
         },
         {
           id: 'lumen-first-bell.return',
@@ -270,6 +295,7 @@ export const CORE_HOOK_V03 = deepFreeze({
         {
           id: 'lumen-correction.ledger-certainty',
           text: 'The Ledger says you rang early. It has never needed to lie.',
+          cue: KEY_OBJECT_CUES_V1.ledger,
         },
         {
           id: 'lumen-correction.communal-memory',
@@ -326,6 +352,7 @@ export const CORE_HOOK_V03 = deepFreeze({
       detail: 'The ink keeps pace without a clerk nearby.',
       actionLabel: 'Close the Ledger',
       altered: false,
+      cue: KEY_OBJECT_CUES_V1.ledger,
     },
     signature: {
       id: 'arrival-signature',
@@ -338,6 +365,7 @@ export const CORE_HOOK_V03 = deepFreeze({
       detail: 'Witnessed with warmth by Steward Lumen.',
       actionLabel: 'Sign the ledger',
       altered: false,
+      cue: KEY_OBJECT_CUES_V1.ledger,
     },
     falseCorrection: {
       id: 'false-correction',
@@ -349,6 +377,7 @@ export const CORE_HOOK_V03 = deepFreeze({
       body: 'I rang before dusk. I am sorry for confusing everyone.',
       detail: 'Witnessed and forgiven by Steward Lumen. The ink is already dry.',
       altered: true,
+      cue: KEY_OBJECT_CUES_V1.ledger,
     },
   },
 
@@ -356,6 +385,7 @@ export const CORE_HOOK_V03 = deepFreeze({
     id: 'ledger_record',
     title: 'Which account will you leave in the Ledger?',
     detail: 'The ink will dry when you leave this page.',
+    cue: KEY_OBJECT_CUES_V1.ledger,
     choices: [
       {
         id: 'comply',

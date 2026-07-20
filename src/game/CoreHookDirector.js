@@ -23,6 +23,15 @@ function horizontalDistance(a, b) {
   return Math.hypot((Number(a.x) || 0) - b.x, (Number(a.z) || 0) - b.z);
 }
 
+function finitePoint(value) {
+  return Boolean(
+    value
+    && Number.isFinite(Number(value.x))
+    && Number.isFinite(Number(value.y))
+    && Number.isFinite(Number(value.z)),
+  );
+}
+
 /**
  * Runs the eight-to-twelve-minute Core Hook Proof without owning rendering,
  * input, or presentation. All visible effects are injected and all authored
@@ -56,6 +65,7 @@ export class CoreHookDirector {
       getDayOneLedgerRecord: deps.getDayOneLedgerRecord || (() => null),
       getStewardPosition: deps.getStewardPosition || (() => this.deps.stewardActor?.position),
       setStoryBlocking: deps.setStoryBlocking || null,
+      onObjectiveChange: deps.onObjectiveChange || null,
       onError: deps.onError || null,
     };
 
@@ -71,6 +81,7 @@ export class CoreHookDirector {
     this.anomalyElapsed = 0;
     this.anomalyPromise = null;
     this.resolutionPromise = null;
+    this.activeObjective = null;
     this.generation = 0;
   }
 
@@ -133,6 +144,84 @@ export class CoreHookDirector {
     }
     await this._setCurrentObjective();
     return this.session.snapshot();
+  }
+
+  /** Return the current authored objective without mutating state or UI. */
+  currentObjective() {
+    const events = this.content.events;
+    if (this.session.ending) {
+      const choice = this.session.getChoice(this.content.ids.choice);
+      return this.content.objectives[this.content.outcomes[choice]?.objective] || null;
+    }
+    if (!this.session.hasEvent(events.stewardMet)) return this.content.objectives.meetSteward;
+    if (!this.session.hasEvent(events.ledgerSigned)) return this.content.objectives.signLedger;
+    if (!this._isDayOneComplete()) {
+      return this._getDayOneObjective() || this.content.objectives.firstAfternoon;
+    }
+    if (!this.session.hasEvent(events.firstBellRung)) return this.content.objectives.ringBell;
+    if (!this.session.hasEvent(events.anomalyBellRang)) return this.content.objectives.returnToLumen;
+    if (!this.session.hasEvent(events.falseRecordSeen)) return this.content.objectives.inspectLedger;
+    if (this.session.hasEvent(events.choiceMade)) {
+      const choice = this.session.getChoice(this.content.ids.choice);
+      return this.content.objectives[this.content.outcomes[choice]?.objective] || null;
+    }
+    return this.content.objectives.hearCorrection;
+  }
+
+  /**
+   * Resolve declarative objective targets against the live interaction map.
+   * The returned provider intentionally follows moving targets such as Lumen.
+   */
+  resolveObjectiveTarget(objective = this.activeObjective || this.currentObjective()) {
+    const descriptor = objective?.target;
+    if (!descriptor || typeof descriptor !== 'object') return null;
+
+    if (descriptor.kind === 'interactable') {
+      const interactable = this.interactables.get(descriptor.id);
+      if (!interactable?.position || !finitePoint(interactable.position)) return null;
+      return {
+        id: descriptor.id,
+        kind: descriptor.kind,
+        radius: Number(descriptor.radius ?? interactable.radius) || 1.35,
+        distanceMode: descriptor.distanceMode || 'horizontal',
+        getPosition: () => (finitePoint(interactable.position) ? interactable.position : null),
+      };
+    }
+
+    if (descriptor.kind === 'anchor') {
+      if (!finitePoint(descriptor.position)) return null;
+      return {
+        id: descriptor.id,
+        kind: descriptor.kind,
+        radius: Number(descriptor.radius) || 1.35,
+        distanceMode: descriptor.distanceMode || 'horizontal',
+        getPosition: () => (finitePoint(descriptor.position) ? descriptor.position : null),
+      };
+    }
+
+    if (descriptor.kind === 'route-destination') {
+      const getPosition = () => {
+        try {
+          const destination = this.deps.getRouteDestination?.(descriptor.route) || null;
+          return finitePoint(destination) ? destination : null;
+        } catch (error) {
+          this._reportError(error, 'objective-route-destination');
+          return null;
+        }
+      };
+      if (!getPosition()) return null;
+      return {
+        id: descriptor.route,
+        kind: descriptor.kind,
+        radius: Number(descriptor.arrivalRadius ?? descriptor.radius)
+          || this.content.timing.routeArrivalRadius
+          || 1.35,
+        distanceMode: descriptor.distanceMode || 'horizontal',
+        getPosition,
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -306,6 +395,12 @@ export class CoreHookDirector {
     this.busy = false;
     this.anomalyPromise = null;
     this.resolutionPromise = null;
+    this.activeObjective = null;
+    try {
+      this.deps.onObjectiveChange?.(null, null);
+    } catch (error) {
+      this._reportError(error, 'objective-change');
+    }
     this.interactables.clear();
     this.stewardInteractable = null;
     this._setBlocking(false);
@@ -596,30 +691,22 @@ export class CoreHookDirector {
   }
 
   async _setObjective(objective) {
-    if (!this.storyUI?.setObjective) return;
-    await Promise.resolve(this.storyUI.setObjective(objective));
+    this.activeObjective = objective || null;
+    if (this.storyUI?.setObjective) {
+      await Promise.resolve(this.storyUI.setObjective(objective));
+    }
+    try {
+      this.deps.onObjectiveChange?.(
+        this.activeObjective,
+        this.resolveObjectiveTarget(this.activeObjective),
+      );
+    } catch (error) {
+      this._reportError(error, 'objective-change');
+    }
   }
 
   async _setCurrentObjective() {
-    const events = this.content.events;
-    let objective;
-    if (this.session.ending) {
-      const choice = this.session.getChoice(this.content.ids.choice);
-      objective = this.content.objectives[this.content.outcomes[choice]?.objective];
-    } else if (!this.session.hasEvent(events.stewardMet)) objective = this.content.objectives.meetSteward;
-    else if (!this.session.hasEvent(events.ledgerSigned)) objective = this.content.objectives.signLedger;
-    else if (!this._isDayOneComplete()) {
-      objective = this._getDayOneObjective() || this.content.objectives.firstAfternoon;
-    }
-    else if (!this.session.hasEvent(events.firstBellRung)) objective = this.content.objectives.ringBell;
-    else if (!this.session.hasEvent(events.anomalyBellRang)) objective = this.content.objectives.returnToLumen;
-    else if (!this.session.hasEvent(events.falseRecordSeen)) objective = this.content.objectives.inspectLedger;
-    else if (this.session.hasEvent(events.choiceMade)) {
-      const choice = this.session.getChoice(this.content.ids.choice);
-      objective = this.content.objectives[this.content.outcomes[choice]?.objective];
-    }
-    else objective = this.content.objectives.hearCorrection;
-    await this._setObjective(objective);
+    await this._setObjective(this.currentObjective());
   }
 
   _isDayOneComplete() {

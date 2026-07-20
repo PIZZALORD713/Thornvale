@@ -43,6 +43,19 @@ function asDialogueBeatText(beat) {
   return asText(beat);
 }
 
+function normalizeObjectCue(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const id = typeof value.id === 'string' ? value.id.trim() : '';
+  const label = typeof value.label === 'string' ? value.label.trim() : '';
+  const src = typeof value.src === 'string' ? value.src.trim() : '';
+  return id && label && src ? { id, label, src } : null;
+}
+
+function dialogueBeatCue(beat) {
+  if (!beat || typeof beat !== 'object' || Array.isArray(beat)) return null;
+  return normalizeObjectCue(beat.cue);
+}
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, Number(value) || 0));
 }
@@ -97,6 +110,8 @@ export class StoryUI {
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onActionClick = this._onActionClick.bind(this);
     this._onSignatureInput = this._onSignatureInput.bind(this);
+    this._onObjectiveCueError = this._onObjectiveCueError.bind(this);
+    this._onBeatCueError = this._onBeatCueError.bind(this);
     this._onPointerLockSettled = this._onPointerLockSettled.bind(this);
     this._onFocusOut = this._onFocusOut.bind(this);
   }
@@ -115,16 +130,25 @@ export class StoryUI {
     this.elements.kindnessLabel = this.document.querySelector('#kindnessCounter .kindness-label');
     this.elements.kindnessValue = this.document.querySelector('#kindnessCounter .kindness-value');
     this.elements.objectiveAnnouncement = this.document.getElementById('storyObjectiveAnnouncement');
+    this.elements.storyObjectiveCueImage = this.document.getElementById('storyObjectiveCueImage');
+    this.elements.storyBeatCue = this.document.getElementById('storyBeatCue');
+    this.elements.storyBeatCueImage = this.document.getElementById('storyBeatCueImage');
+    this.elements.storyBeatCueLabel = this.document.getElementById('storyBeatCueLabel');
 
     this.elements.storyLayer.inert = true;
     this.elements.storyLayer.setAttribute('aria-hidden', 'true');
     this.elements.storyObjective.setAttribute('aria-hidden', 'true');
     this.elements.storyAction.addEventListener('click', this._onActionClick);
     this.elements.storySignatureInput.addEventListener('input', this._onSignatureInput);
+    this.elements.storyObjectiveCueImage?.addEventListener('error', this._onObjectiveCueError);
+    this.elements.storyBeatCueImage?.addEventListener('error', this._onBeatCueError);
     this.document.addEventListener('keydown', this._onKeyDown, true);
     this.document.addEventListener('pointerlockchange', this._onPointerLockSettled, true);
     this.document.addEventListener('pointerlockerror', this._onPointerLockSettled, true);
     this.document.addEventListener('focusout', this._onFocusOut, true);
+
+    this._clearObjectiveCue();
+    this._clearBeatCue();
 
     this.initialized = true;
     return this;
@@ -142,6 +166,7 @@ export class StoryUI {
       config.label ?? config.eyebrow ?? 'A little next step',
     );
     this.elements.storyObjectiveText.textContent = text;
+    this._setObjectiveCue(config.cue);
     this.elements.storyObjective.setAttribute('aria-label', `${this.elements.storyObjectiveLabel.textContent}: ${text}`);
     this.elements.storyObjective.setAttribute('aria-hidden', 'false');
     this.elements.storyObjective.classList.add('is-visible');
@@ -161,6 +186,7 @@ export class StoryUI {
     this._ensureInit();
     this.elements.storyObjective.classList.remove('is-visible', 'is-updating');
     this.elements.storyObjective.setAttribute('aria-hidden', 'true');
+    this._clearObjectiveCue();
     if (this.elements.objectiveAnnouncement) this.elements.objectiveAnnouncement.textContent = '';
     return this;
   }
@@ -219,6 +245,7 @@ export class StoryUI {
       eyebrow: config.eyebrow ?? 'A neighbor speaks',
       title: speaker,
       body: asDialogueBeatText(beats[beatIndex]),
+      cue: dialogueBeatCue(beats[beatIndex]),
       detail: config.detail ?? config.note,
       actionLabel: beats.length > 1 ? nextActionLabel : finalActionLabel,
       actionValue: config.actionValue ?? 'continue',
@@ -234,6 +261,7 @@ export class StoryUI {
 
       beatIndex += 1;
       this.elements.storyBody.textContent = asDialogueBeatText(beats[beatIndex]);
+      this._setBeatCue(dialogueBeatCue(beats[beatIndex]));
       this.elements.storyActionLabel.textContent = beatIndex === beats.length - 1
         ? asText(finalActionLabel)
         : asText(nextActionLabel);
@@ -467,6 +495,8 @@ export class StoryUI {
     this.document.removeEventListener('focusout', this._onFocusOut, true);
     this.elements.storyAction.removeEventListener('click', this._onActionClick);
     this.elements.storySignatureInput.removeEventListener('input', this._onSignatureInput);
+    this.elements.storyObjectiveCueImage?.removeEventListener('error', this._onObjectiveCueError);
+    this.elements.storyBeatCueImage?.removeEventListener('error', this._onBeatCueError);
     this._resolvePending(null);
     this._hideModal();
     this.clearObjective();
@@ -491,6 +521,7 @@ export class StoryUI {
     this.elements.storyEyebrow.textContent = asText(config.eyebrow);
     this.elements.storyTitle.textContent = asText(config.title);
     this.elements.storyBody.textContent = asText(config.body);
+    this._setBeatCue(config.kind === 'dialogue' ? config.cue : null);
     this._resetSignaturePresentation();
 
     const detail = asText(config.detail).trim();
@@ -722,6 +753,65 @@ export class StoryUI {
     this.elements.storySignatureText.textContent = '';
   }
 
+  _setObjectiveCue(value) {
+    const cue = normalizeObjectCue(value);
+    this._clearObjectiveCue();
+    if (!cue) return;
+
+    const image = this.elements.storyObjectiveCueImage;
+    if (!image) return;
+    image.dataset.cueId = cue.id;
+    image.setAttribute('src', cue.src);
+    image.hidden = false;
+    image.parentElement?.classList.add('has-object-cue');
+  }
+
+  _clearObjectiveCue() {
+    const image = this.elements.storyObjectiveCueImage;
+    if (!image) return;
+    image.hidden = true;
+    image.removeAttribute('src');
+    delete image.dataset.cueId;
+    image.parentElement?.classList.remove('has-object-cue');
+  }
+
+  _setBeatCue(value) {
+    const cue = normalizeObjectCue(value);
+    this._clearBeatCue();
+    if (!cue) return;
+
+    const chip = this.elements.storyBeatCue;
+    const image = this.elements.storyBeatCueImage;
+    const label = this.elements.storyBeatCueLabel;
+    if (!chip || !image || !label) return;
+    chip.dataset.cueId = cue.id;
+    image.dataset.cueId = cue.id;
+    image.setAttribute('src', cue.src);
+    label.textContent = cue.label;
+    image.hidden = false;
+    chip.hidden = false;
+  }
+
+  _clearBeatCue() {
+    const chip = this.elements.storyBeatCue;
+    const image = this.elements.storyBeatCueImage;
+    if (!chip || !image) return;
+    chip.hidden = true;
+    image.hidden = true;
+    image.removeAttribute('src');
+    delete chip.dataset.cueId;
+    delete image.dataset.cueId;
+    if (this.elements.storyBeatCueLabel) this.elements.storyBeatCueLabel.textContent = '';
+  }
+
+  _onObjectiveCueError() {
+    this._clearObjectiveCue();
+  }
+
+  _onBeatCueError() {
+    this._clearBeatCue();
+  }
+
   _finish(value) {
     if (!this._blocking) return;
     const resolve = this._pendingResolve;
@@ -739,6 +829,7 @@ export class StoryUI {
     this._actionCallback = null;
     this._actionBusy = false;
     this._kind = null;
+    this._clearBeatCue();
     this._restoreFocus();
   }
 

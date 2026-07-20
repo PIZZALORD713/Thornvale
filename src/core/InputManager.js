@@ -1,3 +1,13 @@
+const KEYBOARD_ACTION_BY_CODE = Object.freeze({
+  Space: 'jump',
+  KeyE: 'interact',
+  KeyH: 'objective-hint',
+});
+
+const KEYBOARD_CODE_BY_ACTION = Object.freeze(Object.fromEntries(
+  Object.entries(KEYBOARD_ACTION_BY_CODE).map(([code, action]) => [action, code]),
+));
+
 /**
  * InputManager - Unified semantic input with keyboard/mouse support
  *
@@ -233,8 +243,8 @@ export class InputManager {
     const sources = this.pressedActionSources.get(action);
     if (!sources?.size) return false;
     this.pressedActionSources.delete(action);
-    if (action === 'jump') this.pressedKeys.delete('Space');
-    if (action === 'interact') this.pressedKeys.delete('KeyE');
+    const keyboardCode = KEYBOARD_CODE_BY_ACTION[action];
+    if (keyboardCode) this.pressedKeys.delete(keyboardCode);
     return true;
   }
 
@@ -289,8 +299,8 @@ export class InputManager {
     if (!this.activeKeys.has(e.code)) {
       this.pressedKeys.add(e.code);
       this.activeKeys.add(e.code);
-      if (e.code === 'Space') this.pressAction('jump', 'keyboard');
-      if (e.code === 'KeyE') this.pressAction('interact', 'keyboard');
+      const action = KEYBOARD_ACTION_BY_CODE[e.code];
+      if (action) this.pressAction(action, 'keyboard');
     }
 
     switch (e.code) {
@@ -361,8 +371,8 @@ export class InputManager {
     if (!this.gameplayEnabled) return false;
     if (this.pressedKeys.has(code)) {
       this.pressedKeys.delete(code);
-      if (code === 'Space') this.pressedActionSources.delete('jump');
-      if (code === 'KeyE') this.pressedActionSources.delete('interact');
+      const action = KEYBOARD_ACTION_BY_CODE[code];
+      if (action) this.pressedActionSources.delete(action);
       return true;
     }
     return false;
