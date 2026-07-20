@@ -39,6 +39,10 @@ What becomes easier, harder, or newly required?
 - [`0003-external-runtime-asset-dependencies.md`](0003-external-runtime-asset-dependencies.md) — Accepted; fRiENDSiES permission scope superseded by 0004
 - [`0004-friendsies-project-wide-authorization.md`](0004-friendsies-project-wide-authorization.md) — Accepted
 - [`0005-thornvale-animation-project-wide-authorization.md`](0005-thornvale-animation-project-wide-authorization.md) — Accepted
+- [`0006-pizza-lab-blender-control-boundary.md`](0006-pizza-lab-blender-control-boundary.md) — Accepted for bounded pilot
+- [`0007-pizza-lab-world-stage-authority.md`](0007-pizza-lab-world-stage-authority.md) — Accepted for World Stage v1
+- [`0008-pizza-lab-wayfinder-asset-promotion.md`](0008-pizza-lab-wayfinder-asset-promotion.md) — Accepted for Wayfinder v1
+- [`0009-production-dist-budget-headroom.md`](0009-production-dist-budget-headroom.md) — Accepted
 
 The wiki remains the home for product and design decisions. Its
 [`Tech Decisions`](../../wiki/Tech-Decisions-ADR-Log.md) page can summarize

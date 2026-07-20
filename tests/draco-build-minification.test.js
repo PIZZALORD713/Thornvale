@@ -33,17 +33,20 @@ async function extractDracoBytes(path) {
   return glb.subarray(binStart + (view.byteOffset || 0), binStart + (view.byteOffset || 0) + view.byteLength);
 }
 
-async function decodeDraco(code, bytes) {
+async function decodeDraco(code, bytes, factoryOptions = {}) {
   const context = vm.createContext({
     console,
     setTimeout,
+    clearTimeout,
+    setInterval,
     clearInterval,
     TextDecoder,
+    WebAssembly,
   });
   vm.runInContext(code, context, { timeout: 5_000 });
   const createDecoder = vm.runInContext('DracoDecoderModule', context);
   assert.equal(typeof createDecoder, 'function', 'DracoDecoderModule must remain a global factory');
-  const module = await createDecoder({});
+  const module = await createDecoder(factoryOptions);
   const buffer = new module.DecoderBuffer();
   const decoder = new module.Decoder();
   const mesh = new module.Mesh();
@@ -88,6 +91,33 @@ test('identifier-mangled production Draco preserves its global factory and fallb
 
   const baseline = await decodeDraco(original, bytes);
   const candidate = await decodeDraco(minified, bytes);
+  assert.deepEqual(candidate, baseline);
+  assert.deepEqual(candidate, { ok: true, points: 2_800, faces: 4_800 });
+});
+
+test('identifier-mangled production Draco WASM wrapper preserves its factory and decoding', { timeout: 15_000 }, async () => {
+  const original = await readFile(
+    new URL('../public/draco/draco_wasm_wrapper.js', import.meta.url),
+    'utf8',
+  );
+  const wasmBinary = new Uint8Array(await readFile(
+    new URL('../public/draco/draco_decoder.wasm', import.meta.url),
+  ));
+  const minified = await minifyDracoDecoderSource(original, {
+    filename: 'draco_wasm_wrapper.js',
+  });
+  const bytes = await extractDracoBytes(
+    new URL('../public/friendsies/8914/body.glb', import.meta.url),
+  );
+
+  assert.ok(
+    Buffer.byteLength(original) - Buffer.byteLength(minified) >= 400,
+    'production transform should recover at least 400 bytes from the WASM wrapper',
+  );
+  assert.match(minified, /DracoDecoderModule/);
+
+  const baseline = await decodeDraco(original, bytes, { wasmBinary });
+  const candidate = await decodeDraco(minified, bytes, { wasmBinary });
   assert.deepEqual(candidate, baseline);
   assert.deepEqual(candidate, { ok: true, points: 2_800, faces: 4_800 });
 });

@@ -2,12 +2,40 @@
 
 ## Unreleased
 
+* Raised the audited production artifact ceiling by 20%, from 8,388,608 to
+  10,066,330 bytes (9.6 MiB), so the integrated object-cue and Pizza Lab release
+  has measurable headroom. All family-specific asset caps remain unchanged. The
+  production build also minifies the copied Draco WASM wrapper with decoded
+  geometry equivalence coverage while leaving its checked-in source untouched.
 * Added three compact, provenance-recorded visual studies for the Community
   Ledger, forest-edge camp, and Town Bell to relevant dialogue beats and
   objectives, with text-first and failed-image fallbacks. Desktop players can
   press `H` for one four-second ground ribbon toward the live objective; it
   follows only reviewed town corridors, expires without changing progression,
   and yields to the existing persistent comply/alter routes.
+* Added Pizza Lab v0.4 Wayfinder geometry promotion. The full Blender World
+  Stage now loads an editable project source with three named sign-board
+  assemblies; the add-on and MCP can export their bounded transforms through a
+  clean Blender rebuild into a Draco candidate. Independent promotion gates
+  source hashes, hierarchy, materials, triangles, bounds, provenance, and size,
+  while the existing pilot/baseline selector and per-root fallback preserve the
+  game-owned placement, collider, camera, grass, and interaction contracts. The
+  first v1.1.0 art revision uses full directional yaw to point the three boards
+  independently while keeping X/Y tilt and non-board geometry locked.
+* Extended Pizza Lab to a complete bounded Blender-to-browser placement loop.
+  Blender can stage the existing village-dressing GLB at current runtime
+  coordinates, expose only the Wayfinder as editable, and atomically publish a
+  placement candidate. A separate validator checks the exact source hash,
+  grounding, meadow bounds, cottage clearance, and protected anchors before
+  promoting the placement into `TOWN_LAYOUT`; the Wayfinder visual, collider,
+  camera proxy, and grass clearance therefore update together on browser reload.
+* Added the bounded Pizza Lab v0.1 production-tool pilot: a typed MCP server,
+  authenticated localhost Blender add-on, and shared Blender 4.5.9 headless
+  command core can inspect and validate scenes, preview or explicitly apply an
+  object transform by stable game ID, and undo that transform. ThornVale axes,
+  write roots, and terrain authority live in a project adapter; arbitrary Python,
+  creation, deletion, publishing, and terrain mutation remain unavailable until
+  later gates. The add-on is installed only in a separate Pizza Lab profile.
 * Moved Community Ledger enrollment directly after Lumen’s welcome. Day One
   chores now unlock after signing, update a readable truthful Ledger account,
   and advance to dusk only when the account is complete. After the first Bell,

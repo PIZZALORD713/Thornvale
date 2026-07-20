@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "source": "assets-src/pizza-lab/staging/thornvale-town-v1.json",
+  "placements": {
+    "wayfinder": {
+      "asset": "VillageWayfinder",
+      "x": 0,
+      "y": 0,
+      "z": -6.4,
+      "rotationY": 0
+    }
+  }
+}

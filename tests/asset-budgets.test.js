@@ -24,10 +24,11 @@ const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 test('asset manifest covers runtime media and stays within pilot budgets', async () => {
   const report = await runAssetAudit({ rootDir: REPOSITORY_ROOT });
 
-  assert.equal(report.runtimeAssetCount, 30);
-  assert.equal(report.sourceAssetCount, 3);
+  assert.equal(report.runtimeAssetCount, 31);
+  assert.equal(report.sourceAssetCount, 4);
   assert.equal(report.externalRuntimeDependencyCount, 1);
-  assert.equal(report.activeTownBytes, 972_084);
+  assert.equal(report.budgets.distMaxBytes, Math.ceil(8 * 1024 * 1024 * 1.2));
+  assert.equal(report.activeTownBytes, 1_001_492);
   assert.equal(report.pilotArrivalBytes, 326_584);
   assert.deepEqual(report.characterBytes, {
     '0001': 295_916,
@@ -38,6 +39,7 @@ test('asset manifest covers runtime media and stays within pilot budgets', async
   assert.equal(report.compressedAudioBytes, 0);
   assert.deepEqual(report.sourceBatchBytes, {
     '2026-07-19-key-object-cues-v1': 7_764_361,
+    'pizza-lab-wayfinder-v1': 114_616,
   });
   assert.equal(report.releaseReady, true);
   assert.deepEqual(report.releaseBlockedFamilies, []);

@@ -304,7 +304,7 @@ exists.
 
 | Surface | Pilot limit |
 | --- | ---: |
-| Production `dist/` | 8 MiB or less after dormant-file cleanup |
+| Production `dist/` | 9.6 MiB or less; a 20% increase from the original 8 MiB pilot cap |
 | Active cottage + village GLB payload | 1.5 MiB or less |
 | Versioned arrival/plaza pilot GLB | 800 KiB / 22k triangles / 50 primitives |
 | Assembled fRiENDSiES character | 1.75 MiB / 50k triangles / 6 primitives |

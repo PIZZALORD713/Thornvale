@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "id": "thornvale-wayfinder-pizza-lab-v1",
+  "family": "thornvale-wayfinder-pizza-lab-v1",
+  "version": "1.1.0",
+  "url": "/village/pilot/wayfinder/v1/thornvale-wayfinder.glb",
+  "root": "VillageWayfinder",
+  "sha256": "ff671fe0bbf5fc41431d778eccb01fc94c53def419050975a353b0031557f0bc",
+  "bytes": 29408,
+  "nodes": 11,
+  "meshes": 10,
+  "primitives": 10,
+  "materials": 10,
+  "vertices": 2947,
+  "triangles": 1488,
+  "source": {
+    "path": "assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend",
+    "sha256": "0e78c994f428706d832995eb7ccc91e49287a0e9d0ca607a6abefb346cbb91fb"
+  },
+  "boardOverrides": {
+    "01": {
+      "after": {
+        "location": [
+          0.034322477877140045,
+          0.22070752084255219,
+          2.216794729232788
+        ],
+        "rotationEuler": [
+          0,
+          0,
+          1.3751283884048462
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "before": {
+        "location": [
+          0.1599999964237213,
+          -0.014999999664723873,
+          2.119999885559082
+        ],
+        "rotationEuler": [
+          0,
+          0,
+          -0.03500000014901161
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "02": {
+      "after": {
+        "location": [
+          0.18831831216812134,
+          -0.08438212424516678,
+          1.726143717765808
+        ],
+        "rotationEuler": [
+          0,
+          0,
+          -3.4612810611724854
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "before": {
+        "location": [
+          -0.1599999964237213,
+          -0.014999999664723873,
+          1.7200000286102295
+        ],
+        "rotationEuler": [
+          0,
+          0,
+          0.04500000178813934
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "03": {
+      "after": {
+        "location": [
+          -0.22322207689285278,
+          -0.02265350893139839,
+          1.153796911239624
+        ],
+        "rotationEuler": [
+          0,
+          0,
+          -3.043905019760132
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "before": {
+        "location": [
+          0.1599999964237213,
+          -0.014999999664723873,
+          1.3200000524520874
+        ],
+        "rotationEuler": [
+          0,
+          0,
+          -0.02500000037252903
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    }
+  }
+}

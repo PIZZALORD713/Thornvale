@@ -8,7 +8,7 @@ The machine-readable [`asset-manifest.json`](asset-manifest.json) is the source
 of truth for shipped creative media, reference-only files, permission status,
 exact hashes, and byte budgets. Run `npm run assets:audit` after any asset
 change; run it with `-- --dist` after a production build to enforce the complete
-8 MiB deployment cap.
+9.6 MiB deployment cap. The exact integer limit in the manifest is authoritative.
 
 ## Source-to-runtime flow
 

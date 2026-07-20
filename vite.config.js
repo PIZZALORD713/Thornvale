@@ -6,9 +6,9 @@ import { CURATED_FRIENDSIES_CAST } from './src/content/friendsies-cast.js';
 
 export async function minifyDracoDecoderSource(
   source,
-  { mangleIdentifiers = true } = {},
+  { filename = 'draco_decoder.js', mangleIdentifiers = true } = {},
 ) {
-  const result = await minify('draco_decoder.js', source, {
+  const result = await minify(filename, source, {
     module: false,
     compress: true,
     mangle: mangleIdentifiers,
@@ -63,17 +63,23 @@ function inlineCssMinifier() {
 }
 
 function copiedDracoMinifier() {
-  let decoderPath;
+  let decoderDirectory;
   return {
     name: 'thornvale-copied-draco-minifier',
     apply: 'build',
     enforce: 'post',
     configResolved(config) {
-      decoderPath = resolve(config.root, config.build.outDir, 'draco/draco_decoder.js');
+      decoderDirectory = resolve(config.root, config.build.outDir, 'draco');
     },
     async writeBundle() {
-      const source = await readFile(decoderPath, 'utf8');
-      await writeFile(decoderPath, await minifyDracoDecoderSource(source));
+      for (const filename of ['draco_decoder.js', 'draco_wasm_wrapper.js']) {
+        const decoderPath = resolve(decoderDirectory, filename);
+        const source = await readFile(decoderPath, 'utf8');
+        await writeFile(
+          decoderPath,
+          await minifyDracoDecoderSource(source, { filename }),
+        );
+      }
     },
   };
 }
