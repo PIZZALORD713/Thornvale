@@ -12,7 +12,12 @@ import {
   resolveAssetVariant,
   resolveTraitEchoVariant,
 } from '../config/assets.js';
-import { TOWN_INTERACTION_CONTRACT, TOWN_LAYOUT } from '../config/town.js';
+import {
+  getCottageBlockingColliderEnvelopes,
+  getTownStaticColliderEnvelopes,
+  TOWN_INTERACTION_CONTRACT,
+  TOWN_LAYOUT,
+} from '../config/town.js';
 import {
   createAmbientLife,
   createBellLandmark,
@@ -76,42 +81,8 @@ export function addCottagePhysics(physicsWorld, building) {
       null,
     );
   }
-  for (const detail of building.detailColliders || []) {
-    physicsWorld.createStaticBox(
-      {
-        x: building.position.x + detail.offsetX,
-        y: detail.y,
-        z: building.position.z + detail.offsetZ,
-      },
-      detail.size,
-      null,
-    );
-  }
-
-  const sideX = building.size.x * 0.5 + 1.05;
-  const frontEdge = building.frontSign * (building.size.z * 0.5 + 1.35) * 0.45;
-  const backZ = -building.frontSign * (building.size.z * 0.5 + 1);
-  const sideLength = Math.abs(frontEdge - backZ);
-  const sideCenterZ = (frontEdge + backZ) * 0.5;
-  physicsWorld.createStaticBox(
-    {
-      x: building.position.x,
-      y: 0.45,
-      z: building.position.z + backZ,
-    },
-    { x: sideX * 2 + 0.12, y: 0.9, z: 0.16 },
-    null,
-  );
-  for (const xSign of [-1, 1]) {
-    physicsWorld.createStaticBox(
-      {
-        x: building.position.x + xSign * sideX,
-        y: 0.45,
-        z: building.position.z + sideCenterZ,
-      },
-      { x: 0.16, y: 0.9, z: sideLength + 0.12 },
-      null,
-    );
+  for (const collider of getCottageBlockingColliderEnvelopes(building)) {
+    physicsWorld.createStaticBox(collider.position, collider.size, null);
   }
 }
 
@@ -124,13 +95,6 @@ export function addWalkableTerrainPhysics(physicsWorld, hill = TOWN_LAYOUT.terra
     surface.indices,
     { friction: 0.95 },
   );
-}
-
-function rotatedLocalX(placement, localX) {
-  return {
-    x: placement.x + Math.cos(placement.rotationY || 0) * localX,
-    z: placement.z - Math.sin(placement.rotationY || 0) * localX,
-  };
 }
 
 export function bindAuthoredBellMotion(worldAnimator, bell) {
@@ -172,6 +136,15 @@ export async function buildTown(physicsWorld, scene, {
   );
   const worldAnimator = new WorldAnimator();
   const townRoot = new Group();
+  const staticColliderEnvelopes = new Map(
+    getTownStaticColliderEnvelopes(TOWN_LAYOUT).map((entry) => [entry.id, entry]),
+  );
+  const createStaticCollider = (id) => {
+    const envelope = staticColliderEnvelopes.get(id);
+    return envelope
+      ? physicsWorld.createStaticBox(envelope.position, envelope.size, null)
+      : null;
+  };
   townRoot.name = 'thornvale_kawaii_town';
   townRoot.userData.assetVariant = selectedAssetVariant;
   townRoot.userData.traitEchoVariant = selectedTraitEchoVariant;
@@ -266,11 +239,7 @@ export async function buildTown(physicsWorld, scene, {
   const stoneWell = TOWN_LAYOUT.authoredProps.stoneWell;
   const stoneWellVisual = authoredVillageProps.getObjectByName('authored_stoneWell');
   if (stoneWellVisual) {
-    physicsWorld.createStaticBox(
-      { x: stoneWell.x, y: 0.58, z: stoneWell.z },
-      { x: 2.15, y: 1.16, z: 2.15 },
-      null,
-    );
+    createStaticCollider('stone-well');
     townRoot.add(createCameraProxy(
       'stone_well',
       { x: stoneWell.x, y: 1.3, z: stoneWell.z },
@@ -281,11 +250,7 @@ export async function buildTown(physicsWorld, scene, {
   const wayfinder = TOWN_LAYOUT.authoredProps.wayfinder;
   const wayfinderVisual = authoredVillageProps.getObjectByName('authored_wayfinder');
   if (wayfinderVisual) {
-    physicsWorld.createStaticBox(
-      { x: wayfinder.x, y: 1.05, z: wayfinder.z },
-      { x: 0.42, y: 2.1, z: 0.42 },
-      null,
-    );
+    createStaticCollider('wayfinder');
     townRoot.add(createCameraProxy(
       'wayfinder',
       { x: wayfinder.x, y: 1.15, z: wayfinder.z },
@@ -297,12 +262,9 @@ export async function buildTown(physicsWorld, scene, {
   const gardenArchVisual = authoredVillageProps.getObjectByName('authored_gardenArch');
   if (gardenArchVisual) {
     for (const xSign of [-1, 1]) {
-      const postPosition = rotatedLocalX(gardenArch, xSign * 1.325);
-      physicsWorld.createStaticBox(
-        { x: postPosition.x, y: 1.08, z: postPosition.z },
-        { x: 0.48, y: 2.16, z: 0.48 },
-        null,
-      );
+      const colliderId = `garden-arch-${xSign < 0 ? 'left' : 'right'}`;
+      const postPosition = staticColliderEnvelopes.get(colliderId)?.position;
+      createStaticCollider(colliderId);
       townRoot.add(createCameraProxy(
         `garden_arch_post_${xSign < 0 ? 'left' : 'right'}`,
         { x: postPosition.x, y: 1.25, z: postPosition.z },
@@ -315,16 +277,9 @@ export async function buildTown(physicsWorld, scene, {
     || createWelcomeGate(worldAnimator, TOWN_LAYOUT);
   townRoot.add(welcomeGate);
   for (const xSign of [-1, 1]) {
-    const gatePostPosition = {
-      x: TOWN_LAYOUT.gate.x + xSign * 2.05,
-      y: 1.45,
-      z: TOWN_LAYOUT.gate.z,
-    };
-    physicsWorld.createStaticBox(
-      gatePostPosition,
-      { x: 0.62, y: 2.9, z: 0.62 },
-      null,
-    );
+    const colliderId = `welcome-gate-${xSign < 0 ? 'left' : 'right'}`;
+    const gatePostPosition = staticColliderEnvelopes.get(colliderId)?.position;
+    createStaticCollider(colliderId);
     townRoot.add(createCameraProxy(
       `welcome_gate_post_${xSign < 0 ? 'left' : 'right'}`,
       gatePostPosition,
@@ -366,15 +321,7 @@ export async function buildTown(physicsWorld, scene, {
     townRoot.add(traitEchoes.root);
     traitEchoes.anchorToLandmarks({ ledger, bell, welcomeGate });
   }
-  physicsWorld.createStaticBox(
-    {
-      x: TOWN_LAYOUT.landmarks.ledger.x,
-      y: 1.1,
-      z: TOWN_LAYOUT.landmarks.ledger.z,
-    },
-    { x: 2.05, y: 2.2, z: 0.38 },
-    null,
-  );
+  createStaticCollider('community-ledger');
   townRoot.add(createCameraProxy(
     'community_ledger',
     {
@@ -385,15 +332,7 @@ export async function buildTown(physicsWorld, scene, {
     { x: 2.15, y: 2.3, z: 0.44 },
     ledger,
   ));
-  physicsWorld.createStaticBox(
-    {
-      x: TOWN_LAYOUT.landmarks.bell.x,
-      y: TOWN_LAYOUT.landmarks.bell.baseY + 0.22,
-      z: TOWN_LAYOUT.landmarks.bell.z,
-    },
-    { x: 1.65, y: 0.44, z: 1.35 },
-    null,
-  );
+  createStaticCollider('town-bell');
   townRoot.add(createCameraProxy(
     'town_bell',
     {

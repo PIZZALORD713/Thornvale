@@ -1,8 +1,9 @@
-import { TOWN_LAYOUT } from './town.js';
+import { getTownStaticColliderEnvelopes, TOWN_LAYOUT } from './town.js';
 
 export const OBJECTIVE_HINT_DURATION = 4;
 export const OBJECTIVE_HINT_MAX_DISTANCE = 24;
 export const OBJECTIVE_HINT_ROUTE_CLEARANCE = 0.8;
+export const OBJECTIVE_HINT_PICKUP_CLEARANCE = 0.2;
 export const OBJECTIVE_HINT_START_SNAP_DISTANCE = 10;
 
 // These paths have a deterministic clearance contract. The optional north and
@@ -134,6 +135,15 @@ function expandedBuildingBounds(building, amount) {
   };
 }
 
+function expandedColliderBounds(collider, amount) {
+  return {
+    minX: collider.position.x - collider.size.x * 0.5 - amount,
+    maxX: collider.position.x + collider.size.x * 0.5 + amount,
+    minZ: collider.position.z - collider.size.z * 0.5 - amount,
+    maxZ: collider.position.z + collider.size.z * 0.5 + amount,
+  };
+}
+
 /**
  * Validate only the projection corridor: finite meadow points with every
  * segment outside the cottage clearance envelope. The resolver never creates
@@ -161,6 +171,28 @@ export function isObjectiveHintPathSafe(points, layout = TOWN_LAYOUT) {
     ))) return false;
   }
   return true;
+}
+
+/**
+ * Validate the unscripted player-to-corridor pickup against the same fixed
+ * prop envelopes used by town physics. Authored route bodies and intentional
+ * target approaches retain their separate reviewed contract.
+ */
+export function isObjectiveHintPickupClear(start, end, layout = TOWN_LAYOUT) {
+  const normalizedStart = toPoint(start);
+  const normalizedEnd = toPoint(end);
+  if (
+    !normalizedStart
+    || !normalizedEnd
+    || !isObjectiveHintPathSafe([normalizedStart, normalizedEnd], layout)
+  ) return false;
+  return !getTownStaticColliderEnvelopes(layout).some((collider) => (
+    segmentIntersectsBounds(
+      normalizedStart,
+      normalizedEnd,
+      expandedColliderBounds(collider, OBJECTIVE_HINT_PICKUP_CLEARANCE),
+    )
+  ));
 }
 
 function createGraph(layout) {
@@ -282,7 +314,7 @@ function createGraph(layout) {
   return graph;
 }
 
-function snapToEdges(point, graph, predicate = null) {
+function snapToEdges(point, graph, predicate = null, candidateAllowed = null) {
   let best = null;
   for (const edge of graph.edges) {
     if (predicate && !predicate(edge)) continue;
@@ -297,9 +329,18 @@ function snapToEdges(point, graph, predicate = null) {
     ) / lengthSquared));
     const snapped = lerpPoint(a, b, t);
     const distance = distanceXZ(point, snapped);
-    if (!best || distance < best.distance) best = { edge, point: snapped, t, distance };
+    const candidate = { edge, point: snapped, t, distance };
+    if (candidateAllowed && !candidateAllowed(candidate)) continue;
+    if (!best || distance < best.distance) best = candidate;
   }
   return best;
+}
+
+function findReachableStartSnap(point, graph, layout) {
+  return snapToEdges(point, graph, null, (candidate) => (
+    candidate.distance <= OBJECTIVE_HINT_START_SNAP_DISTANCE + 1e-6
+    && isObjectiveHintPickupClear(point, candidate.point, layout)
+  ));
 }
 
 function canonicalTarget(targetKey, layout) {
@@ -427,9 +468,11 @@ function truncatePath(points, maximumDistance) {
 /**
  * Resolve one temporary route without mutating world or story state.
  *
- * `start` is snapped to the nearest validated corridor; no unreviewed line is
- * ever drawn from the player through world geometry. `target` validates the
- * authoritative live destination against the objective's configured role.
+ * `start` remains the first route point, then joins the nearest reachable
+ * reviewed corridor. The pickup clears cottage masses plus the fixed physics
+ * envelopes; the authored route body retains its reviewed cottage contract.
+ * `target` validates the authoritative live destination against the
+ * objective's configured role.
  */
 export function resolveObjectiveHintPath({
   objective,
@@ -449,8 +492,8 @@ export function resolveObjectiveHintPath({
   const graph = createGraph(layout);
   if (!graph) return null;
 
-  const startSnap = snapToEdges(startPoint, graph);
-  if (!startSnap || startSnap.distance > OBJECTIVE_HINT_START_SNAP_DISTANCE) return null;
+  const startSnap = findReachableStartSnap(startPoint, graph, layout);
+  if (!startSnap) return null;
   const destination = targetAttachment(targetKey, targetPoint, graph, layout);
   if (!destination) return null;
 
@@ -464,7 +507,10 @@ export function resolveObjectiveHintPath({
 
   const nodePath = shortestNodePath(graph, 'virtual:start', targetNodeId);
   if (!nodePath) return null;
-  const fullPath = dedupePoints(nodePath.map((nodeId) => graph.nodes.get(nodeId)));
+  const fullPath = dedupePoints([
+    startPoint,
+    ...nodePath.map((nodeId) => graph.nodes.get(nodeId)),
+  ]);
   if (fullPath.length < 2 || distance3D(fullPath[0], fullPath.at(-1)) <= 1e-7) return null;
 
   const numericMaximum = maxDistance === Infinity ? Infinity : Number(maxDistance);

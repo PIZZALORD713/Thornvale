@@ -409,6 +409,158 @@ export const TOWN_INTERACTION_CONTRACT = deepFreeze({
   bell: { id: 'bell', radius: 2 },
 });
 
+const TOWN_STATIC_COLLIDER_SPECS = deepFreeze({
+  stoneWell: { y: 0.58, size: { x: 2.15, y: 1.16, z: 2.15 } },
+  wayfinder: { y: 1.05, size: { x: 0.42, y: 2.1, z: 0.42 } },
+  gardenArchPost: { y: 1.08, localX: 1.325, size: { x: 0.48, y: 2.16, z: 0.48 } },
+  welcomeGatePost: { y: 1.45, localX: 2.05, size: { x: 0.62, y: 2.9, z: 0.62 } },
+  ledger: { y: 1.1, size: { x: 2.05, y: 2.2, z: 0.38 } },
+  bell: { yOffset: 0.22, size: { x: 1.65, y: 0.44, z: 1.35 } },
+});
+
+function staticCollider(id, position, size) {
+  if (
+    !position
+    || !size
+    || ![position.x, position.y, position.z, size.x, size.y, size.z].every(Number.isFinite)
+  ) return null;
+  return { id, position, size };
+}
+
+/**
+ * Non-walkable cottage details that sit outside the broad building mass.
+ * Porches are deliberately absent: they are low walkable surfaces, not walls
+ * the wind pickup needs to route around.
+ */
+export function getCottageBlockingColliderEnvelopes(building) {
+  if (!building?.position || !building?.size || typeof building.id !== 'string') return [];
+  const result = [];
+  for (let index = 0; index < (building.detailColliders || []).length; index += 1) {
+    const detail = building.detailColliders[index];
+    const entry = staticCollider(
+      `cottage-${building.id}-detail-${index}`,
+      {
+        x: building.position.x + detail.offsetX,
+        y: detail.y,
+        z: building.position.z + detail.offsetZ,
+      },
+      detail.size,
+    );
+    if (entry) result.push(entry);
+  }
+
+  const sideX = building.size.x * 0.5 + 1.05;
+  const frontEdge = building.frontSign * (building.size.z * 0.5 + 1.35) * 0.45;
+  const backZ = -building.frontSign * (building.size.z * 0.5 + 1);
+  const sideLength = Math.abs(frontEdge - backZ);
+  const backFence = staticCollider(
+    `cottage-${building.id}-fence-back`,
+    {
+      x: building.position.x,
+      y: 0.45,
+      z: building.position.z + backZ,
+    },
+    { x: sideX * 2 + 0.12, y: 0.9, z: 0.16 },
+  );
+  if (backFence) result.push(backFence);
+  for (const sign of [-1, 1]) {
+    const sideFence = staticCollider(
+      `cottage-${building.id}-fence-${sign < 0 ? 'left' : 'right'}`,
+      {
+        x: building.position.x + sign * sideX,
+        y: 0.45,
+        z: building.position.z + (frontEdge + backZ) * 0.5,
+      },
+      { x: 0.16, y: 0.9, z: sideLength + 0.12 },
+    );
+    if (sideFence) result.push(sideFence);
+  }
+  return result;
+}
+
+/**
+ * Fixed prop and landmark envelopes shared by town physics and short-lived
+ * world projections. Keeping one layout-derived list prevents a visual cue
+ * from claiming clearance that the player collider does not have.
+ */
+export function getTownStaticColliderEnvelopes(layout = TOWN_LAYOUT) {
+  if (!layout || typeof layout !== 'object') return [];
+  const result = [];
+  const add = (entry) => {
+    if (entry) result.push(entry);
+  };
+
+  const stoneWell = layout.authoredProps?.stoneWell;
+  if (stoneWell) add(staticCollider(
+    'stone-well',
+    { x: stoneWell.x, y: TOWN_STATIC_COLLIDER_SPECS.stoneWell.y, z: stoneWell.z },
+    TOWN_STATIC_COLLIDER_SPECS.stoneWell.size,
+  ));
+
+  const wayfinder = layout.authoredProps?.wayfinder;
+  if (wayfinder) add(staticCollider(
+    'wayfinder',
+    { x: wayfinder.x, y: TOWN_STATIC_COLLIDER_SPECS.wayfinder.y, z: wayfinder.z },
+    TOWN_STATIC_COLLIDER_SPECS.wayfinder.size,
+  ));
+
+  const gardenArch = layout.authoredProps?.gardenArch;
+  if (gardenArch) {
+    const rotation = Number(gardenArch.rotationY) || 0;
+    for (const sign of [-1, 1]) {
+      const localX = sign * TOWN_STATIC_COLLIDER_SPECS.gardenArchPost.localX;
+      add(staticCollider(
+        `garden-arch-${sign < 0 ? 'left' : 'right'}`,
+        {
+          x: gardenArch.x + Math.cos(rotation) * localX,
+          y: TOWN_STATIC_COLLIDER_SPECS.gardenArchPost.y,
+          z: gardenArch.z - Math.sin(rotation) * localX,
+        },
+        TOWN_STATIC_COLLIDER_SPECS.gardenArchPost.size,
+      ));
+    }
+  }
+
+  const gate = layout.gate;
+  if (gate) {
+    for (const sign of [-1, 1]) {
+      add(staticCollider(
+        `welcome-gate-${sign < 0 ? 'left' : 'right'}`,
+        {
+          x: gate.x + sign * TOWN_STATIC_COLLIDER_SPECS.welcomeGatePost.localX,
+          y: TOWN_STATIC_COLLIDER_SPECS.welcomeGatePost.y,
+          z: gate.z,
+        },
+        TOWN_STATIC_COLLIDER_SPECS.welcomeGatePost.size,
+      ));
+    }
+  }
+
+  const ledger = layout.landmarks?.ledger;
+  if (ledger) add(staticCollider(
+    'community-ledger',
+    { x: ledger.x, y: TOWN_STATIC_COLLIDER_SPECS.ledger.y, z: ledger.z },
+    TOWN_STATIC_COLLIDER_SPECS.ledger.size,
+  ));
+
+  const bell = layout.landmarks?.bell;
+  if (bell) add(staticCollider(
+    'town-bell',
+    {
+      x: bell.x,
+      y: Number(bell.baseY) + TOWN_STATIC_COLLIDER_SPECS.bell.yOffset,
+      z: bell.z,
+    },
+    TOWN_STATIC_COLLIDER_SPECS.bell.size,
+  ));
+
+  for (const building of layout.buildings || []) {
+    for (const collider of getCottageBlockingColliderEnvelopes(building)) add(collider);
+  }
+
+  return result;
+}
+
 export function getBuildingLayout(id) {
   return TOWN_LAYOUT.buildings.find((building) => building.id === id) || null;
 }

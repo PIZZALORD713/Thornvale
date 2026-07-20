@@ -1269,9 +1269,23 @@ function showObjectiveHint() {
     return false;
   }
 
+  if (!characterMotor?.isGrounded) {
+    objectiveHintTrail.hide();
+    hud?.setStatus?.('The wind waits for your feet to find the ground.');
+    return false;
+  }
+
   const objective = coreHookDirector.currentObjective?.();
   const target = coreHookDirector.resolveObjectiveTarget?.(objective);
-  const start = characterMotor?.getPosition?.();
+  const characterPosition = characterMotor?.getPosition?.();
+  const capsuleBottomY = characterMotor?.getCapsuleBottomY?.();
+  const start = characterPosition && Number.isFinite(capsuleBottomY)
+    ? {
+        x: characterPosition.x,
+        y: capsuleBottomY,
+        z: characterPosition.z,
+      }
+    : null;
   const destination = target?.getPosition?.();
   const points = resolveObjectiveHintPath({ objective, start, target: destination });
   if (!points) {
@@ -1295,7 +1309,7 @@ function showObjectiveHint() {
   });
   if (shown) {
     const label = objective?.cue?.label || objective?.title || 'the next courtesy';
-    hud?.setStatus?.(`A brief ribbon points toward ${label}.`);
+    hud?.setStatus?.(`A courteous wind gathers toward ${label}.`);
   }
   return shown;
 }
