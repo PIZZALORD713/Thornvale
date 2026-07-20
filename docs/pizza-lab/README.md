@@ -80,9 +80,11 @@ geometry controls:
 - `Wayfinder_BoardAssembly_02`
 - `Wayfinder_BoardAssembly_03`
 
-Move an assembly on Blender X/Z to change its lateral position or height,
-rotate it only on Blender Z, or scale it inside the reviewed envelope. The post,
-stones, plants, materials, and mesh topology are locked.
+Move an assembly on Blender X/Z to change its lateral position or height, move
+it no more than 0.35 m in Blender Y depth, rotate it freely around Blender Z to
+point it in any direction, or scale it inside the reviewed envelope. Blender
+X/Y tilt is rejected. The post, stones, plants, materials, and mesh topology are
+locked.
 
 Use **Export Wayfinder Candidate** or call
 `pizza_wayfinder_candidate_export`. The command snapshots those three

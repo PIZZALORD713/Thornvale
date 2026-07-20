@@ -137,6 +137,14 @@ test('Wayfinder promotion revalidates hashes, Draco geometry, and board envelope
   };
   const files = { candidate: candidateBytes, authoringSource, generator, baseSource, worldStage };
   assert.equal(validatePizzaLabWayfinderCandidate(candidate, files).triangles, 1488);
+  const directional = structuredClone(candidate);
+  directional.boardOverrides['01'].after.location[1]
+    = directional.boardOverrides['01'].before.location[1] + 0.3;
+  directional.boardOverrides['01'].after.rotationEuler = [0, 0, Math.PI];
+  assert.equal(validatePizzaLabWayfinderCandidate(directional, files).triangles, 1488);
+  const tilted = structuredClone(candidate);
+  tilted.boardOverrides['01'].after.rotationEuler = [0.1, 0, 0];
+  assert.throws(() => validatePizzaLabWayfinderCandidate(tilted, files), /rotation exceeds/);
   const invalid = structuredClone(candidate);
   invalid.boardOverrides['01'].after.scale = [2, 1, 1];
   assert.throws(() => validatePizzaLabWayfinderCandidate(invalid, files), /scale exceeds/);

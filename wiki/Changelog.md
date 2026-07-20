@@ -8,7 +8,9 @@
   clean Blender rebuild into a Draco candidate. Independent promotion gates
   source hashes, hierarchy, materials, triangles, bounds, provenance, and size,
   while the existing pilot/baseline selector and per-root fallback preserve the
-  game-owned placement, collider, camera, grass, and interaction contracts.
+  game-owned placement, collider, camera, grass, and interaction contracts. The
+  first v1.1.0 art revision uses full directional yaw to point the three boards
+  independently while keeping X/Y tilt and non-board geometry locked.
 * Extended Pizza Lab to a complete bounded Blender-to-browser placement loop.
   Blender can stage the existing village-dressing GLB at current runtime
   coordinates, expose only the Wayfinder as editable, and atomically publish a

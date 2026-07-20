@@ -101,12 +101,12 @@ def apply_board_overrides(assemblies: list[bpy.types.Object], overrides: dict) -
         scale = finite_vector(after.get("scale"), f"board {board_id} scale")
         if abs(location[0] - canonical_location[0]) > 0.75 or abs(location[2] - canonical_location[2]) > 0.75:
             raise RuntimeError(f"Board {board_id} translation exceeds the 0.75 meter authoring envelope")
-        if abs(location[1] - canonical_location[1]) > 0.2:
-            raise RuntimeError(f"Board {board_id} depth translation exceeds the 0.2 meter authoring envelope")
+        if abs(location[1] - canonical_location[1]) > 0.35:
+            raise RuntimeError(f"Board {board_id} depth translation exceeds the 0.35 meter authoring envelope")
         if abs(rotation[0]) > 1e-6 or abs(rotation[1]) > 1e-6:
             raise RuntimeError(f"Board {board_id} may rotate only around Blender Z")
-        if abs(rotation[2] - canonical_rotation[2]) > math.radians(20):
-            raise RuntimeError(f"Board {board_id} rotation exceeds the 20 degree authoring envelope")
+        # Z is the vertical axis in Blender. A directional sign needs the full
+        # yaw circle; decoded footprint bounds remain the safety gate.
         if not (0.5 <= scale[0] <= 1.75 and 0.75 <= scale[1] <= 1.25 and 0.5 <= scale[2] <= 1.75):
             raise RuntimeError(f"Board {board_id} scale exceeds the reviewed authoring envelope")
         assembly.location = location
@@ -278,7 +278,7 @@ def validate_clean_reimport(path: Path) -> dict:
     size = maximum - minimum
     if minimum.z < -0.08 or minimum.z > 0.08:
         raise RuntimeError(f"Candidate ground contact moved outside tolerance: {minimum.z}")
-    if size.x > 3.0 or size.y > 1.2 or size.z > 3.4:
+    if size.x > 3.2 or size.y > 3.2 or size.z > 3.6:
         raise RuntimeError(f"Candidate bounds exceed the reviewed footprint: {tuple(size)}")
     return {
         "min": [round(value, 6) for value in minimum],

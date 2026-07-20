@@ -664,8 +664,8 @@
       "family": "thornvale-wayfinder-pizza-lab-v1",
       "storage": "git",
       "intakeBatch": "pizza-lab-wayfinder-v1",
-      "bytes": 113719,
-      "sha256": "7622200d4ebd1eb4ccdf04b976030a1e61daed0e76c8877f478f12a8fdf1ba02",
+      "bytes": 114616,
+      "sha256": "0e78c994f428706d832995eb7ccc91e49287a0e9d0ca607a6abefb346cbb91fb",
       "source": {
         "originalFilename": "build-village-dressing.py",
         "path": "scripts/build-village-dressing.py",
@@ -682,12 +682,12 @@
       "budgetGroups": [
         "active-town-glb"
       ],
-      "bytes": 28164,
-      "sha256": "a8c0f393bf598bdf82f9e9e517ce441df6e248b23af77eb300e375257d7d5d42",
+      "bytes": 29408,
+      "sha256": "ff671fe0bbf5fc41431d778eccb01fc94c53def419050975a353b0031557f0bc",
       "source": {
         "originalFilename": "thornvale-wayfinder-authoring.blend",
         "path": "assets-src/pizza-lab/wayfinder-v1/thornvale-wayfinder-authoring.blend",
-        "sha256": "7622200d4ebd1eb4ccdf04b976030a1e61daed0e76c8877f478f12a8fdf1ba02",
+        "sha256": "0e78c994f428706d832995eb7ccc91e49287a0e9d0ca607a6abefb346cbb91fb",
         "transform": "Fresh canonical generator rebuild, allowlisted transforms on three sign-board assemblies, material consolidation, and Draco-compressed Blender 4.5.9 LTS GLB export."
       }
     }
