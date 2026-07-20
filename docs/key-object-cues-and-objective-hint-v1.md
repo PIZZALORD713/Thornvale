@@ -42,15 +42,26 @@ objective, route, and world state and must never advance the story.
 | Choice or behavior | Output type | Immediate change | Later change | Authoritative state | Visible proof |
 | --- | --- | --- | --- | --- | --- |
 | Read request | UI projection | Landmark study appears | Objective can reuse it | Existing content objective/beat | Image and label, with text-only fallback |
-| Press `H` | World projection | Temporary path markers appear | Markers expire | Existing current objective and live target provider | One four-second instanced ribbon; its reviewed route body hands off 2.4 m early to a short, eased, leashed final connector |
+| Press `H` | World projection | A temporary windborne point cloud appears | Cloud expires | Existing current objective and live target provider | One four-second draw; its reviewed route body hands off 2.4 m early to a short, eased, leashed final breath |
 | Choose comply/alter | Existing route/world | Existing persistent route appears | Existing ending remains reachable | Existing `GameSession` choice | No temporary ribbon is created |
+
+The V2 presentation pilot retains that route contract while replacing the
+ground dashes with one low-air point-cloud gust: dozens of muted-ivory motes,
+sparse sage matter, and one warm-gold leading point advect in irregular clumps
+around the route tangent. The stream broadens subtly and corkscrews through its
+wake without opening into a haze or collapsing back into a line. Individual
+motes decay at staggered thresholds
+after the first fifth of the journey; by roughly ninety-percent route progress,
+about eighty-five percent of the body has released into the air, leaving only
+the lead and a final breath. Reduced motion freezes a short directional cloud
+instead of simulating its flow or attrition.
 
 ## Scope
 
 - **Reuse:** Current objectives, interactable positions, authored town paths,
   StoryUI, and Three.js scene lifecycle.
 - **Build:** Three optimized landmark studies, cue descriptors, exact provenance,
-  a safe path resolver, semantic `H` input, and one temporary instanced trail.
+  a safe path resolver, semantic `H` input, and one temporary point-cloud trail.
 - **Do not build:** Voiceover, lip sync, cutscenes, minimap, compass arrow,
   navmesh/pathfinding, permanent quest GPS, new story state, or a broad icon atlas.
 - **Defer until:** Clean-save observation shows which missing landmarks or failure
