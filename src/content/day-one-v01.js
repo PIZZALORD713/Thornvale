@@ -1,4 +1,5 @@
 import { DAY_ONE_ACTIONS_V01 } from './day-one-actions-v01.js';
+import { KEY_OBJECT_CUES_V1 } from './key-object-cues-v1.js';
 
 function deepFreeze(value) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
@@ -128,6 +129,7 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Meet the steward who kept the gate open for you.',
       title: 'A place kept warm',
       detail: 'Meet the steward who kept the gate open for you.',
+      target: { kind: 'interactable', id: 'steward-8914' },
     },
     gatherWood: {
       id: 'day-one-gather-wood',
@@ -135,6 +137,8 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Gather 6 wood for a fire and a sturdier shelter.',
       title: 'What the forest gives',
       detail: 'Gather 6 wood for a fire and a sturdier shelter.',
+      cue: KEY_OBJECT_CUES_V1.camp,
+      target: { kind: 'interactable', id: DAY_ONE_INTERACTION_IDS.woodlot },
     },
     catchFish: {
       id: 'day-one-catch-fish',
@@ -142,6 +146,7 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Catch one fish in the pond.',
       title: 'Supper from the pond',
       detail: 'Catch one fish in the pond.',
+      target: { kind: 'interactable', id: DAY_ONE_INTERACTION_IDS.fishingSpot },
     },
     lightFire: {
       id: 'day-one-light-fire',
@@ -149,6 +154,8 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Use 1 wood to light the campfire.',
       title: 'A little warmth',
       detail: 'Use 1 wood to light the campfire.',
+      cue: KEY_OBJECT_CUES_V1.camp,
+      target: { kind: 'interactable', id: DAY_ONE_INTERACTION_IDS.campfire },
     },
     cookFish: {
       id: 'day-one-cook-fish',
@@ -156,6 +163,8 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Cook your fish over the campfire.',
       title: 'Supper from the pond',
       detail: 'Cook your fish over the campfire.',
+      cue: KEY_OBJECT_CUES_V1.camp,
+      target: { kind: 'interactable', id: DAY_ONE_INTERACTION_IDS.campfire },
     },
     eatFish: {
       id: 'day-one-eat-fish',
@@ -163,6 +172,8 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Eat the cooked fish to restore nourishment and energy.',
       title: 'Take care of yourself',
       detail: 'Eat the cooked fish to restore nourishment and energy.',
+      cue: KEY_OBJECT_CUES_V1.camp,
+      target: { kind: 'interactable', id: DAY_ONE_INTERACTION_IDS.campfire },
     },
     plantSeed: {
       id: 'day-one-plant-seed',
@@ -170,6 +181,8 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Plant your seed in the garden bed beside camp.',
       title: 'Something for tomorrow',
       detail: 'Plant your seed in the garden bed beside camp.',
+      cue: KEY_OBJECT_CUES_V1.camp,
+      target: { kind: 'interactable', id: DAY_ONE_INTERACTION_IDS.garden },
     },
     waterSeed: {
       id: 'day-one-water-seed',
@@ -177,6 +190,8 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Water the planted seed.',
       title: 'Something for tomorrow',
       detail: 'Water the planted seed.',
+      cue: KEY_OBJECT_CUES_V1.camp,
+      target: { kind: 'interactable', id: DAY_ONE_INTERACTION_IDS.garden },
     },
     gatherShelterWood: {
       id: 'day-one-gather-shelter-wood',
@@ -184,6 +199,8 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Gather enough wood to brace the makeshift shelter.',
       title: 'A roof for tonight',
       detail: 'Gather enough wood to brace the makeshift shelter.',
+      cue: KEY_OBJECT_CUES_V1.camp,
+      target: { kind: 'interactable', id: DAY_ONE_INTERACTION_IDS.woodlot },
     },
     repairShelter: {
       id: 'day-one-repair-shelter',
@@ -191,6 +208,8 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Use 4 wood to brace the makeshift shelter.',
       title: 'A roof for tonight',
       detail: 'Use 4 wood to brace the makeshift shelter.',
+      cue: KEY_OBJECT_CUES_V1.camp,
+      target: { kind: 'interactable', id: DAY_ONE_INTERACTION_IDS.shelter },
     },
     signLedger: {
       id: 'day-one-sign-ledger',
@@ -198,6 +217,8 @@ export const DAY_ONE_V01 = deepFreeze({
       text: 'Enter your name in the Community Ledger before settling your plot.',
       title: 'The first town courtesy',
       detail: 'Enter your name in the Community Ledger before settling your plot.',
+      cue: KEY_OBJECT_CUES_V1.ledger,
+      target: { kind: 'interactable', id: 'ledger' },
     },
   },
 

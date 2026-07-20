@@ -25,6 +25,7 @@ import { InputManager } from './core/InputManager.js';
 import { CharacterMotor } from './physics/CharacterMotor.js';
 import { CameraRig } from './game/camera/CameraRig.js';
 import { configureCameraRig } from './config/camera.js';
+import { resolveObjectiveHintPath } from './config/objective-hints.js';
 import { TOWN_LAYOUT } from './config/town.js';
 import { resolveControlMode, resolveTouchControlStyle } from './config/controls.js';
 import {
@@ -41,6 +42,7 @@ import { createKawaiiAvatar } from './visuals/KawaiiAvatar.js';
 import { loadFriendsiesAnimationPack } from './visuals/loadFriendsiesAnimationPack.js';
 import { StewardActor } from './visuals/StewardActor.js';
 import { StoryWorld } from './visuals/StoryWorld.js';
+import { ObjectiveHintTrail } from './visuals/ObjectiveHintTrail.js';
 import {
   applyStoryPresentationDatasets,
   projectStoryPresentation,
@@ -100,6 +102,7 @@ let dayOneActionPresenter;
 let dayOneActionUnsubscribe;
 let dayOneWorld;
 let storyWorld;
+let objectiveHintTrail;
 let stewardActor;
 let dayNightSystem;
 let interactableSystem;
@@ -193,6 +196,7 @@ async function init() {
 
   scene = new Scene();
   storyWorld = new StoryWorld(scene, { reducedMotion }).init();
+  objectiveHintTrail = new ObjectiveHintTrail(scene, { reducedMotion }).init();
   camera = new PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.08, 180);
   camera.position.set(0, 4.8, 9);
 
@@ -335,6 +339,7 @@ async function init() {
     },
   });
   dayOneActionUnsubscribe = dayOneActionController.subscribe((event) => {
+    if (event?.type === 'start') objectiveHintTrail?.hide?.();
     dayOneActionPresenter?.handle?.(event);
   });
 
@@ -387,6 +392,7 @@ async function init() {
       getDayOneLedgerRecord: () => dayOneDirector?.ledgerRecordFor() || null,
       getStewardPosition: () => stewardActor?.position || null,
       setStoryBlocking: handleStoryBlocking,
+      onObjectiveChange: () => objectiveHintTrail?.hide?.(),
       onError: (error) => {
         console.error('[CoreHookDirector]', error);
         hud.setStatus('A page slipped out of the story. Please try that courtesy again.');
@@ -405,6 +411,7 @@ async function init() {
   bindWorldEntry();
   window.addEventListener('resize', scheduleResize);
   window.visualViewport?.addEventListener?.('resize', scheduleResize);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('beforeunload', dispose, { once: true });
 
   setLoading(1, 'The gate is open.');
@@ -437,6 +444,7 @@ async function init() {
     dayOneActionController,
     dayOneWorld,
     storyWorld,
+    objectiveHintTrail,
     worldAnimator,
     assetVariant,
     traitEchoVariant,
@@ -608,6 +616,7 @@ function moveSteward(anchor, options = {}) {
 
 function resetPlayerToArrival(position = null) {
   if (!playerController || !playerSpawnPoint) return;
+  objectiveHintTrail?.hide?.();
   const target = position?.isVector3
     ? position.clone()
     : position
@@ -650,6 +659,7 @@ async function recoverPlayerAfterPassOut({ recoverySite = 'gate' } = {}) {
     ? DAY_ONE_V01.anchors.campRecovery
     : playerSpawnPoint;
   const cover = hud?.elements?.lockOverlay;
+  objectiveHintTrail?.hide?.();
   playerController?.setActionLocked?.(true);
   touchControls?.setEnabled?.(false);
   cover?.classList.add('is-recovering');
@@ -687,6 +697,7 @@ function playAnomalyBellEffects() {
 }
 
 async function ringAnomalyBell({ onReveal } = {}) {
+  objectiveHintTrail?.hide?.();
   const shot = CORE_HOOK_V03.anchors.camera?.secondBell;
   const reveal = () => {
     onReveal?.();
@@ -737,6 +748,7 @@ function handleStoryBlocking(blocking) {
   inputManager?.setGameplayEnabled?.(!storyBlocking);
   touchControls?.setEnabled?.(worldEntered && !storyBlocking);
   if (storyBlocking) {
+    objectiveHintTrail?.hide?.();
     hud?.elements?.lockOverlay?.classList.add('hidden');
     if (hud?.elements?.resumeLook) hud.elements.resumeLook.hidden = true;
     if (document.pointerLockElement) inputManager?.exitLock?.();
@@ -1122,6 +1134,7 @@ function animate() {
   coreHookDirector?.update(dt, characterMotor?.getPosition?.());
   dayOneActionController?.update?.(dt);
   storyWorld?.update(dt);
+  objectiveHintTrail?.update?.(dt);
   dayOneWorld?.update?.(dt);
 
   if (interactableSystem && characterMotor) {
@@ -1200,6 +1213,10 @@ function handleGlobalInput() {
     cameraRig.skipFocusShot();
   }
 
+  if (inputManager.consumeActionPress('objective-hint')) {
+    showObjectiveHint();
+  }
+
   const requestedTimeToggle = inputManager.consumeKeyPress('KeyN');
   if (requestedTimeToggle && (!storyEnabled || debugEnabled)) {
     const mode = dayNightSystem.toggle();
@@ -1236,6 +1253,42 @@ function handleGlobalInput() {
       localStorage.setItem(VISUAL_OFFSET_STORAGE_KEY, nextOffset.toFixed(3));
     }
   }
+}
+
+function showObjectiveHint() {
+  if (
+    !worldEntered
+    || !storyEnabled
+    || storyBlocking
+    || cameraRig?.isFocusShotActive?.()
+    || dayOneActionController?.isActive
+    || !coreHookDirector
+    || !objectiveHintTrail
+  ) {
+    objectiveHintTrail?.hide?.();
+    return false;
+  }
+
+  const objective = coreHookDirector.currentObjective?.();
+  const target = coreHookDirector.resolveObjectiveTarget?.(objective);
+  const start = characterMotor?.getPosition?.();
+  const destination = target?.getPosition?.();
+  const points = resolveObjectiveHintPath({ objective, start, target: destination });
+  if (!points) {
+    objectiveHintTrail.hide();
+    hud?.setStatus?.('No new trail answers just now. Follow the path already before you.');
+    return false;
+  }
+
+  const shown = objectiveHintTrail.show({ points, cueId: objective.id });
+  if (shown) {
+    hud?.setStatus?.('A brief ribbon marks the town\'s preferred path.');
+  }
+  return shown;
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) objectiveHintTrail?.hide?.();
 }
 
 function updateFPS(dt) {
@@ -1312,6 +1365,7 @@ function dispose() {
   cameraRig?.cancelFocusShot?.();
   window.removeEventListener('resize', scheduleResize);
   window.visualViewport?.removeEventListener?.('resize', scheduleResize);
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
   if (resizeFrameId) window.cancelAnimationFrame(resizeFrameId);
   resizeFrameId = 0;
   if (cameraOcclusionTarget) {
@@ -1328,6 +1382,8 @@ function dispose() {
   dayOneActionController?.dispose?.();
   dayOneActionController = null;
   coreHookDirector?.dispose();
+  objectiveHintTrail?.dispose?.();
+  objectiveHintTrail = null;
   dayOneDirector?.dispose();
   dayOneWorld?.dispose();
   ({
@@ -1349,6 +1405,7 @@ function dispose() {
     window.thornvale.dayOneDirector = null;
     window.thornvale.dayOneWorld = null;
     window.thornvale.dayOneActionController = null;
+    window.thornvale.objectiveHintTrail = null;
     window.thornvale.environmentLighting = null;
   }
   gameSession?.dispose();

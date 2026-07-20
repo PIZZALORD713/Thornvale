@@ -40,22 +40,45 @@ test('semantic keyboard consumption cannot leave a stale physical action edge', 
   const input = new InputManager();
   input._onKeyDown({ code: 'Space', target: { tagName: 'BODY' } });
   input._onKeyDown({ code: 'KeyE', target: { tagName: 'BODY' } });
+  input._onKeyDown({ code: 'KeyH', target: { tagName: 'BODY' } });
 
   assert.equal(input.consumeActionPress('jump'), true);
   assert.equal(input.consumeKeyPress('Space'), false);
   assert.equal(input.consumeActionPress('interact'), true);
   assert.equal(input.consumeKeyPress('KeyE'), false);
+  assert.equal(input.consumeActionPress('objective-hint'), true);
+  assert.equal(input.consumeKeyPress('KeyH'), false);
 });
 
 test('legacy keyboard consumption cannot leave a stale semantic action edge', () => {
   const input = new InputManager();
   input._onKeyDown({ code: 'Space', target: { tagName: 'BODY' } });
   input._onKeyDown({ code: 'KeyE', target: { tagName: 'BODY' } });
+  input._onKeyDown({ code: 'KeyH', target: { tagName: 'BODY' } });
 
   assert.equal(input.consumeKeyPress('Space'), true);
   assert.equal(input.consumeActionPress('jump'), false);
   assert.equal(input.consumeKeyPress('KeyE'), true);
   assert.equal(input.consumeActionPress('interact'), false);
+  assert.equal(input.consumeKeyPress('KeyH'), true);
+  assert.equal(input.consumeActionPress('objective-hint'), false);
+});
+
+test('KeyH produces one objective-hint edge per physical key depression', () => {
+  const input = new InputManager();
+  const event = { code: 'KeyH', target: { tagName: 'BODY' } };
+
+  input._onKeyDown(event);
+  input._onKeyDown(event);
+  assert.equal(input.consumeActionPress('objective-hint'), true);
+  assert.equal(input.consumeActionPress('objective-hint'), false);
+
+  input._onKeyDown(event);
+  assert.equal(input.consumeActionPress('objective-hint'), false);
+  input._onKeyUp(event);
+  input._onKeyDown(event);
+  assert.equal(input.consumeActionPress('objective-hint'), true);
+  assert.equal(input.consumeActionPress('objective-hint'), false);
 });
 
 test('disabling gameplay clears every external source and rejects stale touch input', () => {
@@ -63,6 +86,7 @@ test('disabling gameplay clears every external source and rejects stale touch in
   input.setMovementInput('touch', 0.75, -0.25);
   input.setActionHeld('sprint', true, 'touch');
   input.pressAction('interact', 'touch');
+  input._onKeyDown({ code: 'KeyH', target: { tagName: 'BODY' } });
   input.addLookDelta(0.2, 0.1, 'touch');
 
   input.setGameplayEnabled(false);
@@ -77,4 +101,5 @@ test('disabling gameplay clears every external source and rejects stale touch in
   assert.equal(input.isActionHeld('jump'), false);
   assert.equal(input.consumeActionPress('interact'), false);
   assert.equal(input.consumeActionPress('jump'), false);
+  assert.equal(input.consumeActionPress('objective-hint'), false);
 });

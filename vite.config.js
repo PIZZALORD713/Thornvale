@@ -4,11 +4,14 @@ import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { CURATED_FRIENDSIES_CAST } from './src/content/friendsies-cast.js';
 
-export async function minifyDracoDecoderSource(source) {
+export async function minifyDracoDecoderSource(
+  source,
+  { mangleIdentifiers = true } = {},
+) {
   const result = await minify('draco_decoder.js', source, {
     module: false,
     compress: true,
-    mangle: false,
+    mangle: mangleIdentifiers,
     codegen: { legalComments: 'inline', removeWhitespace: true },
     sourcemap: false,
   });

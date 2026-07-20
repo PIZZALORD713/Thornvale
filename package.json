@@ -13,6 +13,8 @@
     "friendsies:probe": "node scripts/probe-friendsies-trait.mjs",
     "animations:build": "node scripts/build-story-actions-v1.mjs",
     "animations:verify": "node scripts/build-story-actions-v1.mjs --verify",
+    "object-cues:build": "node scripts/build-key-object-cues-v1.mjs",
+    "object-cues:verify": "node scripts/build-key-object-cues-v1.mjs --verify",
     "assets:audit": "node scripts/check-asset-budgets.mjs",
     "assets:release": "node scripts/check-asset-budgets.mjs --dist --release",
     "check": "npm run test && npm run build && npm run assets:audit -- --dist"

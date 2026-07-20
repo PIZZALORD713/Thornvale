@@ -5,6 +5,7 @@ import { StoryUI } from '../src/ui/StoryUI.js';
 
 const REQUIRED_IDS = [
   'storyObjective',
+  'storyObjectiveCueImage',
   'storyObjectiveLabel',
   'storyObjectiveText',
   'storyLayer',
@@ -14,6 +15,9 @@ const REQUIRED_IDS = [
   'storyEyebrow',
   'storyTitle',
   'storyBody',
+  'storyBeatCue',
+  'storyBeatCueImage',
+  'storyBeatCueLabel',
   'storyDetail',
   'storySignaturePanel',
   'storySignatureInput',
@@ -37,6 +41,10 @@ class FakeClassList {
 
   remove(...values) {
     values.forEach((value) => this.values.delete(value));
+  }
+
+  contains(value) {
+    return this.values.has(value);
   }
 
   toggle(value, force) {
@@ -108,6 +116,10 @@ class FakeElement {
     this.attributes.delete(name);
   }
 
+  getAttribute(name) {
+    return this.attributes.get(name) ?? null;
+  }
+
   toggleAttribute(name, force) {
     const shouldAdd = force === undefined ? !this.attributes.has(name) : Boolean(force);
     if (shouldAdd) this.attributes.set(name, '');
@@ -158,9 +170,13 @@ class FakeDocument extends FakeElement {
         ? 'button'
         : id === 'storySignatureInput'
           ? 'input'
-          : id === 'storyCard'
-            ? 'section'
-            : 'div';
+          : id === 'storyObjectiveCueImage' || id === 'storyBeatCueImage'
+            ? 'img'
+            : id === 'storyBeatCue'
+              ? 'figure'
+              : id === 'storyCard'
+                ? 'section'
+                : 'div';
       this.elements.set(id, new FakeElement(this, id, tagName));
     }
 
@@ -169,8 +185,25 @@ class FakeDocument extends FakeElement {
 
     const storyLayer = this.getElementById('storyLayer');
     const storyCard = this.getElementById('storyCard');
+    const objective = this.getElementById('storyObjective');
+    const objectiveGlyph = new FakeElement(this, '', 'span');
+    objectiveGlyph.classList.add('story-objective-glyph');
+    objectiveGlyph.append(this.getElementById('storyObjectiveCueImage'));
+    objective.append(
+      objectiveGlyph,
+      this.getElementById('storyObjectiveLabel'),
+      this.getElementById('storyObjectiveText'),
+    );
+
+    const beatCue = this.getElementById('storyBeatCue');
+    beatCue.append(
+      this.getElementById('storyBeatCueImage'),
+      this.getElementById('storyBeatCueLabel'),
+    );
     storyLayer.append(storyCard);
     storyCard.append(
+      this.getElementById('storyBody'),
+      beatCue,
       this.getElementById('storySignaturePanel'),
       this.getElementById('storySignatureInput'),
       this.getElementById('storySignatureDisplay'),
@@ -226,6 +259,113 @@ function assertKeyHint(documentRef, prefix, key) {
   assert.equal(hint.children[0].textContent, `${prefix} `);
   assert.equal(hint.children[1].textContent, key);
 }
+
+test('StoryUI objective cues decorate the glyph without replacing authoritative text', (t) => {
+  const { documentRef, ui } = createUI(t);
+  const objective = documentRef.getElementById('storyObjective');
+  const image = documentRef.getElementById('storyObjectiveCueImage');
+  const glyph = image.parentElement;
+
+  ui.setObjective({
+    label: 'A town courtesy',
+    text: 'Enter your name in the Community Ledger.',
+    cue: {
+      id: 'ledger-key',
+      label: 'Community Ledger key',
+      src: '/assets/cues/ledger-key.webp',
+    },
+  });
+
+  assert.equal(image.hidden, false);
+  assert.equal(image.getAttribute('src'), '/assets/cues/ledger-key.webp');
+  assert.equal(image.dataset.cueId, 'ledger-key');
+  assert.equal(glyph.classList.contains('has-object-cue'), true);
+  assert.equal(
+    objective.attributes.get('aria-label'),
+    'A town courtesy: Enter your name in the Community Ledger.',
+    'the visible cue label must not replace or duplicate the objective announcement',
+  );
+
+  ui.setObjective({
+    label: 'The second courtesy',
+    text: 'Ring the town Bell once.',
+    cue: { id: 'bell-key', label: '', src: '/assets/cues/bell-key.webp' },
+  });
+  assert.equal(image.hidden, true, 'an incomplete cue should fail back to the glyph');
+  assert.equal(image.getAttribute('src'), null);
+  assert.equal(glyph.classList.contains('has-object-cue'), false);
+  assert.equal(documentRef.getElementById('storyObjectiveText').textContent, 'Ring the town Bell once.');
+
+  ui.setObjective({
+    label: 'The second courtesy',
+    text: 'Ring the town Bell once.',
+    cue: {
+      id: 'bell-key',
+      label: 'Town Bell key',
+      src: '/assets/cues/missing-bell-key.webp',
+    },
+  });
+  image.dispatchEvent({ type: 'error', target: image, defaultPrevented: false });
+  assert.equal(image.hidden, true, 'an image failure should restore the existing fallback glyph');
+  assert.equal(image.getAttribute('src'), null);
+  assert.equal(documentRef.getElementById('storyObjectiveText').textContent, 'Ring the town Bell once.');
+  assert.equal(objective.classList.contains('is-visible'), true);
+});
+
+test('StoryUI dialogue cues update and clear with their authored beat', async (t) => {
+  const { documentRef, ui } = createUI(t);
+  const chip = documentRef.getElementById('storyBeatCue');
+  const image = documentRef.getElementById('storyBeatCueImage');
+  const label = documentRef.getElementById('storyBeatCueLabel');
+  const beats = [
+    {
+      text: 'The key is warm from someone else’s hand.',
+      cue: {
+        id: 'cottage-key',
+        label: 'Cottage key',
+        src: '/assets/cues/cottage-key.webp',
+      },
+    },
+    {
+      text: 'Lumen folds your fingers around it.',
+      cue: { id: 'invalid-key', label: 'Invalid key' },
+    },
+    {
+      text: 'The little brass tag reads HOME.',
+      cue: {
+        id: 'home-tag',
+        label: 'Brass tag · HOME',
+        src: '/assets/cues/home-tag.webp',
+      },
+    },
+  ];
+
+  const result = ui.say({ speaker: 'Steward Lumen', beats });
+  assert.equal(chip.hidden, false);
+  assert.equal(chip.dataset.cueId, 'cottage-key');
+  assert.equal(image.getAttribute('src'), '/assets/cues/cottage-key.webp');
+  assert.equal(label.textContent, 'Cottage key');
+  assert.equal(documentRef.getElementById('storyBody').textContent, beats[0].text);
+
+  documentRef.getElementById('storyAction').click();
+  assert.equal(chip.hidden, true, 'a beat without a complete cue should remove the prior chip');
+  assert.equal(image.getAttribute('src'), null);
+  assert.equal(label.textContent, '');
+  assert.equal(documentRef.getElementById('storyBody').textContent, beats[1].text);
+
+  documentRef.getElementById('storyAction').click();
+  assert.equal(chip.hidden, false);
+  assert.equal(chip.dataset.cueId, 'home-tag');
+  assert.equal(label.textContent, 'Brass tag · HOME');
+  image.dispatchEvent({ type: 'error', target: image, defaultPrevented: false });
+  assert.equal(chip.hidden, true, 'a failed beat image should leave the dialogue text alone');
+  assert.equal(documentRef.getElementById('storyBody').textContent, beats[2].text);
+  assert.equal(ui.isBlocking(), true);
+
+  documentRef.getElementById('storyAction').click();
+  assert.equal(await result, 'continue');
+  assert.equal(chip.hidden, true);
+});
 
 test('StoryUI.say renders authored beats one at a time and resolves after the last', async (t) => {
   const { documentRef, previousFocus, ui } = createUI(t);

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+* Reflowed the live corner HUD into two explicit rails so the town status,
+  current objective, and remembered standing cannot overlap, while time and
+  survival information keep a consistent ten-pixel separation. Increased the
+  time and survival typography floors, widened the compact survival panel, and
+  preserved a clear objective row below both corners on narrow portrait views.
+* Added three compact, provenance-recorded visual studies for the Community
+  Ledger, forest-edge camp, and Town Bell to relevant dialogue beats and
+  objectives, with text-first and failed-image fallbacks. Desktop players can
+  press `H` for one four-second ground ribbon toward the live objective; it
+  follows only reviewed town corridors, expires without changing progression,
+  and yields to the existing persistent comply/alter routes.
 * Moved Community Ledger enrollment directly after Lumen’s welcome. Day One
   chores now unlock after signing, update a readable truthful Ledger account,
   and advance to dusk only when the account is complete. After the first Bell,

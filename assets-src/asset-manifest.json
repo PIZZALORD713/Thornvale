@@ -50,6 +50,22 @@
       "rawSourceRedistribution": false,
       "releaseBlocked": false
     },
+    "thornvale-key-object-cues-v1": {
+      "assetKind": "ui",
+      "creator": "Thornvale project using built-in OpenAI image generation",
+      "status": "project-authored",
+      "licenseOrPermission": "Generated specifically for Thornvale without external image inputs; no root license is selected and default project terms apply; see NOTICE.md",
+      "sourcePage": null,
+      "sourceRetrievedOn": null,
+      "provenance": "public/ui/key-object-cues/v1/PROVENANCE.md",
+      "fallbackContract": "A missing or undecodable cue preserves the existing objective and dialogue text and cannot block interaction, choice, or progression.",
+      "qaEvidence": [
+        "tests/key-object-cues-assets.test.js",
+        "tests/story-ui-beats.test.js"
+      ],
+      "rawSourceRedistribution": false,
+      "releaseBlocked": false
+    },
     "thornvale-cottages": {
       "creator": "Thornvale project",
       "status": "project-authored",
@@ -610,6 +626,108 @@
         "path": "scripts/build-village-dressing.py",
         "sha256": "8f8ad2f88f097d4e75e001f3026212a38a9023e68b64159bd281942868c382f9",
         "transform": "The deterministic generator creates the Blender scene and exports the WelcomeGate, CommunityLedger, and TownBell pilot roots."
+      }
+    },
+    {
+      "id": "thornvale-key-object-cue-community-ledger-v1",
+      "path": "public/ui/key-object-cues/v1/community-ledger.avif",
+      "runtime": true,
+      "kind": "ui",
+      "family": "thornvale-key-object-cues-v1",
+      "bytes": 1229,
+      "sha256": "6265b754ffda9a796c0e687a253a0846e091724ca03884c5ed817bbb40476a50",
+      "dimensions": { "width": 128, "height": 128 },
+      "source": {
+        "originalFilename": "community-ledger-source.png",
+        "path": "assets-src/ui/key-object-cues-v1/community-ledger-source.png",
+        "sha256": "1ecd8deab8fcd0943c3c1a9fde4c7be023793c9ec82d611a842868b28ef4be3b",
+        "transform": "FFmpeg 8.1 center-fit and Lanczos downsample to 128x128, YUV420p, single-frame libsvtav1 CRF 42 preset 8, metadata removed, AVIF output."
+      }
+    },
+    {
+      "id": "thornvale-key-object-cue-forest-edge-camp-v1",
+      "path": "public/ui/key-object-cues/v1/forest-edge-camp.avif",
+      "runtime": true,
+      "kind": "ui",
+      "family": "thornvale-key-object-cues-v1",
+      "bytes": 1500,
+      "sha256": "061e3e8790570545cbf07f108bf9a27776df3fa1b4f344cb03fcd8cf240fb666",
+      "dimensions": { "width": 128, "height": 128 },
+      "source": {
+        "originalFilename": "forest-edge-camp-source.png",
+        "path": "assets-src/ui/key-object-cues-v1/forest-edge-camp-source.png",
+        "sha256": "21908419258bf52065e22878c719766e467fc76d1b096509706d886deb9ae869",
+        "transform": "FFmpeg 8.1 center-fit and Lanczos downsample to 128x128, YUV420p, single-frame libsvtav1 CRF 42 preset 8, metadata removed, AVIF output."
+      }
+    },
+    {
+      "id": "thornvale-key-object-cue-town-bell-v1",
+      "path": "public/ui/key-object-cues/v1/town-bell.avif",
+      "runtime": true,
+      "kind": "ui",
+      "family": "thornvale-key-object-cues-v1",
+      "bytes": 1592,
+      "sha256": "cee19defffcd01efe9c9e70c87a0d52ce9a835d196f25e4196a589fb1eb52966",
+      "dimensions": { "width": 128, "height": 128 },
+      "source": {
+        "originalFilename": "town-bell-source.png",
+        "path": "assets-src/ui/key-object-cues-v1/town-bell-source.png",
+        "sha256": "980d06a36745f3c2c1a018adab6e8f1d75fe2463fbe9ed7a1e4c8da240076de2",
+        "transform": "FFmpeg 8.1 center-fit and Lanczos downsample to 128x128, YUV420p, single-frame libsvtav1 CRF 42 preset 8, metadata removed, AVIF output."
+      }
+    },
+    {
+      "id": "thornvale-key-object-cue-community-ledger-source-v1",
+      "path": "assets-src/ui/key-object-cues-v1/community-ledger-source.png",
+      "runtime": false,
+      "kind": "source-image",
+      "family": "thornvale-key-object-cues-v1",
+      "storage": "git",
+      "intakeBatch": "2026-07-19-key-object-cues-v1",
+      "bytes": 2350408,
+      "sha256": "1ecd8deab8fcd0943c3c1a9fde4c7be023793c9ec82d611a842868b28ef4be3b",
+      "dimensions": { "width": 1254, "height": 1254 },
+      "source": {
+        "originalFilename": "exec-addbb796-6a8b-4707-8919-22ce11462894.png",
+        "path": "assets-src/ui/key-object-cues-v1/community-ledger-source.png",
+        "sha256": "1ecd8deab8fcd0943c3c1a9fde4c7be023793c9ec82d611a842868b28ef4be3b",
+        "transform": "Built-in image-generation output retained unchanged as the canonical source."
+      }
+    },
+    {
+      "id": "thornvale-key-object-cue-forest-edge-camp-source-v1",
+      "path": "assets-src/ui/key-object-cues-v1/forest-edge-camp-source.png",
+      "runtime": false,
+      "kind": "source-image",
+      "family": "thornvale-key-object-cues-v1",
+      "storage": "git",
+      "intakeBatch": "2026-07-19-key-object-cues-v1",
+      "bytes": 2630657,
+      "sha256": "21908419258bf52065e22878c719766e467fc76d1b096509706d886deb9ae869",
+      "dimensions": { "width": 1254, "height": 1254 },
+      "source": {
+        "originalFilename": "exec-36f4be7d-3d65-4c25-8b2b-9ecd5679129c.png",
+        "path": "assets-src/ui/key-object-cues-v1/forest-edge-camp-source.png",
+        "sha256": "21908419258bf52065e22878c719766e467fc76d1b096509706d886deb9ae869",
+        "transform": "Built-in image-generation output retained unchanged as the canonical source."
+      }
+    },
+    {
+      "id": "thornvale-key-object-cue-town-bell-source-v1",
+      "path": "assets-src/ui/key-object-cues-v1/town-bell-source.png",
+      "runtime": false,
+      "kind": "source-image",
+      "family": "thornvale-key-object-cues-v1",
+      "storage": "git",
+      "intakeBatch": "2026-07-19-key-object-cues-v1",
+      "bytes": 2783296,
+      "sha256": "980d06a36745f3c2c1a018adab6e8f1d75fe2463fbe9ed7a1e4c8da240076de2",
+      "dimensions": { "width": 1254, "height": 1254 },
+      "source": {
+        "originalFilename": "exec-cbe8ec3e-479a-4a90-8dc9-ed917786b075.png",
+        "path": "assets-src/ui/key-object-cues-v1/town-bell-source.png",
+        "sha256": "980d06a36745f3c2c1a018adab6e8f1d75fe2463fbe9ed7a1e4c8da240076de2",
+        "transform": "Built-in image-generation output retained unchanged as the canonical source."
       }
     }
   ]

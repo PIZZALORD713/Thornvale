@@ -58,6 +58,8 @@ function createHarness({
     signature: 'Juniper Vale',
   }),
   stewardActionHandler = null,
+  stewardPosition = { x: 1.6, y: 0, z: 9.4 },
+  onObjectiveChange = null,
 } = {}) {
   const calls = [];
   const playerPlacements = [];
@@ -195,6 +197,7 @@ function createHarness({
     setStoryBlocking(value) {
       calls.push(`blocking:${value}`);
     },
+    onObjectiveChange,
     onError(error, context) {
       calls.push(`error:${context}:${error.message}`);
     },
@@ -207,12 +210,69 @@ function createHarness({
     ],
     stewardInteractable: {
       id: 'steward-8914',
-      position: { x: 1.6, y: 0, z: 9.4 },
+      position: stewardPosition,
+      radius: 2.35,
     },
   });
 
   return { calls, director, session, storage, playerPlacements };
 }
+
+test('objective targets resolve from authored descriptors and follow moving actors', async () => {
+  const stewardPosition = { x: 1.6, y: 0, z: 9.4 };
+  const observed = [];
+  const harness = createHarness({
+    stewardPosition,
+    onObjectiveChange(objective, target) {
+      observed.push({ objective, target });
+    },
+  });
+
+  const before = harness.session.snapshot();
+  assert.equal(harness.director.currentObjective(), CORE_HOOK_V03.objectives.meetSteward);
+  assert.deepEqual(harness.session.snapshot(), before, 'querying the objective must not mutate session state');
+
+  await harness.director.start();
+  const stewardTarget = harness.director.resolveObjectiveTarget();
+  assert.equal(stewardTarget.id, CORE_HOOK_V03.ids.steward);
+  assert.equal(stewardTarget.radius, 2.35);
+  assert.strictEqual(stewardTarget.getPosition(), stewardPosition);
+
+  stewardPosition.x = -0.2;
+  stewardPosition.z = 4.8;
+  assert.strictEqual(stewardTarget.getPosition(), stewardPosition);
+  assert.deepEqual(
+    { x: stewardTarget.getPosition().x, z: stewardTarget.getPosition().z },
+    { x: -0.2, z: 4.8 },
+    'the published provider must follow Lumen without republishing',
+  );
+  assert.equal(observed.at(-1).objective, CORE_HOOK_V03.objectives.meetSteward);
+
+  const ledgerTarget = harness.director.resolveObjectiveTarget(CORE_HOOK_V03.objectives.signLedger);
+  assert.equal(ledgerTarget.id, CORE_HOOK_V03.ids.ledger);
+  assert.deepEqual({ ...ledgerTarget.getPosition() }, { x: -2, y: 0.8, z: 3 });
+
+  const complyTarget = harness.director.resolveObjectiveTarget(CORE_HOOK_V03.objectives.complyComplete);
+  assert.equal(complyTarget.id, 'comply');
+  assert.equal(complyTarget.radius, CORE_HOOK_V03.timing.routeArrivalRadius);
+  assert.deepEqual({ ...complyTarget.getPosition() }, { x: 7, y: 0, z: 4.25 });
+
+  assert.equal(harness.director.resolveObjectiveTarget({ target: { kind: 'interactable', id: 'missing' } }), null);
+  assert.equal(harness.director.resolveObjectiveTarget({ target: { kind: 'anchor', position: { x: NaN, y: 0, z: 0 } } }), null);
+});
+
+test('objective observer failures cannot block the authored route', async () => {
+  const harness = createHarness({
+    onObjectiveChange() {
+      throw new Error('cue projection unavailable');
+    },
+  });
+
+  await harness.director.start();
+  assert.ok(harness.calls.includes(`objective:${CORE_HOOK_V03.objectives.meetSteward.id}`));
+  assert.ok(harness.calls.includes('error:objective-change:cue projection unavailable'));
+  assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.steward), true);
+});
 
 test('the truthful Ledger stays reviewable during Day One without creating the false record', async () => {
   const dayOne = { complete: false };
