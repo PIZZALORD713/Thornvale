@@ -41,6 +41,8 @@ import {
 } from '../visuals/TownAssetLoader.js';
 import { loadTraitEchoV1 } from '../visuals/FriendsiesTraitEchoes.js';
 import { createDayOneWorld } from '../visuals/DayOneWorld.js';
+import { createStewardshipWorld } from '../visuals/StewardshipWorld.js';
+import { FishingWorld } from '../visuals/FishingWorld.js';
 import { WorldAnimator } from '../visuals/WorldAnimator.js';
 import { createMoundSurfaceGrid } from '../utils/terrain-surface.js';
 
@@ -307,9 +309,21 @@ export async function buildTown(physicsWorld, scene, {
   const dayOneWorld = createDayOneWorld({
     layout: TOWN_LAYOUT,
     reducedMotion,
+    includeLegacyResources: false,
   });
   townRoot.add(dayOneWorld.root);
   interactables.push(...dayOneWorld.interactables);
+
+  const stewardshipWorld = createStewardshipWorld({
+    physicsWorld,
+    reducedMotion,
+  });
+  townRoot.add(stewardshipWorld.root);
+  interactables.push(...stewardshipWorld.interactables);
+
+  const fishingWorld = new FishingWorld({ reducedMotion }).init();
+  townRoot.add(fishingWorld.root);
+  interactables.push(...fishingWorld.interactables);
 
   const ledger = authoredPilotLandmarks.get('ledger')
     || createLedgerLandmark(worldAnimator, TOWN_LAYOUT);
@@ -387,10 +401,14 @@ export async function buildTown(physicsWorld, scene, {
     breathingGrass,
     ambientLife,
     dayOneWorld,
+    stewardshipWorld,
+    fishingWorld,
     worldAnimator,
     updateWorld: (dt, nightState) => {
       worldAnimator.update(dt, nightState);
       dayOneWorld.update(dt);
+      stewardshipWorld.update(dt);
+      fishingWorld.update(dt);
     },
   };
 }

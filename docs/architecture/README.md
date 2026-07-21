@@ -99,13 +99,16 @@ infrastructure depend on a feature UI or visual implementation.
 ## Current authored gameplay flow
 
 `GameSession` is the single save and progression authority for both the Core
-Hook and the bounded Day One Proof. `CoreHookDirector` owns the social-horror
-story spine; `DayOneDirector` owns resource costs, survival recovery, camp and
-garden progress, and the first-afternoon completion predicate. `src/main.js`
-routes each stable interaction ID to the appropriate director, then projects
-the resulting session snapshot into `DayOneWorld`, the survival HUD, the story
-world, and the aesthetic presentation. Visual and UI modules never write the
-saved state.
+Hook, the bounded Day One Proof, and stewardship activities. The clean v1 save
+stores global `player`, `world`, and `activities` state; chapter state keeps a
+historical account and completion flag but never duplicates current inventory.
+`CoreHookDirector` owns the social-horror story spine, `DayOneDirector` owns
+camp/garden costs and recovery, `WoodcuttingDirector` owns axe/tree/planting
+commits, and `FishingController` owns the transient cast-to-landing state
+machine. `src/main.js` routes stable interaction IDs to those systems and
+projects snapshots into `DayOneWorld`, `StewardshipWorld`, the HUDs, the story
+world, and the aesthetic presentation. Visual and UI modules never write saved
+state; fishing timing, line tension, tree fall, and axe swing remain transient.
 
 ## Incremental target
 

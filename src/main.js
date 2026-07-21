@@ -57,11 +57,14 @@ import { HUD } from './ui/HUD.js';
 import { StoryUI } from './ui/StoryUI.js';
 import { TouchControls } from './ui/TouchControls.js';
 import { MobileDisplayNotice } from './ui/MobileDisplayNotice.js';
+import { FishingHUD } from './ui/FishingHUD.js';
 import { DayNightSystem } from './game/DayNightSystem.js';
 import { GameSession } from './game/GameSession.js';
 import { CoreHookDirector } from './game/CoreHookDirector.js';
 import { DayOneDirector } from './game/DayOneDirector.js';
 import { DayOneActionController } from './game/DayOneActionController.js';
+import { WoodcuttingDirector } from './game/WoodcuttingDirector.js';
+import { FishingController } from './game/FishingController.js';
 import {
   hasPlayerFallenOutOfWorld,
   resolveCurrentRecoveryPoint,
@@ -70,6 +73,7 @@ import { InteractableSystem } from './game/InteractableSystem.js';
 import { buildTown } from './game/TownBuilder.js';
 import { CORE_HOOK_V03 } from './content/core-hook-v03.js';
 import { DAY_ONE_V01 } from './content/day-one-v01.js';
+import { STEWARDSHIP_V01 } from './content/stewardship-v01.js';
 import { DayOneActionPresenter } from './visuals/DayOneActionPresenter.js';
 import { disposeTownPresentation } from './app/disposeTownPresentation.js';
 import { recoverMissingCharacterVisuals } from './app/recoverMissingCharacterVisuals.js';
@@ -101,6 +105,12 @@ let dayOneActionController;
 let dayOneActionPresenter;
 let dayOneActionUnsubscribe;
 let dayOneWorld;
+let stewardshipWorld;
+let fishingWorld;
+let woodcuttingDirector;
+let fishingController;
+let fishingUnsubscribe;
+let fishingHUD;
 let storyWorld;
 let objectiveHintTrail;
 let stewardActor;
@@ -268,6 +278,8 @@ async function init() {
   ambientLife = town.ambientLife || null;
   breathingGrass = town.breathingGrass || null;
   dayOneWorld = town.dayOneWorld || null;
+  stewardshipWorld = town.stewardshipWorld || null;
+  fishingWorld = town.fishingWorld || null;
   const spawnPoint = town.spawnPoint || new Vector3(0, 2, 14);
   playerSpawnPoint = spawnPoint.clone();
   worldAnimator = town.worldAnimator || (town.updateWorld
@@ -351,13 +363,35 @@ async function init() {
   });
 
   if (storyEnabled) {
-    gameSession = new GameSession({ storageKey: CORE_HOOK_V03.storageKey });
+    gameSession = new GameSession();
     if (params.get('story') === 'reset' || params.get('reset') === '1') gameSession.reset();
     dayOneDirector = new DayOneDirector({
       session: gameSession,
       content: DAY_ONE_V01,
       actionController: dayOneActionController,
       onPassOut: recoverPlayerAfterPassOut,
+    });
+    woodcuttingDirector = new WoodcuttingDirector({
+      session: gameSession,
+      onStatus: (message) => hud?.setStatus?.(message),
+      onExhausted: () => dayOneDirector?.recoverFromExhaustion?.(),
+    });
+    fishingController = new FishingController({
+      session: gameSession,
+      control: playerController,
+      onStatus: (message) => hud?.setStatus?.(message),
+    });
+    fishingHUD = new FishingHUD({ controlMode }).init();
+    fishingUnsubscribe = fishingController.subscribe((state) => {
+      fishingHUD?.setState?.(state);
+      fishingWorld?.setState?.(state);
+      if (state.type === 'landed') {
+        hud?.setStatus?.('A pond dace comes ashore. The catch is now in your inventory.');
+        celebrateInteraction(fishingWorld?.root?.position || new Vector3(...STEWARDSHIP_V01.fishing.position), 'magic');
+        coreHookDirector?.refreshObjective?.();
+      } else if (state.type === 'escaped') {
+        hud?.setStatus?.('The pond settles. Cast again when you are ready.');
+      }
     });
 
     projectSessionState(gameSession.snapshot(), { animate: false });
@@ -443,6 +477,11 @@ async function init() {
     dayOneDirector,
     dayOneActionController,
     dayOneWorld,
+    stewardshipWorld,
+    fishingWorld,
+    woodcuttingDirector,
+    fishingController,
+    interactableSystem,
     storyWorld,
     objectiveHintTrail,
     worldAnimator,
@@ -467,6 +506,12 @@ function applyDayOnePresentationState(snapshot) {
     dayOneWorld?.setState?.(snapshot);
   } catch (error) {
     console.warn('[DayOneWorld] Snapshot projection failed.', error);
+  }
+
+  try {
+    stewardshipWorld?.setState?.(snapshot);
+  } catch (error) {
+    console.warn('[StewardshipWorld] Snapshot projection failed.', error);
   }
 
   try {
@@ -526,6 +571,60 @@ function registerStoryInteractions(interactables) {
   interactableSystem = new InteractableSystem(hud);
 
   for (const interactable of interactables) {
+    const isFishingInteraction = interactable.id === STEWARDSHIP_V01.ids.fishingSpot;
+    const isWoodcuttingInteraction = woodcuttingDirector?.handles?.(interactable.id) ?? false;
+    if (isFishingInteraction) {
+      interactable.enabled = () => fishingController?.canStart?.() ?? false;
+      interactable.prompt = () => fishingController?.prompt || 'Cast into the quiet pond';
+      interactable.onInteract = () => fishingController?.start?.({
+        targetPosition: interactable.position,
+        feedbackKind: 'magic',
+      });
+      interactableSystem.register(interactable);
+      continue;
+    }
+    if (isWoodcuttingInteraction) {
+      interactable.enabled = () => (
+        !stewardshipWorld?._strike
+        && !fishingController?.active
+        && (woodcuttingDirector?.isInteractableEnabled?.(interactable.id) ?? false)
+      );
+      interactable.prompt = () => woodcuttingDirector?.promptFor?.(interactable.id) || 'Tend the grove';
+      interactable.onInteract = () => {
+        const definition = STEWARDSHIP_V01.trees.find((tree) => tree.id === interactable.id);
+        if (!definition) return woodcuttingDirector.interact(interactable.id);
+        if (!woodcuttingDirector.canAffordStrike()) {
+          return woodcuttingDirector.interact(interactable.id);
+        }
+
+        const tree = gameSession.snapshot().world.trees.byId[interactable.id];
+        const final = (tree?.hitCount || 0) + 1 >= definition.requiredHits;
+        playerController?.setActionLocked?.(true, { targetPosition: interactable.position });
+        return new Promise((resolve) => {
+          let outcome = null;
+          const started = stewardshipWorld?.playStrike?.(interactable.id, {
+            final,
+            onContact: () => {
+              outcome = woodcuttingDirector.interact(interactable.id);
+              if (outcome?.applied) {
+                celebrateInteraction(interactable.position, outcome.felled ? 'magic' : 'kindness');
+                coreHookDirector?.refreshObjective?.();
+              }
+            },
+            onComplete: () => {
+              playerController?.setActionLocked?.(false);
+              resolve(outcome);
+            },
+          });
+          if (!started) {
+            playerController?.setActionLocked?.(false);
+            resolve(woodcuttingDirector.interact(interactable.id));
+          }
+        });
+      };
+      interactableSystem.register(interactable);
+      continue;
+    }
     const isDayOneInteraction = dayOneDirector?.handles?.(interactable.id) ?? false;
     const director = isDayOneInteraction ? dayOneDirector : coreHookDirector;
     interactable.enabled = () => (
@@ -534,7 +633,7 @@ function registerStoryInteractions(interactables) {
     );
     interactable.prompt = () => director?.promptFor(interactable.id) || 'Listen closely';
     interactable.onInteract = async () => {
-      const dayOneBefore = isDayOneInteraction ? gameSession?.dayOne : null;
+      const dayOneBefore = isDayOneInteraction ? gameSession?.snapshot?.() : null;
       const authoredAction = isDayOneInteraction
         ? dayOneDirector?.actionFor?.(interactable.id, gameSession?.snapshot?.())
         : null;
@@ -543,9 +642,10 @@ function registerStoryInteractions(interactables) {
         feedbackKind: dayOneFeedbackKind(interactable.id),
       });
       if (isDayOneInteraction) {
-        const dayOneAfter = gameSession?.dayOne;
+        const dayOneAfter = gameSession?.snapshot?.();
         const changed = JSON.stringify(dayOneBefore) !== JSON.stringify(dayOneAfter);
-        const passedOut = (dayOneAfter?.passedOutCount || 0) > (dayOneBefore?.passedOutCount || 0);
+        const passedOut = (dayOneAfter?.player?.passedOutCount || 0)
+          > (dayOneBefore?.player?.passedOutCount || 0);
         if (changed && !passedOut && !authoredAction && typeof result === 'string' && result.trim()) {
           celebrateInteraction(interactable.position, dayOneFeedbackKind(interactable.id));
         }
@@ -1136,8 +1236,15 @@ function animate() {
   storyWorld?.update(dt);
   objectiveHintTrail?.update?.(dt);
   dayOneWorld?.update?.(dt);
+  stewardshipWorld?.update?.(dt);
+  fishingWorld?.update?.(dt);
 
-  if (interactableSystem && characterMotor) {
+  fishingController?.update?.(dt, inputManager);
+
+  if (fishingController?.active) {
+    hud?.hidePrompt?.();
+    touchControls?.setInteraction?.(fishingHUD?.actionLabel || fishingController.prompt, true);
+  } else if (interactableSystem && characterMotor) {
     interactableSystem.update(characterMotor.getPosition(), inputManager);
     const focusShotActive = Boolean(cameraRig?.isFocusShotActive?.());
     touchControls?.setInteraction?.(
@@ -1262,6 +1369,7 @@ function showObjectiveHint() {
     || storyBlocking
     || cameraRig?.isFocusShotActive?.()
     || dayOneActionController?.isActive
+    || fishingController?.active
     || !coreHookDirector
     || !objectiveHintTrail
   ) {
@@ -1404,6 +1512,12 @@ function dispose() {
   traitEchoUnsubscribe = null;
   dayOneActionUnsubscribe?.();
   dayOneActionUnsubscribe = null;
+  fishingUnsubscribe?.();
+  fishingUnsubscribe = null;
+  fishingController?.dispose?.();
+  fishingController = null;
+  fishingHUD?.dispose?.();
+  fishingHUD = null;
   dayOneActionPresenter?.dispose?.();
   dayOneActionPresenter = null;
   dayOneActionController?.dispose?.();
@@ -1412,7 +1526,12 @@ function dispose() {
   objectiveHintTrail?.dispose?.();
   objectiveHintTrail = null;
   dayOneDirector?.dispose();
+  woodcuttingDirector = null;
   dayOneWorld?.dispose();
+  stewardshipWorld?.dispose?.();
+  stewardshipWorld = null;
+  fishingWorld?.dispose?.();
+  fishingWorld = null;
   ({
     ambientLife,
     traitEchoes,
@@ -1431,6 +1550,11 @@ function dispose() {
     window.thornvale.worldAnimator = worldAnimator;
     window.thornvale.dayOneDirector = null;
     window.thornvale.dayOneWorld = null;
+    window.thornvale.stewardshipWorld = null;
+    window.thornvale.fishingWorld = null;
+    window.thornvale.woodcuttingDirector = null;
+    window.thornvale.fishingController = null;
+    window.thornvale.interactableSystem = null;
     window.thornvale.dayOneActionController = null;
     window.thornvale.objectiveHintTrail = null;
     window.thornvale.environmentLighting = null;

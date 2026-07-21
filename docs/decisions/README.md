@@ -43,6 +43,7 @@ What becomes easier, harder, or newly required?
 - [`0007-pizza-lab-world-stage-authority.md`](0007-pizza-lab-world-stage-authority.md) — Accepted for World Stage v1
 - [`0008-pizza-lab-wayfinder-asset-promotion.md`](0008-pizza-lab-wayfinder-asset-promotion.md) — Accepted for Wayfinder v1
 - [`0009-production-dist-budget-headroom.md`](0009-production-dist-budget-headroom.md) — Accepted
+- [`0010-global-player-world-activity-state.md`](0010-global-player-world-activity-state.md) — Accepted
 
 The wiki remains the home for product and design decisions. Its
 [`Tech Decisions`](../../wiki/Tech-Decisions-ADR-Log.md) page can summarize

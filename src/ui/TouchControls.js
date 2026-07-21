@@ -25,6 +25,7 @@ export class TouchControls {
     this.movePointerId = null;
     this.lookPointerId = null;
     this.jumpPointerId = null;
+    this.interactPointerId = null;
     this.lookPosition = { x: 0, y: 0 };
     this.sprinting = false;
   }
@@ -61,7 +62,11 @@ export class TouchControls {
       this.listen(this.elements.jumpButton, type, (event) => this.onJumpEnd(event));
     }
     this.listen(this.elements.jumpButton, 'click', (event) => this.onJumpClick(event));
-    this.listen(this.elements.interactButton, 'click', (event) => this.onInteract(event));
+    this.listen(this.elements.interactButton, 'pointerdown', (event) => this.onInteractStart(event));
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+      this.listen(this.elements.interactButton, type, (event) => this.onInteractEnd(event));
+    }
+    this.listen(this.elements.interactButton, 'click', (event) => this.onInteractClick(event));
 
     for (const type of ['blur', 'pagehide', 'resize', 'orientationchange']) {
       this.listen(this.window, type, () => this.clear());
@@ -222,8 +227,27 @@ export class TouchControls {
     this.consumeEvent(event);
   }
 
-  onInteract(event) {
-    if (!this.enabled || !this.interactionAvailable) return;
+  onInteractStart(event) {
+    if (!this.enabled || !this.interactionAvailable || this.interactPointerId !== null) return;
+    this.interactPointerId = event.pointerId;
+    this.projectState('interactionActive', true);
+    this.capture(event.currentTarget, event.pointerId);
+    this.input?.setActionHeld?.('interact', true, TOUCH_SOURCE);
+    this.input?.pressAction?.('interact', TOUCH_SOURCE);
+    this.consumeEvent(event);
+  }
+
+  onInteractEnd(event) {
+    if (event.pointerId !== this.interactPointerId) return;
+    this.release(event.currentTarget, event.pointerId);
+    this.interactPointerId = null;
+    this.projectState('interactionActive', false);
+    this.input?.setActionHeld?.('interact', false, TOUCH_SOURCE);
+    this.consumeEvent(event);
+  }
+
+  onInteractClick(event) {
+    if (!this.enabled || !this.interactionAvailable || Number(event.detail) !== 0) return;
     this.input?.pressAction?.('interact', TOUCH_SOURCE);
     this.consumeEvent(event);
   }
@@ -263,6 +287,7 @@ export class TouchControls {
     this.projectState('moving', this.movePointerId !== null);
     this.projectState('sprinting', this.sprinting);
     this.projectState('jumpActive', this.jumpPointerId !== null);
+    this.projectState('interactionActive', this.interactPointerId !== null);
     this.projectState('interactionAvailable', this.interactionAvailable);
   }
 
@@ -270,9 +295,11 @@ export class TouchControls {
     this.release(this.elements.moveZone, this.movePointerId);
     this.release(this.elements.lookZone, this.lookPointerId);
     this.release(this.elements.jumpButton, this.jumpPointerId);
+    this.release(this.elements.interactButton, this.interactPointerId);
     this.movePointerId = null;
     this.lookPointerId = null;
     this.jumpPointerId = null;
+    this.interactPointerId = null;
     this.sprinting = false;
     this.interactionAvailable = false;
     if (this.elements.interactButton) {

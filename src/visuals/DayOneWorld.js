@@ -90,9 +90,14 @@ function stateValue(...values) {
  * anchors for whichever authoritative director is composing the day.
  */
 export class DayOneWorld {
-  constructor({ layout = TOWN_LAYOUT, reducedMotion = false } = {}) {
+  constructor({
+    layout = TOWN_LAYOUT,
+    reducedMotion = false,
+    includeLegacyResources = true,
+  } = {}) {
     this.layout = layout;
     this.reducedMotion = Boolean(reducedMotion);
+    this.includeLegacyResources = Boolean(includeLegacyResources);
     this.root = new Group();
     this.root.name = 'day_one_provisional_camp_world';
     this.root.userData.cameraCollision = false;
@@ -120,8 +125,10 @@ export class DayOneWorld {
     this._createShelter();
     this._createCampfire();
     this._createGarden();
-    this._createWoodlot();
-    this._createFishingSpot();
+    if (this.includeLegacyResources) {
+      this._createWoodlot();
+      this._createFishingSpot();
+    }
     this._createInteractables();
     this.initialized = true;
     this.setState(null);
@@ -703,7 +710,13 @@ export class DayOneWorld {
   }
 
   _createInteractables() {
-    this.interactables = DAY_ONE_WORLD_INTERACTIONS.map((contract) => {
+    const interactions = this.includeLegacyResources
+      ? DAY_ONE_WORLD_INTERACTIONS
+      : DAY_ONE_WORLD_INTERACTIONS.filter((contract) => (
+        contract.id !== DAY_ONE_V01.ids.woodlot
+        && contract.id !== DAY_ONE_V01.ids.fishingSpot
+      ));
+    this.interactables = interactions.map((contract) => {
       const anchor = this.layout.dayOne[contract.site];
       return {
         id: contract.id,
@@ -715,7 +728,19 @@ export class DayOneWorld {
   }
 
   setState(snapshot) {
-    const dayOne = snapshot?.dayOne || snapshot || {};
+    const globalState = snapshot?.player && snapshot?.world;
+    const specimens = globalState ? Object.values(snapshot.player.inventory?.specimens || {}) : [];
+    const dayOne = globalState ? {
+      complete: snapshot.chapters?.dayOne?.complete,
+      camp: snapshot.world.camp,
+      garden: snapshot.world.garden,
+      inventory: {
+        wood: snapshot.player.inventory?.stackables?.['resource.wood'] || 0,
+        rawFish: specimens.filter((fish) => fish?.condition === 'raw').length,
+        cookedFish: specimens.filter((fish) => fish?.condition === 'cooked').length,
+      },
+      activity: snapshot.chapters?.dayOne?.account,
+    } : snapshot?.dayOne || snapshot || {};
     this._state = dayOne;
     const camp = dayOne.camp || {};
     const garden = dayOne.garden || {};

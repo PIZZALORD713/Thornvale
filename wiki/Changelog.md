@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+* Replaced the provisional one-press wood and pond rewards with the first
+  stewardship slice. A canonical provenance-pinned fRiENDSiES axe can be found,
+  owned, and equipped; each of three mature trees takes three strikes, falls to
+  a persistent stump, grants six usable wood plus one replacement seed exactly
+  once, and can be followed by a persistent seedling at the marked grove patch.
+  The simple rod now runs a deterministic cast, false-nibble, true-bite, hook,
+  tension-management, and landing sequence with desktop and touch hold input.
+  Canonical fRiENDSiES `hand:Guess` now presents that simple-rod tier with its
+  original gold grip, coiled line, and lure; its rigid frame-zero pose is baked
+  in memory under the unchanged pond anchor, with the procedural rod retained
+  as a local non-blocking fallback.
+  A persistent four-step fishing guide teaches that rhythm on the first cast,
+  distinguishes the decoy nibble from the true plunge, changes the live reel
+  cue from hold to release before dangerous tension, and explains the exact
+  missed rule after an escape. Read-heavy windows are more forgiving and use
+  keyboard- or touch-specific control names.
+  Successful catches persist as individual fish specimens. Inventory, tools,
+  equipment, trees, activities, camp, garden, and chapter accounting now share
+  one clean global `GameSession` contract; development saves from older shapes
+  reset because no player migration is required. Tree strikes retain the
+  established labor cost and pass-out recovery, invalid lifecycle saves reset,
+  restored stumps no longer replay their fall, and completed Day One accounts
+  remain historical while lifetime stewardship totals continue.
 * Raised the audited production artifact ceiling by 20%, from 8,388,608 to
   10,066,330 bytes (9.6 MiB), so the integrated object-cue and Pizza Lab release
   has measurable headroom. All family-specific asset caps remain unchanged. The

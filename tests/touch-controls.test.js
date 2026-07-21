@@ -139,13 +139,22 @@ test('jump and interaction emit one semantic edge and interruption clears held s
   controls.setInteraction('Gather wood', true);
   assert.equal(interact.disabled, false);
   assert.equal(elements.get('touchInteractLabel').textContent, 'Gather wood');
-  interact.dispatch('click');
+  interact.dispatch('pointerdown', { pointerId: 17 });
+  assert.equal(input.isActionHeld('interact'), true);
+  assert.equal(input.consumeActionPress('interact'), true);
+  assert.equal(input.consumeActionPress('interact'), false);
+  interact.dispatch('pointerup', { pointerId: 17 });
+  assert.equal(input.isActionHeld('interact'), false);
+
+  interact.dispatch('click', { detail: 0 });
   assert.equal(input.consumeActionPress('interact'), true);
   assert.equal(input.consumeActionPress('interact'), false);
 
   jump.dispatch('pointerdown', { pointerId: 8 });
+  interact.dispatch('pointerdown', { pointerId: 18 });
   windowRef.dispatch('blur');
   assert.equal(input.isActionHeld('jump'), false);
+  assert.equal(input.isActionHeld('interact'), false);
   assert.deepEqual({ ...input.getMovementInput() }, { x: 0, z: 0 });
 
   controls.dispose();

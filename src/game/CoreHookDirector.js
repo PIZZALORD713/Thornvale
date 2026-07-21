@@ -60,7 +60,9 @@ export class CoreHookDirector {
       setRoute: deps.setRoute || null,
       getRouteDestination: deps.getRouteDestination || null,
       resetPlayer: deps.resetPlayer || null,
-      isDayOneComplete: deps.isDayOneComplete || (() => Boolean(this.session.dayOne?.complete)),
+      isDayOneComplete: deps.isDayOneComplete || (() => (
+        this.session.snapshot?.().chapters?.dayOne?.complete === true
+      )),
       getDayOneObjective: deps.getDayOneObjective || (() => null),
       getDayOneLedgerRecord: deps.getDayOneLedgerRecord || (() => null),
       getStewardPosition: deps.getStewardPosition || (() => this.deps.stewardActor?.position),
