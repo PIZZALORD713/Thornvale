@@ -240,7 +240,7 @@ test('manual curation stays bounded, exact-keyed, semantic, and technically clas
   assert.equal(curation.authorizationFamily, 'friendsies-project');
   assert.match(curation.scope, /never permission/);
   assert.equal(Object.hasOwn(curation, 'rightsStatus'), false);
-  assert.equal(entries.length, 27);
+  assert.equal(entries.length, 31);
 
   const allowedStatuses = new Set(['active', 'shortlist', 'hold']);
   const requiredProfileFields = [
@@ -264,11 +264,13 @@ test('manual curation stays bounded, exact-keyed, semantic, and technically clas
       'radial-bloom', 'tree-crest', 'sleep-crest', 'horizontal-leaf',
       'cloud-crest', 'stacked-totem', 'starburst-crest', 'chef-crest',
       'shell-crest', 'eye-crest', 'fractured-heart', 'portal-crest',
-      'inverted-crown',
+      'inverted-crown', 'rounded-grove-tree', 'mushroom-cluster',
+      'flowered-berm', 'mushroom-cap',
     ]),
     mountType: new Set([
       'offering', 'sconce', 'crest', 'shelf', 'lintel', 'ground-marker',
       'held-reference', 'unassigned',
+      'grounded', 'water-surface',
     ]),
     readDistance: new Set(['near', 'mid', 'far']),
     paletteFamily: new Set([
@@ -277,6 +279,7 @@ test('manual curation stays bounded, exact-keyed, semantic, and technically clas
       'night-gold', 'anomaly-violet', 'renewal-green', 'memory-purple',
       'civic-gold', 'botanical-pink', 'botanical-green', 'domestic-green',
       'civic-coral', 'pond-blue', 'correction-berry', 'route-periwinkle',
+      'grove-green', 'mushroom-violet', 'pond-green',
     ]),
     phaseReveal: new Set(['arrival', 'day', 'dusk', 'post-anomaly', 'resolution', 'future']),
     affordanceRisk: new Set(['low', 'medium', 'high']),
@@ -287,7 +290,7 @@ test('manual curation stays bounded, exact-keyed, semantic, and technically clas
   };
   for (const [key, entry] of entries) {
     assert.equal(key, `${entry.traitType}:${entry.value}`);
-    assert.ok(['hand', 'sprout', 'backpiece'].includes(entry.traitType));
+    assert.ok(['hand', 'head', 'sprout', 'backpiece'].includes(entry.traitType));
     assert.ok(allowedStatuses.has(entry.status));
     assert.ok(Array.isArray(entry.semanticTags) && entry.semanticTags.length > 0);
     assert.equal(typeof entry.environmentRole, 'string');
@@ -327,6 +330,12 @@ test('manual curation stays bounded, exact-keyed, semantic, and technically clas
   assert.equal(curation.entries['hand:Flower White'].status, 'active');
   assert.equal(curation.entries['hand:Torch'].status, 'active');
   assert.equal(curation.entries['sprout:Crown Up'].status, 'active');
+  assert.equal(curation.entries['head:Carrot'].status, 'active');
+  assert.equal(curation.entries['head:Earthworm'].status, 'active');
+  assert.equal(curation.entries['head:Flower Hill'].status, 'active');
+  assert.equal(curation.entries['sprout:Blooming Tree'].status, 'active');
+  assert.equal(curation.entries['sprout:Resting Green Leaf'].status, 'active');
+  assert.equal(curation.entries['sprout:Purp Mush'].status, 'active');
   assert.equal(curation.entries['hand:Book Of Ocean'].status, 'shortlist');
   assert.equal(curation.entries['sprout:Friends Key'].status, 'shortlist');
   assert.equal(curation.entries['hand:Orb'].status, 'hold');

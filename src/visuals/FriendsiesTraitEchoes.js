@@ -87,7 +87,7 @@ function assertFiniteGeometry(geometry, label) {
 /**
  * Freeze one fRiENDSiES attachment at its authored frame-zero pose.
  *
- * The three curated v1 traits are rigid props wrapped in full character rigs.
+ * The curated v1 traits are rigid props wrapped in full character rigs.
  * Baking their single weighted joint removes the armature and animation while
  * preserving the exact textured model for efficient environment instancing.
  */

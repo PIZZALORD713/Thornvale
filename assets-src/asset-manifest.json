@@ -663,6 +663,108 @@
       }
     },
     {
+      "id": "friendsies-pond-grove-carrot-v1",
+      "path": "public/friendsies/environment/pond-grove-v1/head-carrot.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-project",
+      "budgetGroups": ["friendsies-character:pond-grove-v1"],
+      "runtimeContexts": ["environment:pond-grove", "trait-echo:vegetation"],
+      "bytes": 286216,
+      "sha256": "497704b585c74c3d4b4a2eaf27d0f6bee2dd36b50144acea0d6c29172e5ed65e",
+      "source": {
+        "originalFilename": "52ace99054a82db5bb05d1213ec048a5.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/52ace99054a82db5bb05d1213ec048a5.glb",
+        "sha256": "497704b585c74c3d4b4a2eaf27d0f6bee2dd36b50144acea0d6c29172e5ed65e",
+        "transform": "Bundled unchanged from canonical head:Carrot; runtime-only frame-zero bake, normalization, and instancing."
+      }
+    },
+    {
+      "id": "friendsies-pond-grove-earthworm-v1",
+      "path": "public/friendsies/environment/pond-grove-v1/head-earthworm.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-project",
+      "budgetGroups": ["friendsies-character:pond-grove-v1"],
+      "runtimeContexts": ["environment:pond-grove", "trait-echo:vegetation"],
+      "bytes": 359232,
+      "sha256": "3961eda5f0f194eadc07fe36f126478dc1b5275f11220d5dd44a5be19e03db0b",
+      "source": {
+        "originalFilename": "e87f8a5943a749d420354f24b5c913df.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/e87f8a5943a749d420354f24b5c913df.glb",
+        "sha256": "3961eda5f0f194eadc07fe36f126478dc1b5275f11220d5dd44a5be19e03db0b",
+        "transform": "Bundled unchanged from canonical head:Earthworm; runtime-only frame-zero bake, normalization, and instancing."
+      }
+    },
+    {
+      "id": "friendsies-pond-grove-flower-hill-v1",
+      "path": "public/friendsies/environment/pond-grove-v1/head-flower-hill.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-project",
+      "budgetGroups": ["friendsies-character:pond-grove-v1"],
+      "runtimeContexts": ["environment:pond-grove", "trait-echo:vegetation"],
+      "bytes": 84744,
+      "sha256": "e2cc2e240b5894ca5fa6bfbccb216658c3c833a8063afec181a95b57cda165d8",
+      "source": {
+        "originalFilename": "be68e9d400f5be45fc485bf18df85a68.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/be68e9d400f5be45fc485bf18df85a68.glb",
+        "sha256": "e2cc2e240b5894ca5fa6bfbccb216658c3c833a8063afec181a95b57cda165d8",
+        "transform": "Bundled unchanged from canonical head:Flower Hill; runtime-only frame-zero bake, normalization, and instancing."
+      }
+    },
+    {
+      "id": "friendsies-pond-grove-blooming-tree-v1",
+      "path": "public/friendsies/environment/pond-grove-v1/sprout-blooming-tree.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-project",
+      "budgetGroups": ["friendsies-character:pond-grove-v1"],
+      "runtimeContexts": ["environment:pond-grove", "trait-echo:vegetation"],
+      "bytes": 160004,
+      "sha256": "307dffcfacb8341c62284e1d572f823a83f061e951e459cfa529e3cccfc7f086",
+      "source": {
+        "originalFilename": "832b32717ead69077ab86f57d169a203.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/832b32717ead69077ab86f57d169a203.glb",
+        "sha256": "307dffcfacb8341c62284e1d572f823a83f061e951e459cfa529e3cccfc7f086",
+        "transform": "Bundled unchanged from canonical sprout:Blooming Tree; runtime-only frame-zero bake, normalization, and instancing."
+      }
+    },
+    {
+      "id": "friendsies-pond-grove-resting-green-leaf-v1",
+      "path": "public/friendsies/environment/pond-grove-v1/sprout-resting-green-leaf.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-project",
+      "budgetGroups": ["friendsies-character:pond-grove-v1"],
+      "runtimeContexts": ["environment:pond-grove", "trait-echo:vegetation"],
+      "bytes": 89740,
+      "sha256": "91f4544d2ace120956416407a7afe29e00731bd8b2ac862c256a897740a398a5",
+      "source": {
+        "originalFilename": "c3d4251fd07059dd4e8fced0b0ca631a.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/c3d4251fd07059dd4e8fced0b0ca631a.glb",
+        "sha256": "91f4544d2ace120956416407a7afe29e00731bd8b2ac862c256a897740a398a5",
+        "transform": "Bundled unchanged from canonical sprout:Resting Green Leaf; runtime-only frame-zero bake, normalization, and instancing."
+      }
+    },
+    {
+      "id": "friendsies-pond-grove-purp-mush-v1",
+      "path": "public/friendsies/environment/pond-grove-v1/sprout-purp-mush.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-project",
+      "budgetGroups": ["friendsies-character:pond-grove-v1"],
+      "runtimeContexts": ["environment:pond-grove", "trait-echo:vegetation"],
+      "bytes": 57888,
+      "sha256": "75413d5aec8c59ae78a497a38d9a2ff749462e2a4a127415e6d98960ac6c4487",
+      "source": {
+        "originalFilename": "e21213f839a1064cefa849551b6e6d5b.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/e21213f839a1064cefa849551b6e6d5b.glb",
+        "sha256": "75413d5aec8c59ae78a497a38d9a2ff749462e2a4a127415e6d98960ac6c4487",
+        "transform": "Bundled unchanged from canonical sprout:Purp Mush; runtime-only frame-zero bake, normalization, and instancing."
+      }
+    },
+    {
       "id": "thornvale-cottages",
       "path": "public/town/cottages/thornvale-cottages.glb",
       "runtime": true,

@@ -14,6 +14,7 @@ is not served by Vite and does not make any trait a runtime or release asset.
 npm run friendsies:index
 npm run friendsies:atlas
 npm run friendsies:probe -- --type hand --value "Book Of Ocean"
+npm run friendsies:probe -- --type head --value "Carrot"
 ```
 
 Follow the [environmental trait workflow](../../docs/friendsies-trait-workflow.md)

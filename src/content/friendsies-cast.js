@@ -37,7 +37,7 @@ function curatedTrait(sourceTokenId, traitType, value, assetUrl, options = {}) {
   };
 }
 
-function castEntry(tokenId, role, storyUse, attributes) {
+function castEntry(tokenId, role, storyUse, attributes, sourceOverrides = {}) {
   return {
     token_id: tokenId,
     role,
@@ -50,6 +50,7 @@ function castEntry(tokenId, role, storyUse, attributes) {
       tokenId,
       canonicalToken: true,
       provenancePath: `/friendsies/${String(tokenId).padStart(4, '0')}/PROVENANCE.md`,
+      ...sourceOverrides,
     },
     attributes,
   };
@@ -67,6 +68,102 @@ export const CURATED_FRIENDSIES_CAST = deepFreeze({
       },
     }),
   ]),
+  404: castEntry(404, 'trait-echo-source', [
+    'pond-grove',
+    'fungal-understory',
+  ], [
+    curatedTrait(
+      404,
+      'sprout',
+      'Purp Mush',
+      '/friendsies/environment/pond-grove-v1/sprout-purp-mush.glb',
+      {
+        storyUse: ['fungal-understory', 'pond-bank-detail'],
+        presentation: { storySignal: 'pond-grove-mushroom' },
+      },
+    ),
+  ], {
+    provenancePath: '/friendsies/environment/pond-grove-v1/PROVENANCE.md',
+  }),
+  563: castEntry(563, 'trait-echo-source', [
+    'pond-grove',
+    'flowered-bank',
+    'growth-landmark',
+  ], [
+    curatedTrait(
+      563,
+      'head',
+      'Flower Hill',
+      '/friendsies/environment/pond-grove-v1/head-flower-hill.glb',
+      {
+        storyUse: ['flowered-bank', 'pond-wayfinding'],
+        presentation: { storySignal: 'pond-grove-flower-hill' },
+      },
+    ),
+    curatedTrait(
+      563,
+      'sprout',
+      'Blooming Tree',
+      '/friendsies/environment/pond-grove-v1/sprout-blooming-tree.glb',
+      {
+        storyUse: ['grove-landmark', 'growth-endpoint'],
+        presentation: { storySignal: 'pond-grove-blooming-tree' },
+      },
+    ),
+  ], {
+    provenancePath: '/friendsies/environment/pond-grove-v1/PROVENANCE.md',
+  }),
+  601: castEntry(601, 'trait-echo-source', [
+    'pond-grove',
+    'mushroom-landmark',
+  ], [
+    curatedTrait(
+      601,
+      'head',
+      'Earthworm',
+      '/friendsies/environment/pond-grove-v1/head-earthworm.glb',
+      {
+        storyUse: ['mushroom-landmark', 'pond-bank-silhouette'],
+        presentation: { storySignal: 'pond-grove-mushroom-cluster' },
+      },
+    ),
+  ], {
+    provenancePath: '/friendsies/environment/pond-grove-v1/PROVENANCE.md',
+  }),
+  952: castEntry(952, 'trait-echo-source', [
+    'pond-grove',
+    'rounded-tree',
+  ], [
+    curatedTrait(
+      952,
+      'head',
+      'Carrot',
+      '/friendsies/environment/pond-grove-v1/head-carrot.glb',
+      {
+        storyUse: ['rounded-grove-tree', 'district-wayfinding'],
+        presentation: { storySignal: 'pond-grove-rounded-tree' },
+      },
+    ),
+  ], {
+    provenancePath: '/friendsies/environment/pond-grove-v1/PROVENANCE.md',
+  }),
+  1017: castEntry(1017, 'trait-echo-source', [
+    'pond-grove',
+    'resting-leaf',
+  ], [
+    curatedTrait(
+      1017,
+      'sprout',
+      'Resting Green Leaf',
+      '/friendsies/environment/pond-grove-v1/sprout-resting-green-leaf.glb',
+      {
+        storyUse: ['pond-surface', 'quiet-water-marker'],
+        presentation: { storySignal: 'pond-grove-resting-leaf' },
+      },
+    ),
+  ], {
+    provenancePath: '/friendsies/environment/pond-grove-v1/PROVENANCE.md',
+  }),
   6602: castEntry(6602, 'default-player', [
     'arrival',
     'player-avatar',

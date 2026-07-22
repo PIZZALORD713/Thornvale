@@ -47,6 +47,9 @@ reduced-motion, failure-fallback, and release-gate matrix is recorded in
 [`2026-07-13-story-actions-v1.md`](2026-07-13-story-actions-v1.md).
 The Trait Echo v1 checklist and pending results record is
 [`2026-07-12-trait-echo-v1.md`](2026-07-12-trait-echo-v1.md).
+The Pond–Grove v1.1 exact-asset intake, rollback matrix, and visual comparison
+are recorded in
+[`2026-07-21-pond-grove-trait-echo-v1.md`](2026-07-21-pond-grove-trait-echo-v1.md).
 The coordinated Courtesy/Correction shell, consequence grammar, trait-casting
 atlas, and breathing-grass evidence is recorded in
 [`2026-07-12-aesthetic-system-v1.md`](2026-07-12-aesthetic-system-v1.md).

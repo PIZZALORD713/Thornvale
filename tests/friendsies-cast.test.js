@@ -51,8 +51,10 @@ test('curated cast records story role and canonical source token without policy 
   }
 });
 
-test('curated cast contains the bounded default, steward, and Trait Echo source', () => {
-  assert.deepEqual(Object.keys(CURATED_FRIENDSIES_CAST).sort(), ['1', '6602', '8914']);
+test('curated cast contains the bounded characters and nine Trait Echo sources', () => {
+  assert.deepEqual(Object.keys(CURATED_FRIENDSIES_CAST).sort(), [
+    '1', '1017', '404', '563', '601', '6602', '8914', '952',
+  ]);
 
   const traitValues = Object.values(CURATED_FRIENDSIES_CAST)
     .flatMap((entry) => entry.attributes)
