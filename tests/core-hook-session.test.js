@@ -28,16 +28,26 @@ class MemoryStorage {
 }
 
 function completeDayOneDraft(draft) {
-  draft.dayOne.activity.woodGathered = 6;
-  draft.dayOne.activity.fishCaught = 1;
-  draft.dayOne.activity.mealsCooked = 1;
-  draft.dayOne.activity.mealsEaten = 1;
-  draft.dayOne.activity.seedsPlanted = 1;
-  draft.dayOne.garden.planted = true;
-  draft.dayOne.garden.watered = true;
-  draft.dayOne.camp.fireLit = true;
-  draft.dayOne.camp.shelterRepaired = true;
-  draft.dayOne.complete = true;
+  Object.assign(draft.activities.woodcutting, { woodHarvested: 6 });
+  Object.assign(draft.activities.fishing, {
+    totalCaught: 1,
+    caughtBySpecies: { 'fish.pond-dace': 1 },
+    largestCmBySpecies: { 'fish.pond-dace': 18 },
+  });
+  Object.assign(draft.activities.cooking, { mealsCooked: 1, mealsEaten: 1 });
+  Object.assign(draft.activities.gardening, { seedsPlanted: 1 });
+  Object.assign(draft.chapters.dayOne.account, {
+    woodGathered: 6,
+    fishCaught: 1,
+    mealsCooked: 1,
+    mealsEaten: 1,
+    seedsPlanted: 1,
+  });
+  draft.world.garden.planted = true;
+  draft.world.garden.watered = true;
+  draft.world.camp.fireLit = true;
+  draft.world.camp.shelterRepaired = true;
+  draft.chapters.dayOne.complete = true;
 }
 
 function createHarness({
@@ -494,7 +504,7 @@ test('GameSession saves versioned state, reloads it, and resets cleanly', () => 
     assert.equal(storage.getItem(CORE_HOOK_V03.storageKey), null);
   }
 
-  const versionOneSave = {
+  const obsoletePartialSave = {
     version: 1,
     phase: 'day-routine',
     neighborliness: 65,
@@ -509,12 +519,11 @@ test('GameSession saves versioned state, reloads it, and resets cleanly', () => 
     ending: null,
     updatedAt: 24,
   };
-  storage.setItem(CORE_HOOK_V03.storageKey, JSON.stringify(versionOneSave));
-  const migrated = new GameSession({ storage });
-  assert.equal(migrated.phase, 'day-routine');
-  assert.equal(migrated.playerName, null);
-  assert.equal(migrated.hasEvent('community-ledger-signed'), true);
-  assert.equal(JSON.parse(storage.getItem(CORE_HOOK_V03.storageKey)).version, GAME_SESSION_VERSION);
+  storage.setItem(CORE_HOOK_V03.storageKey, JSON.stringify(obsoletePartialSave));
+  const rebaselined = new GameSession({ storage });
+  assert.equal(rebaselined.phase, 'arrival');
+  assert.equal(rebaselined.hasEvent('community-ledger-signed'), false);
+  assert.equal(storage.getItem(CORE_HOOK_V03.storageKey), null);
 });
 
 test('CoreHookDirector enforces the authored interaction order', async () => {

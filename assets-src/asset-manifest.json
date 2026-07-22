@@ -619,6 +619,50 @@
       }
     },
     {
+      "id": "friendsies-tool-axe-v1",
+      "path": "public/friendsies/tools/axe-v1.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-project",
+      "budgetGroups": [
+        "friendsies-character:tool-axe-v1"
+      ],
+      "runtimeContexts": [
+        "environment:axe-discovery",
+        "equipment:woodcutting"
+      ],
+      "bytes": 146792,
+      "sha256": "866cef9aec2a8817983e150f38e8634990c9038864d6a69fad67c5c26c4c98ba",
+      "source": {
+        "originalFilename": "2e7d86ace19eafc64df6be34dbd82483.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/2e7d86ace19eafc64df6be34dbd82483.glb",
+        "sha256": "866cef9aec2a8817983e150f38e8634990c9038864d6a69fad67c5c26c4c98ba",
+        "transform": "Bundled unchanged from the canonical hand:Axe trait asset."
+      }
+    },
+    {
+      "id": "friendsies-tool-fishing-pole-v1",
+      "path": "public/friendsies/tools/fishing-pole-v1.glb",
+      "runtime": true,
+      "kind": "character-model",
+      "family": "friendsies-project",
+      "budgetGroups": [
+        "friendsies-character:tool-fishing-pole-v1"
+      ],
+      "runtimeContexts": [
+        "environment:pond-fishing",
+        "equipment:fishing"
+      ],
+      "bytes": 368156,
+      "sha256": "f7fd184057ea34c3a2a0b3ee0c0f5f5a2acfa978182ecd73758eb2b65b91b1b1",
+      "source": {
+        "originalFilename": "a7c18d32c3575842b53793691ab74e55.glb",
+        "url": "https://storage.googleapis.com/friendsies-v2-assets-d8088d/assets/a7c18d32c3575842b53793691ab74e55.glb",
+        "sha256": "f7fd184057ea34c3a2a0b3ee0c0f5f5a2acfa978182ecd73758eb2b65b91b1b1",
+        "transform": "Bundled unchanged from the canonical hand:Guess trait asset and presented as ThornVale fishing equipment."
+      }
+    },
+    {
       "id": "thornvale-cottages",
       "path": "public/town/cottages/thornvale-cottages.glb",
       "runtime": true,

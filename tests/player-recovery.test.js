@@ -17,13 +17,13 @@ test('fall recovery triggers only after the player leaves the playable vertical 
 test('the current recovery point follows shelter repair without mutating session state', () => {
   const gate = { x: 0, y: 2, z: 14 };
   const shelter = { x: -29.3, y: 0.9, z: 3.8 };
-  const beforeRepair = { dayOne: { camp: { shelterRepaired: false } } };
-  const afterRepair = { dayOne: { camp: { shelterRepaired: true } } };
+  const beforeRepair = { world: { camp: { shelterRepaired: false } } };
+  const afterRepair = { world: { camp: { shelterRepaired: true } } };
 
   assert.deepEqual(resolveCurrentRecoveryPoint(beforeRepair, gate, shelter), gate);
   assert.deepEqual(resolveCurrentRecoveryPoint(afterRepair, gate, shelter), shelter);
   assert.notStrictEqual(resolveCurrentRecoveryPoint(afterRepair, gate, shelter), shelter);
-  assert.deepEqual(afterRepair, { dayOne: { camp: { shelterRepaired: true } } });
+  assert.deepEqual(afterRepair, { world: { camp: { shelterRepaired: true } } });
 });
 
 test('non-story play and incomplete snapshots safely recover at the arrival spawn', () => {

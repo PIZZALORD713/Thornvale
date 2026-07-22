@@ -24,7 +24,7 @@ const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 test('asset manifest covers runtime media and stays within pilot budgets', async () => {
   const report = await runAssetAudit({ rootDir: REPOSITORY_ROOT });
 
-  assert.equal(report.runtimeAssetCount, 31);
+  assert.equal(report.runtimeAssetCount, 33);
   assert.equal(report.sourceAssetCount, 4);
   assert.equal(report.externalRuntimeDependencyCount, 1);
   assert.equal(report.budgets.distMaxBytes, Math.ceil(8 * 1024 * 1024 * 1.2));
@@ -34,6 +34,8 @@ test('asset manifest covers runtime media and stays within pilot budgets', async
     '0001': 295_916,
     '6602': 888_847,
     '8914': 1_609_420,
+    'tool-axe-v1': 146_792,
+    'tool-fishing-pole-v1': 368_156,
   });
   assert.equal(report.cc0RuntimeBytes, 0);
   assert.equal(report.compressedAudioBytes, 0);
@@ -80,7 +82,7 @@ test('fRiENDSiES uses one standing project authorization without per-use gates',
   const canonicalAssets = manifest.assets.filter((asset) => (
     asset.source?.url?.startsWith(FRIENDSIES_CANONICAL_ASSET_URL_PREFIX)
   ));
-  assert.equal(canonicalAssets.length, 14);
+  assert.equal(canonicalAssets.length, 16);
   assert.ok(canonicalAssets.every((asset) => asset.family === FRIENDSIES_PROJECT_FAMILY_ID));
 
   // Mixamo contributes separate upstream motion rights, while publication

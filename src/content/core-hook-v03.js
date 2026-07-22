@@ -12,7 +12,7 @@ function deepFreeze(value) {
 export const CORE_HOOK_V03 = deepFreeze({
   id: 'core-hook-v03',
   title: 'A Courtesy Before Dusk',
-  storageKey: 'thornvale.core-hook-v03',
+  storageKey: 'thornvale.game-session-v1',
 
   ids: {
     steward: 'steward-8914',

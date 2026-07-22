@@ -150,6 +150,19 @@ export class PhysicsWorld {
     return { body, collider, mesh };
   }
 
+  /** Remove one previously created rigid body and all colliders attached to it. */
+  removeRigidBody(body) {
+    if (!body || !this.world?.removeRigidBody) return false;
+    try {
+      this.world.removeRigidBody(body);
+      return true;
+    } catch (_error) {
+      // Reconciliation is idempotent: an already-removed optional prop body is
+      // not allowed to interrupt authoritative world-state projection.
+      return false;
+    }
+  }
+
   /**
    * Create a fixed triangle-mesh surface. Intended for continuous authored
    * terrain such as the Bell hill, not for decorative props or individual tiles.

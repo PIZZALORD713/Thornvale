@@ -154,7 +154,7 @@ test('World Stage keeps Day One stations, approaches, and recovery behavior on t
 
   assert.deepEqual(
     resolveCurrentRecoveryPoint(
-      { dayOne: { camp: { shelterRepaired: false } } },
+      { world: { camp: { shelterRepaired: false } } },
       TOWN_LAYOUT.spawn,
       TOWN_LAYOUT.dayOne.campRecovery,
     ),
@@ -162,7 +162,7 @@ test('World Stage keeps Day One stations, approaches, and recovery behavior on t
   );
   assert.deepEqual(
     resolveCurrentRecoveryPoint(
-      { dayOne: { camp: { shelterRepaired: true } } },
+      { world: { camp: { shelterRepaired: true } } },
       TOWN_LAYOUT.spawn,
       TOWN_LAYOUT.dayOne.campRecovery,
     ),

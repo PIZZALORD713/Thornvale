@@ -324,6 +324,9 @@ export class InputManager {
         this.keys.jump = true;
         this.setActionHeld('jump', true, 'keyboard');
         break;
+      case 'KeyE':
+        this.setActionHeld('interact', true, 'keyboard');
+        break;
       case 'ShiftLeft':
       case 'ShiftRight':
         this.keys.sprint = true;
@@ -354,6 +357,9 @@ export class InputManager {
       case 'Space':
         this.keys.jump = false;
         this.setActionHeld('jump', false, 'keyboard');
+        break;
+      case 'KeyE':
+        this.setActionHeld('interact', false, 'keyboard');
         break;
       case 'ShiftLeft':
       case 'ShiftRight':

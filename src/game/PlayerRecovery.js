@@ -18,7 +18,7 @@ function clonePoint(point) {
 }
 
 export function resolveCurrentRecoveryPoint(snapshot, arrivalPoint, shelterPoint) {
-  if (snapshot?.dayOne?.camp?.shelterRepaired === true && shelterPoint) {
+  if (snapshot?.world?.camp?.shelterRepaired === true && shelterPoint) {
     return clonePoint(shelterPoint);
   }
   return clonePoint(arrivalPoint);

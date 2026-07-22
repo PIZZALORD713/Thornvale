@@ -81,6 +81,22 @@ test('KeyH produces one objective-hint edge per physical key depression', () => 
   assert.equal(input.consumeActionPress('objective-hint'), false);
 });
 
+test('KeyE exposes one press edge and a held interact state until release', () => {
+  const input = new InputManager();
+  const event = { code: 'KeyE', target: { tagName: 'BODY' } };
+
+  input._onKeyDown(event);
+  assert.equal(input.consumeActionPress('interact'), true);
+  assert.equal(input.isActionHeld('interact'), true);
+
+  input._onKeyDown(event);
+  assert.equal(input.consumeActionPress('interact'), false);
+  assert.equal(input.isActionHeld('interact'), true);
+
+  input._onKeyUp(event);
+  assert.equal(input.isActionHeld('interact'), false);
+});
+
 test('disabling gameplay clears every external source and rejects stale touch input', () => {
   const input = new InputManager();
   input.setMovementInput('touch', 0.75, -0.25);
