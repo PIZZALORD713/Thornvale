@@ -39,8 +39,8 @@ machine-checked integrity constraints.
 is a source-side review artifact, not a runtime manifest. It is derived from the
 pinned fRiENDSiES metadata revision recorded in the index and preserves all
 seven collection trait types. The bounded environmental curation sidecar
-currently emphasizes `hand` and `sprout`; `backpiece` is also a valid source for
-an authored Thornvale use. A trait is identified by the exact, case-sensitive key
+currently emphasizes `hand`, `head`, and `sprout`; `backpiece` is also a valid
+source for an authored Thornvale use. A trait is identified by the exact, case-sensitive key
 `${traitType}:${value}`.
 
 ```bash
@@ -131,7 +131,7 @@ Reports include bytes, SHA-256, mesh, primitive, triangle, skin, joint,
 animation, material, texture, image, node, and morph-target counts. The
 compatibility result is deliberately conservative:
 
-The checked-in probe ledger currently records the three active traits plus
+The checked-in probe ledger currently records the three original active civic traits plus
 `Book Of Ocean` and the token-`#431` `Friends Key` variant. It contains reports
 only; no downloaded GLB is retained.
 

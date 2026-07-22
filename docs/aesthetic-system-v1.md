@@ -1,4 +1,4 @@
-# Thornvale Aesthetic System v1
+# Thornvale Aesthetic System v1.1
 
 Status: implemented development slice; local review only
 Chapter: **A Courtesy Before Dusk**
@@ -38,37 +38,47 @@ or both.
 
 ## Trait casting grammar
 
-Traits are civic language, not meadow filler or collectibles.
+Traits are authored world language, not atlas-label literalism, meadow filler,
+or automatic collectibles.
 
 | Collection category | Thornvale meaning | Placement rule |
 | --- | --- | --- |
-| Sprout | Identity, office, district, or belonging | One crest above eye level per landmark |
+| Sprout | Identity, office, district, belonging, or authored vegetation | Civic sprouts use one crest above eye level per landmark; vegetation sprouts use grounded or water-surface placements clear of interaction lanes |
 | Hand item | Gift, courtesy, ritual, access, or observation | One mounted tool at threshold or hand height |
+| Head | Landmark or vegetation when the silhouette reads more clearly than the catalog name | Grounded, non-colliding, and clear of interaction lanes |
 
 Active vocabulary:
 
 - `Flower White`: offered kindness and evidence that kindness occurred.
 - `Torch`: guidance becoming ritual boundary.
 - `Crown Up`: civic office and authority.
+- `Carrot`: a rounded grove-tree silhouette at pond and camp.
+- `Earthworm`: a singular mushroom-cluster landmark on the pond bank.
+- `Flower Hill`: low flowered banks framing the pond route.
+- `Blooming Tree`: the visible growth endpoint at the camp grove.
+- `Resting Green Leaf`: quiet pond-surface detail.
+- `Purp Mush`: restrained fungal understory tying pond and camp together.
 
-The v1 stage uses seven instances in three trait draw families:
+The v1.1 stage uses twenty-one instances in nine trait draw families:
 
 - one private arrival Flower;
 - a paired Flower witness at the Community Ledger;
 - paired Gate Torches;
 - one Bell ritual Torch;
 - one Ledger Crown crest.
+- two rounded trees, one mushroom landmark, two flowered banks, one blooming
+  tree, four resting pond leaves, and four understory mushrooms.
 
-Every instance declares an authored `offering`, `sconce`, or `crest` socket.
-One shared code-native mount draw call provides contact and cast shadow. The
-free-standing spawn Torch and redundant arrival Flower were removed.
+The seven civic instances declare an authored `offering`, `sconce`, or `crest`
+socket. One shared code-native mount draw provides their contact and cast
+shadow. The fourteen Pond–Grove instances declare a `ground` or `water` surface,
+remain non-colliding, and avoid fishing, planting, and woodcutting anchors.
 
 Rights-gated intake order:
 
 1. `Friends Key` as the Welcome Gate crest;
 2. `Book Of Ocean` on the Ledger shelf;
-3. `Resting Green Leaf` at the comply cottage;
-4. `Kaleidoscope` only after the second-bell reveal.
+3. `Kaleidoscope` only after the second-bell reveal.
 
 `All Seeing`, `Orb`, `Warp`, `Rebirth`, `Crown Down`, and additional flower
 colors remain on hold. Their literal meaning or repeated silhouettes would
@@ -209,6 +219,10 @@ route destinations, or save fields. No new collection binary is permitted
 until its exact variant completes source-integrity, fit, budget, fallback, and
 rollback review. Canonical fRiENDSiES material inherits ADR 0004 and never
 requires a new permission decision for a role, placement, or transform.
+
+Trait Echo v1.1 is budgeted at nine trait draws, twenty-one placements, and
+90,968 displayed triangles. Each family loads independently; a failed
+vegetation binary is omitted while the procedural nature and town remain.
 
 ## Validation matrix
 

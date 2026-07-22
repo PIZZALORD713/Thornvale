@@ -112,11 +112,11 @@ test('every v1 family resolves through the canonical curated cast registry', () 
     assert.equal(trait.sourceTokenId, sourceTokenId);
     assert.equal(trait.trait_type, traitType);
     assert.equal(trait.value, value);
-    assert.match(trait.asset_url, /^\/friendsies\/(0001|8914)\/.+\.glb$/);
+    assert.match(trait.asset_url, /^\/friendsies\/.+\.glb$/);
   }
 });
 
-test('the three real trait packages retain the rigid-prop glTF contract', async () => {
+test('the nine real trait packages retain the rigid-prop glTF contract', async () => {
   for (const family of TRAIT_ECHO_V1.families) {
     const trait = getCuratedFriendsiesTrait(
       family.trait.sourceTokenId,
@@ -141,12 +141,12 @@ test('the three real trait packages retain the rigid-prop glTF contract', async 
   }
 });
 
-test('v1 keeps seven strategically mounted placements in three trait families', () => {
-  assert.equal(TRAIT_ECHO_V1.families.length, 3);
-  assert.equal(TRAIT_ECHO_V1.budgets.expectedPlacements, 7);
-  assert.equal(TRAIT_ECHO_V1.budgets.maximumDrawCalls, 3);
-  assert.equal(countTraitEchoPlacements(), 7);
-  assert.equal(countTraitEchoTriangles(), 26_544);
+test('v1 keeps twenty-one strategic placements in nine trait families', () => {
+  assert.equal(TRAIT_ECHO_V1.families.length, 9);
+  assert.equal(TRAIT_ECHO_V1.budgets.expectedPlacements, 21);
+  assert.equal(TRAIT_ECHO_V1.budgets.maximumDrawCalls, 9);
+  assert.equal(countTraitEchoPlacements(), 21);
+  assert.equal(countTraitEchoTriangles(), 90_968);
   assert.ok(
     countTraitEchoTriangles() <= TRAIT_ECHO_V1.budgets.maximumDisplayedTriangles,
     'v1 exceeds its displayed-triangle ceiling',
@@ -173,10 +173,9 @@ test('v1 keeps seven strategically mounted placements in three trait families', 
       `${placement.id} has neither a finite position nor a landmark anchor`,
     );
     assert.ok(Number.isFinite(placement.height) && placement.height > 0);
-    assert.ok(
-      ['offering', 'sconce', 'crest'].includes(placement.socket),
-      `${placement.id} has no authored landmark socket`,
-    );
+    const hasCivicSocket = ['offering', 'sconce', 'crest'].includes(placement.socket);
+    const hasEnvironmentSurface = ['ground', 'water'].includes(placement.surface);
+    assert.ok(hasCivicSocket || hasEnvironmentSurface, `${placement.id} has no authored mount`);
   }
 
   const pairs = new Map();
@@ -414,14 +413,32 @@ test('one family load failure does not remove surviving trait families', async (
   }
 
   assert.ok(echoes);
-  assert.equal(requestedUrls.length, 3);
-  assert.deepEqual([...echoes.families.keys()].sort(), ['civic-crown', 'welcome-flower']);
+  assert.equal(requestedUrls.length, 9);
+  assert.deepEqual([...echoes.families.keys()].sort(), [
+    'civic-crown',
+    'pond-grove-blooming-tree',
+    'pond-grove-flower-hill',
+    'pond-grove-mushroom-landmark',
+    'pond-grove-purple-mushroom',
+    'pond-grove-resting-leaf',
+    'pond-grove-rounded-tree',
+    'welcome-flower',
+  ]);
   assert.deepEqual([...echoes.failedFamilies.keys()], ['civic-torch']);
   assert.equal(echoes.families.get('welcome-flower').mesh.count, 3);
   assert.equal(echoes.families.get('civic-crown').mesh.count, 1);
   assert.deepEqual(
     [...echoes.root.userData.traitEcho.loadedFamilies].sort(),
-    ['civic-crown', 'welcome-flower'],
+    [
+      'civic-crown',
+      'pond-grove-blooming-tree',
+      'pond-grove-flower-hill',
+      'pond-grove-mushroom-landmark',
+      'pond-grove-purple-mushroom',
+      'pond-grove-resting-leaf',
+      'pond-grove-rounded-tree',
+      'welcome-flower',
+    ],
   );
   assert.deepEqual(echoes.root.userData.traitEcho.failedFamilies, ['civic-torch']);
 
@@ -662,8 +679,8 @@ test('the shared civic mount draw uses socket colors over a white material base'
   assert.equal(mesh.count, 7);
   assert.equal(
     echoes.root.children.filter((child) => child.isInstancedMesh).length,
-    4,
-    'v1 must remain three trait draws plus one civic-mount draw',
+    10,
+    'v1 must remain nine trait draws plus one civic-mount draw',
   );
   assert.ok(mesh.instanceColor, 'setColorAt must allocate an instance-color attribute');
   assert.equal(mesh.instanceColor.count, 7);
@@ -710,7 +727,7 @@ test('Trait Echo disposal releases shared embedded textures exactly once', async
   });
 
   echoes.dispose();
-  assert.deepEqual(textureDisposeCounts.map((getCount) => getCount()), [1, 1, 1]);
+  assert.deepEqual(textureDisposeCounts.map((getCount) => getCount()), Array(9).fill(1));
   for (const scene of sourceScenes) {
     scene.children[0].geometry.dispose();
     scene.children[0].material.dispose();

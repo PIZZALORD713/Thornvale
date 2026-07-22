@@ -14,6 +14,7 @@ const JSON_CHUNK_TYPE = 0x4e4f534a;
 const GLB_MAGIC = 0x46546c67;
 const GLB_VERSION = 2;
 const TRIANGLE_MODES = new Set([4, 5, 6]);
+const SUPPORTED_TRAIT_TYPES = Object.freeze(['backpiece', 'hand', 'head', 'sprout']);
 const FRIENDSIES_ASSET_ORIGIN = 'https://storage.googleapis.com';
 const FRIENDSIES_ASSET_PREFIX = '/friendsies-v2-assets-d8088d/assets/';
 
@@ -498,7 +499,7 @@ function parseCliArguments(argv) {
 
 function printHelp() {
   console.log(`Usage:
-  node scripts/probe-friendsies-trait.mjs --type <hand|sprout> --value <exact value> [options]
+  node scripts/probe-friendsies-trait.mjs --type <backpiece|hand|head|sprout> --value <exact value> [options]
 
 Options:
   --variant <id|index>  Exact variant ID/hash or zero-based variant index
@@ -524,8 +525,8 @@ export async function runProbeCli(argv = process.argv.slice(2), {
   if (!options.traitType || !options.value) {
     throw new Error('--type and --value are required; values are exact and case-sensitive');
   }
-  if (!['hand', 'sprout'].includes(options.traitType)) {
-    throw new Error('--type must be hand or sprout');
+  if (!SUPPORTED_TRAIT_TYPES.includes(options.traitType)) {
+    throw new Error('--type must be backpiece, hand, head, or sprout');
   }
 
   const absoluteRoot = resolve(rootDir);

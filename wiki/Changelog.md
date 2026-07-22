@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+* Added the Pond–Grove Trait Echo v1.1 environment pass: canonical `Carrot` and
+  `Earthworm` heads now read as rounded trees and a mushroom landmark, while
+  `Flower Hill`, `Blooming Tree`, `Resting Green Leaf`, and `Purp Mush` create
+  flowered banks, a grove endpoint, pond leaves, and fungal understory across
+  fourteen non-colliding placements. The family is exact-variant pinned,
+  locally bundled, provenance recorded, independently fallible, and reversible
+  with `?traits=off`; gameplay anchors, saves, fishing, planting, and
+  woodcutting authority are unchanged.
 * Replaced the provisional one-press wood and pond rewards with the first
   stewardship slice. A canonical provenance-pinned fRiENDSiES axe can be found,
   owned, and equipped; each of three mature trees takes three strikes, falls to
