@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-story-archive/
 *.log
 __pycache__/
 .playwright-cli/
@@ -7,3 +8,4 @@ output/playwright/
 output/pizza-lab/
 .pizza-lab/
 .vs/
+.vercel

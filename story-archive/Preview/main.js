@@ -37,7 +37,7 @@ import {
 } from '../runtime/preview-actions.js';
 
 const CARD_PATHS = Object.freeze([
-  '/story-archive/Characters/Friend%206602.md',
+  new URL('../Characters/Friend 6602.md', import.meta.url).href,
 ]);
 const PLAYER_HEIGHT = 0.9;
 const STAGE_RADIUS = 1.9;

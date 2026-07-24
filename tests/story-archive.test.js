@@ -129,10 +129,17 @@ test('vault includes reusable template, schema, preview, and honest HTTP boundar
   const home = await readFile(resolve(ROOT, 'story-archive/Story Archive.md'), 'utf8');
   const card = await readFile(CARD_PATH, 'utf8');
   const preview = await readFile(resolve(ROOT, 'story-archive/Preview/main.js'), 'utf8');
+  const viteConfig = await readFile(resolve(ROOT, 'vite.story-archive.config.js'), 'utf8');
   assert.match(home, /npm run story-archive:dev/);
   assert.match(home, /Raw `file:\/\/` viewing is unsupported/);
   assert.match(card, /mode=play/);
+  assert.match(
+    preview,
+    /new URL\('\.\.\/Characters\/Friend 6602\.md', import\.meta\.url\)\.href/,
+  );
   assert.match(preview, /loadCharacter\(card\.token_id, \{ instanceId: 'preview' \}\)/);
   assert.match(preview, /writesAuthoritativeState: false/);
   assert.doesNotMatch(preview, /loadCharacter\((8914|['"]friend:8914)/);
+  assert.match(viteConfig, /resolve\('story-archive\/Preview\/index\.html'\)/);
+  assert.match(viteConfig, /outDir: 'dist-story-archive'/);
 });
