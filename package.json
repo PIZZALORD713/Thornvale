@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "story-archive:dev": "vite --host 127.0.0.1 --open /story-archive/Preview/?id=friend%3A6602&mode=play",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",

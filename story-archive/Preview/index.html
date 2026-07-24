@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" data-preview-state="loading">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#243a32" />
+    <title>Friend 6602 · ThornVale Story Archive</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%232b493c'/%3E%3Cpath d='M34 12 30 28h12v8H28l-4 16h-8l4-16H10v-8h12l4-16h8Zm16 0-4 16h8v8H44l-4 16h-8l4-16h8l4-16h8Z' fill='%23ead19a'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="preview-shell">
+      <section class="stage-card" aria-labelledby="preview-title">
+        <header class="stage-header">
+          <div>
+            <p class="eyebrow">ThornVale story-room preview</p>
+            <h1 id="preview-title">Friend 6602</h1>
+          </div>
+          <p class="authority-chip" title="This preview does not write game or story state">
+            presentation only
+          </p>
+        </header>
+
+        <div class="stage-wrap" id="stage-wrap">
+          <canvas
+            id="stage"
+            aria-label="Playable 3D preview of Friend 6602"
+            tabindex="0"
+          ></canvas>
+          <div class="stage-vignette" aria-hidden="true"></div>
+
+          <div class="status-panel" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="status">Reading character card…</span>
+          </div>
+
+          <div class="mode-badge" id="mode-badge">play mode</div>
+
+          <div class="touch-look-hint" aria-hidden="true">drag to look</div>
+          <div class="touch-controls" id="touch-controls" aria-label="Touch input pilot">
+            <div class="touch-stick" id="touch-stick" aria-label="Movement stick">
+              <span class="touch-stick-knob" id="touch-stick-knob"></span>
+            </div>
+            <div class="touch-buttons">
+              <button class="touch-button" id="touch-action" type="button">Action</button>
+              <button class="touch-button touch-button-primary" id="touch-jump" type="button">
+                Jump
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-strip" id="action-strip" aria-label="Safe Friend 6602 actions"></div>
+
+        <p class="controls-copy" id="controls-copy">
+          <strong>Keyboard:</strong> WASD move · Shift sprint · Space jump · E next action ·
+          drag to look · 1–7 choose action
+        </p>
+      </section>
+
+      <aside class="identity-card" aria-label="Character card metadata">
+        <p class="eyebrow">Verified runtime identity</p>
+        <div class="identity-heading">
+          <div class="token-mark" aria-hidden="true">#</div>
+          <div>
+            <h2 id="card-label">Friend 6602</h2>
+            <p id="card-id">friend:6602</p>
+          </div>
+        </div>
+
+        <dl class="identity-list">
+          <div><dt>Role</dt><dd id="card-role">—</dd></div>
+          <div><dt>Identity</dt><dd id="card-identity">—</dd></div>
+          <div><dt>Rig</dt><dd id="card-rig">—</dd></div>
+          <div><dt>Pack</dt><dd id="card-pack">—</dd></div>
+        </dl>
+
+        <section class="traits" aria-labelledby="traits-title">
+          <h3 id="traits-title">Seven-part assembly</h3>
+          <ul id="trait-list"></ul>
+        </section>
+
+        <div class="canon-note">
+          No name, pronouns, personality, memory, relationship, or dialogue is
+          assigned by repo canon.
+        </div>
+      </aside>
+    </main>
+
+    <template id="action-template">
+      <button class="action-button" type="button">
+        <span class="action-label"></span>
+        <kbd class="action-shortcut"></kbd>
+      </button>
+    </template>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
