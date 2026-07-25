@@ -35,6 +35,28 @@ const METADATA_RANGE_ATTEMPTS = 10;
 const METADATA_ENTRY_EXPANSION = 256 * 1024;
 const UTF8_ENCODER = new TextEncoder();
 
+export function tagFriendsiesTraitRenderables(root, trait) {
+  const traitType = String(trait?.traitType ?? trait?.trait_type ?? '').toLowerCase();
+  if (!root || typeof root.traverse !== 'function' || !traitType) return 0;
+
+  const detail = Object.freeze({
+    traitType,
+    value: trait?.value || null,
+    assetUrl: trait?.url ?? trait?.asset_url ?? null,
+  });
+  root.userData ??= {};
+  root.userData.friendsiesTrait = detail;
+
+  let tagged = 0;
+  root.traverse((object) => {
+    if (!(object?.isMesh || object?.isSkinnedMesh)) return;
+    object.userData ??= {};
+    object.userData.friendsiesTrait = detail;
+    tagged += 1;
+  });
+  return tagged;
+}
+
 /**
  * Fetch one exact token entry from the pinned, numerically ordered catalog.
  * GitHub's raw endpoint supports CORS byte ranges, so arbitrary player links
@@ -341,6 +363,10 @@ export class CharacterLoader {
     }
 
     const bodyRoot = bodyRes.gltf.scene;
+    tagFriendsiesTraitRenderables(bodyRoot, {
+      ...bodyAttr,
+      url: bodyUrl,
+    });
     group.add(bodyRoot);
 
     const bodySkinned = findFirstSkinnedMesh(bodyRoot);
@@ -384,6 +410,10 @@ export class CharacterLoader {
     let faceOverlayCount = 0;
     if (headRes?.ok) {
       const headScene = headRes.gltf.scene;
+      tagFriendsiesTraitRenderables(headScene, {
+        ...headAttr,
+        url: headUrl,
+      });
       group.add(headScene);
       group.updateMatrixWorld(true);
 
@@ -394,7 +424,15 @@ export class CharacterLoader {
         bodySkeleton,
         faceAnchor,
       );
+      tagFriendsiesTraitRenderables(faceAnchor, {
+        ...faceAttr,
+        url: faceUrl,
+      });
       retargetRigidAttachmentsToBodyBones(headScene, bodySkeleton);
+      tagFriendsiesTraitRenderables(headScene, {
+        ...headAttr,
+        url: headUrl,
+      });
       applyFriendsiesHeadPresentation(headScene, headAttr);
       tuneMaterialsForEnv(headScene);
     }
@@ -433,11 +471,13 @@ export class CharacterLoader {
         if (!partRes.ok) continue;
 
         const partScene = partRes.gltf.scene;
+        tagFriendsiesTraitRenderables(partScene, asset);
         group.add(partScene);
         group.updateMatrixWorld(true);
 
         attachPartToBodySkeleton(partScene, bodySkeleton, bodySkinned);
         retargetRigidAttachmentsToBodyBones(partScene, bodySkeleton);
+        tagFriendsiesTraitRenderables(partScene, asset);
         const handheldGlow = resolveHandheldGlowPresentation(asset);
         if (handheldGlow) {
           addSoftHandheldGlow(partScene, bodySkeleton, handheldGlow);

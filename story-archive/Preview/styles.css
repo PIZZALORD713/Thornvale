@@ -270,6 +270,10 @@ kbd {
 
 .identity-card {
   align-self: start;
+  max-height: calc(100dvh - 56px);
+  position: sticky;
+  top: 28px;
+  overflow-y: auto;
   padding: clamp(20px, 2.2vw, 30px);
 }
 
@@ -332,30 +336,162 @@ kbd {
   text-align: right;
 }
 
-.traits h3 {
+.section-heading {
   margin-bottom: 12px;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.traits h3 {
+  margin-bottom: 4px;
   color: #d9be82;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+.section-heading p {
+  margin: 0;
+  color: rgba(247, 240, 220, 0.58);
+  font-size: 0.69rem;
+  line-height: 1.45;
+}
+
+.text-button,
+.editor-button,
+.trait-button {
+  border: 1px solid rgba(255, 246, 220, 0.13);
+  color: #f6ecd2;
+  background: #29483b;
+  cursor: pointer;
+  font: inherit;
+}
+
+.text-button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.text-button[aria-pressed="true"],
+.trait-button[aria-pressed="true"] {
+  border-color: #e7c067;
+  color: #192d24;
+  background: #e7c067;
+}
+
 .traits ul {
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
   list-style: none;
 }
 
 .traits li {
-  padding: 7px 9px;
-  border: 1px solid rgba(255, 246, 220, 0.1);
-  border-radius: 9px;
-  color: rgba(247, 240, 220, 0.78);
-  background: rgba(21, 39, 31, 0.56);
+  min-width: 0;
+}
+
+.trait-button {
+  width: 100%;
+  min-height: 54px;
+  padding: 8px 9px;
+  display: grid;
+  gap: 3px;
+  border-radius: 10px;
+  text-align: left;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.trait-button:hover,
+.text-button:hover,
+.editor-button:hover {
+  border-color: rgba(240, 202, 115, 0.48);
+  background: #315442;
+}
+
+.trait-button:active,
+.text-button:active,
+.editor-button:active {
+  transform: translateY(1px);
+}
+
+.trait-label {
+  color: rgba(247, 240, 220, 0.54);
+  font-size: 0.61rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trait-value {
+  overflow: hidden;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trait-button[aria-pressed="true"] .trait-label {
+  color: rgba(25, 45, 36, 0.66);
+}
+
+.trait-detail {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid rgba(231, 192, 103, 0.26);
+  border-radius: 14px;
+  background: rgba(16, 35, 27, 0.64);
+}
+
+.trait-detail-heading {
+  margin-bottom: 8px;
+}
+
+.trait-detail-heading h4 {
+  margin: 0;
+  font: 600 1.12rem Georgia, serif;
+}
+
+.trait-detail dl {
+  margin: 0;
+}
+
+.trait-detail dl div {
+  padding: 7px 0;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+  border-top: 1px solid rgba(255, 246, 220, 0.07);
+}
+
+.trait-detail dt {
+  color: rgba(247, 240, 220, 0.5);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.trait-detail dd {
+  margin: 0;
+  min-width: 0;
+  color: rgba(247, 240, 220, 0.82);
   font-size: 0.69rem;
+  text-align: right;
+}
+
+.trait-detail code,
+.editor-intro code {
+  overflow-wrap: anywhere;
+  font-size: 0.66rem;
 }
 
 .canon-note {
@@ -369,6 +505,163 @@ kbd {
   line-height: 1.55;
 }
 
+.authoring-editor {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 246, 220, 0.1);
+}
+
+.authoring-editor summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.authoring-editor summary::-webkit-details-marker {
+  display: none;
+}
+
+.authoring-editor summary::after {
+  content: "+";
+  color: #e2c378;
+  font-size: 1.3rem;
+}
+
+.authoring-editor[open] summary::after {
+  content: "−";
+}
+
+.authoring-editor summary .eyebrow {
+  display: block;
+}
+
+.authoring-editor summary strong {
+  font: 600 1.08rem Georgia, serif;
+}
+
+.editor-intro,
+.editor-boundary {
+  color: rgba(247, 240, 220, 0.66);
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.editor-intro {
+  margin: 12px 0;
+}
+
+.editor-boundary {
+  margin: 14px 0 0;
+}
+
+.editor-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.editor-button {
+  min-height: 42px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.editor-button-primary {
+  border-color: #e7c067;
+  color: #192d24;
+  background: #e7c067;
+}
+
+.editor-button:disabled,
+.text-button:disabled,
+.trait-button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.editor-file,
+.editor-status {
+  margin: 10px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.editor-file {
+  color: #ead69e;
+  font-weight: 800;
+}
+
+.editor-status {
+  color: rgba(247, 240, 220, 0.6);
+}
+
+.editor-status[data-state="ready"] {
+  color: #9ddaaa;
+}
+
+.editor-status[data-state="warning"] {
+  color: #e4c983;
+}
+
+.editor-status[data-state="error"] {
+  color: #f29a89;
+}
+
+#editor-fields {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.editor-field {
+  display: grid;
+  gap: 4px;
+}
+
+.editor-field-heading {
+  color: #ead69e;
+  font-size: 0.69rem;
+  font-weight: 800;
+}
+
+.editor-field-description {
+  color: rgba(247, 240, 220, 0.52);
+  font-size: 0.63rem;
+  line-height: 1.35;
+}
+
+.editor-field textarea {
+  width: 100%;
+  min-height: 82px;
+  resize: vertical;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 246, 220, 0.13);
+  border-radius: 10px;
+  outline: none;
+  color: #f8efd9;
+  background: rgba(16, 35, 27, 0.76);
+  font: 0.72rem/1.5 ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+.editor-field textarea:focus-visible,
+.trait-button:focus-visible,
+.text-button:focus-visible,
+.editor-button:focus-visible,
+.authoring-editor summary:focus-visible {
+  box-shadow: 0 0 0 3px rgba(242, 203, 114, 0.5);
+}
+
+.editor-field textarea:disabled {
+  opacity: 0.48;
+}
+
 .touch-controls,
 .touch-look-hint {
   display: none;
@@ -380,7 +673,11 @@ kbd {
   }
 
   .identity-card {
-    display: none;
+    width: calc(100% - 24px);
+    max-height: none;
+    position: static;
+    margin: 0 12px 20px;
+    overflow: visible;
   }
 }
 
@@ -394,6 +691,12 @@ kbd {
     padding: 10px;
     border: 0;
     border-radius: 0;
+  }
+
+  .identity-card {
+    width: calc(100% - 20px);
+    margin: 0 10px 18px;
+    border-radius: 18px;
   }
 
   .stage-header {

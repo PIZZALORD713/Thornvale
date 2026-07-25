@@ -79,14 +79,71 @@
         </dl>
 
         <section class="traits" aria-labelledby="traits-title">
-          <h3 id="traits-title">Seven-part assembly</h3>
+          <div class="section-heading">
+            <div>
+              <h3 id="traits-title">Seven-part assembly</h3>
+              <p>Select a trait to inspect its exact runtime part.</p>
+            </div>
+            <button
+              class="text-button"
+              id="show-full-character"
+              type="button"
+              aria-pressed="true"
+            >
+              Full Friend
+            </button>
+          </div>
           <ul id="trait-list"></ul>
+
+          <div class="trait-detail" id="trait-detail" hidden>
+            <div class="trait-detail-heading">
+              <p class="eyebrow">Selected trait</p>
+              <h4 id="trait-detail-title">—</h4>
+            </div>
+            <dl>
+              <div><dt>Value</dt><dd id="trait-detail-value">—</dd></div>
+              <div><dt>Format</dt><dd id="trait-detail-format">—</dd></div>
+              <div><dt>3D binding</dt><dd id="trait-detail-binding">—</dd></div>
+              <div><dt>Runtime asset</dt><dd><code id="trait-detail-asset">—</code></dd></div>
+              <div><dt>Provenance</dt><dd><code id="trait-detail-provenance">—</code></dd></div>
+            </dl>
+          </div>
         </section>
 
         <div class="canon-note">
           No name, pronouns, personality, memory, relationship, or dialogue is
           assigned by repo canon.
         </div>
+
+        <details class="authoring-editor" open>
+          <summary>
+            <span>
+              <span class="eyebrow">Local Obsidian authoring</span>
+              <strong>Edit character details</strong>
+            </span>
+          </summary>
+          <p class="editor-intro">
+            Choose the actual <code>Friend 6602.md</code> in your Obsidian vault.
+            Nothing is written until you press Save.
+          </p>
+          <div class="editor-actions">
+            <button class="editor-button" id="choose-card-file" type="button">
+              Choose Obsidian card
+            </button>
+            <button class="editor-button editor-button-primary" id="save-card-file" type="button" disabled>
+              Save selected file
+            </button>
+          </div>
+          <p class="editor-file" id="editor-file">No local file selected.</p>
+          <p class="editor-status" id="editor-status" role="status" aria-live="polite">
+            Direct save requires desktop Chrome or Edge.
+          </p>
+          <form id="editor-fields" aria-label="Editable character story fields"></form>
+          <p class="editor-boundary">
+            The verified token, traits, rig, actions, and source references remain protected.
+            Updating the shared link still requires a normal Git commit and redeploy.
+          </p>
+        </details>
       </aside>
     </main>
 
@@ -95,6 +152,23 @@
         <span class="action-label"></span>
         <kbd class="action-shortcut"></kbd>
       </button>
+    </template>
+
+    <template id="trait-template">
+      <li>
+        <button class="trait-button" type="button" aria-pressed="false">
+          <span class="trait-label"></span>
+          <strong class="trait-value"></strong>
+        </button>
+      </li>
+    </template>
+
+    <template id="editor-field-template">
+      <label class="editor-field">
+        <span class="editor-field-heading"></span>
+        <span class="editor-field-description"></span>
+        <textarea rows="3" disabled></textarea>
+      </label>
     </template>
 
     <script type="module" src="./main.js"></script>

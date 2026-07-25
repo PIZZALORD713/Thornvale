@@ -24,17 +24,27 @@ import { FriendsiesAnimator } from '../../src/visuals/FriendsiesAnimator.js';
 import { loadFriendsiesAnimationPack } from '../../src/visuals/loadFriendsiesAnimationPack.js';
 import { VisualRig } from '../../src/visuals/VisualRig.js';
 import {
+  EDITABLE_CHARACTER_FIELDS,
+  readEditableCharacterFields,
+  updateEditableCharacterFields,
+} from '../runtime/character-card-editor.js';
+import {
   CHARACTER_CARD_MODES,
   loadCharacterCards,
   resolveCharacterCard,
   validateCardAgainstCuratedEntry,
 } from '../runtime/character-card.js';
+import { resizePreviewRenderer } from '../runtime/preview-rendering.js';
 import {
   SAFE_PREVIEW_ACTIONS,
   filterSafePreviewClips,
   getSafePreviewAction,
   validateInvocationAction,
 } from '../runtime/preview-actions.js';
+import {
+  applyCharacterTraitInspection,
+  createTraitInspectionDetail,
+} from '../runtime/trait-inspection.js';
 
 const CARD_PATHS = Object.freeze([
   new URL('../Characters/Friend 6602.md', import.meta.url).href,
@@ -68,7 +78,22 @@ const dom = {
   cardRig: document.querySelector('#card-rig'),
   cardPack: document.querySelector('#card-pack'),
   traitList: document.querySelector('#trait-list'),
+  traitTemplate: document.querySelector('#trait-template'),
+  showFullCharacter: document.querySelector('#show-full-character'),
+  traitDetail: document.querySelector('#trait-detail'),
+  traitDetailTitle: document.querySelector('#trait-detail-title'),
+  traitDetailValue: document.querySelector('#trait-detail-value'),
+  traitDetailFormat: document.querySelector('#trait-detail-format'),
+  traitDetailBinding: document.querySelector('#trait-detail-binding'),
+  traitDetailAsset: document.querySelector('#trait-detail-asset'),
+  traitDetailProvenance: document.querySelector('#trait-detail-provenance'),
   identityCard: document.querySelector('.identity-card'),
+  chooseCardFile: document.querySelector('#choose-card-file'),
+  saveCardFile: document.querySelector('#save-card-file'),
+  editorFile: document.querySelector('#editor-file'),
+  editorStatus: document.querySelector('#editor-status'),
+  editorFields: document.querySelector('#editor-fields'),
+  editorFieldTemplate: document.querySelector('#editor-field-template'),
   touchControls: document.querySelector('#touch-controls'),
   touchStick: document.querySelector('#touch-stick'),
   touchStickKnob: document.querySelector('#touch-stick-knob'),
@@ -115,10 +140,214 @@ function populateCard(card) {
     ['Sprout', card.trait_sprout],
   ];
   dom.traitList.replaceChildren(...traits.map(([label, value]) => {
-    const item = document.createElement('li');
-    item.textContent = `${label}: ${value}`;
+    const item = dom.traitTemplate.content.firstElementChild.cloneNode(true);
+    const button = item.querySelector('.trait-button');
+    button.disabled = true;
+    button.querySelector('.trait-label').textContent = label;
+    button.querySelector('.trait-value').textContent = value;
     return item;
   }));
+}
+
+function setEditorStatus(message, state = null) {
+  dom.editorStatus.textContent = message;
+  if (state) dom.editorStatus.dataset.state = state;
+  else delete dom.editorStatus.dataset.state;
+}
+
+function normalizeEditorFields(fields) {
+  return Object.freeze(Object.fromEntries(
+    EDITABLE_CHARACTER_FIELDS.map((field) => [
+      field.id,
+      String(fields[field.id] ?? '').replaceAll('\r\n', '\n'),
+    ]),
+  ));
+}
+
+function setupCharacterCardEditor(card) {
+  const session = {
+    handle: null,
+    baseSource: null,
+    baseFields: null,
+  };
+  const fieldControls = new Map();
+
+  dom.editorFields.replaceChildren(...EDITABLE_CHARACTER_FIELDS.map((field) => {
+    const control = dom.editorFieldTemplate.content.firstElementChild.cloneNode(true);
+    const textarea = control.querySelector('textarea');
+    control.querySelector('.editor-field-heading').textContent = field.heading;
+    control.querySelector('.editor-field-description').textContent = field.description;
+    textarea.name = field.id;
+    textarea.placeholder = 'Choose the local Obsidian card to edit this field.';
+    fieldControls.set(field.id, textarea);
+    return control;
+  }));
+
+  const directSaveSupported = (
+    window.isSecureContext
+    && typeof window.showOpenFilePicker === 'function'
+  );
+  if (!directSaveSupported) {
+    dom.chooseCardFile.disabled = true;
+    setEditorStatus(
+      'Direct local-file editing is unavailable here. Open this link in desktop Chrome or Edge over HTTPS.',
+      'warning',
+    );
+    return;
+  }
+
+  dom.chooseCardFile.addEventListener('click', async () => {
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        id: 'thornvale-story-archive-card',
+        multiple: false,
+        types: [{
+          description: 'Obsidian Markdown character card',
+          accept: {
+            'text/markdown': ['.md'],
+            'text/plain': ['.md'],
+          },
+        }],
+      });
+      if (!handle) return;
+      const file = await handle.getFile();
+      const source = await file.text();
+      const fields = normalizeEditorFields(readEditableCharacterFields(source, {
+        expectedCardId: card.card_id,
+      }));
+
+      session.handle = handle;
+      session.baseSource = source;
+      session.baseFields = fields;
+      for (const field of EDITABLE_CHARACTER_FIELDS) {
+        const control = fieldControls.get(field.id);
+        control.value = fields[field.id];
+        control.disabled = false;
+      }
+      dom.editorFile.textContent = file.name;
+      dom.saveCardFile.disabled = false;
+      setEditorStatus('Local card loaded. Review your draft, then press Save selected file.', 'ready');
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        setEditorStatus('No file selected.');
+        return;
+      }
+      setEditorStatus(error?.message || 'The selected file could not be opened.', 'error');
+    }
+  });
+
+  dom.saveCardFile.addEventListener('click', async () => {
+    if (!session.handle || !session.baseSource || !session.baseFields) return;
+    dom.saveCardFile.disabled = true;
+    setEditorStatus('Checking for newer Obsidian edits…');
+
+    try {
+      const latestFile = await session.handle.getFile();
+      const latestSource = await latestFile.text();
+      const updates = {};
+      for (const field of EDITABLE_CHARACTER_FIELDS) {
+        const value = fieldControls.get(field.id).value;
+        if (value !== session.baseFields[field.id]) updates[field.id] = value;
+      }
+      if (Object.keys(updates).length === 0) {
+        setEditorStatus('No character-detail changes to save.', 'ready');
+        return;
+      }
+
+      const updatedSource = updateEditableCharacterFields(session.baseSource, updates, {
+        expectedCardId: card.card_id,
+        latestSource,
+      });
+      if (updatedSource === latestSource) {
+        const latestFields = normalizeEditorFields(readEditableCharacterFields(latestSource, {
+          expectedCardId: card.card_id,
+        }));
+        session.baseSource = latestSource;
+        session.baseFields = latestFields;
+        for (const field of EDITABLE_CHARACTER_FIELDS) {
+          fieldControls.get(field.id).value = latestFields[field.id];
+        }
+        setEditorStatus('The local file already contains this character-detail update.', 'ready');
+        return;
+      }
+      const writer = await session.handle.createWritable({ mode: 'exclusive' });
+      try {
+        await writer.write(updatedSource);
+        await writer.close();
+      } catch (error) {
+        try {
+          await writer.abort?.();
+        } catch {
+          // Preserve the original writer failure; abort is only cleanup.
+        }
+        throw error;
+      }
+
+      const verifiedSource = await (await session.handle.getFile()).text();
+      if (verifiedSource !== updatedSource) {
+        throw new Error('The browser could not verify the saved Markdown. Reopen the file before editing.');
+      }
+      const verifiedFields = normalizeEditorFields(readEditableCharacterFields(verifiedSource, {
+        expectedCardId: card.card_id,
+      }));
+      session.baseSource = verifiedSource;
+      session.baseFields = verifiedFields;
+      for (const field of EDITABLE_CHARACTER_FIELDS) {
+        fieldControls.get(field.id).value = verifiedFields[field.id];
+      }
+      setEditorStatus('Saved and verified in the selected Obsidian Markdown file.', 'ready');
+    } catch (error) {
+      setEditorStatus(error?.message || 'The local card could not be saved.', 'error');
+    } finally {
+      dom.saveCardFile.disabled = !session.handle;
+    }
+  });
+}
+
+function showTraitDetail(detail) {
+  dom.traitDetail.hidden = false;
+  dom.traitDetailTitle.textContent = detail.label;
+  dom.traitDetailValue.textContent = detail.value;
+  dom.traitDetailFormat.textContent = detail.format;
+  dom.traitDetailBinding.textContent = detail.binding;
+  dom.traitDetailAsset.textContent = detail.assetUrl;
+  dom.traitDetailProvenance.textContent = detail.provenancePath;
+}
+
+function renderTraitInspector(assets, stage) {
+  const details = assets.map((asset) => createTraitInspectionDetail(asset, {
+    provenancePath: '/friendsies/6602/PROVENANCE.md',
+  }));
+  const buttons = details.map((detail) => {
+    const item = dom.traitTemplate.content.firstElementChild.cloneNode(true);
+    const button = item.querySelector('.trait-button');
+    button.dataset.traitType = detail.traitType;
+    button.querySelector('.trait-label').textContent = detail.label;
+    button.querySelector('.trait-value').textContent = detail.value;
+    button.addEventListener('click', () => {
+      stage.setTraitInspection(detail.traitType);
+      showTraitDetail(detail);
+      dom.showFullCharacter.setAttribute('aria-pressed', 'false');
+      dom.traitList.querySelectorAll('.trait-button').forEach((candidate) => {
+        candidate.setAttribute(
+          'aria-pressed',
+          String(candidate.dataset.traitType === detail.traitType),
+        );
+      });
+      setStatus(`${detail.label}: ${detail.value} · isolated 3D preview`, 'ready');
+    });
+    return item;
+  });
+  dom.traitList.replaceChildren(...buttons);
+  dom.showFullCharacter.addEventListener('click', () => {
+    stage.setTraitInspection(null);
+    dom.traitDetail.hidden = true;
+    dom.showFullCharacter.setAttribute('aria-pressed', 'true');
+    dom.traitList.querySelectorAll('.trait-button').forEach((button) => {
+      button.setAttribute('aria-pressed', 'false');
+    });
+    setStatus('Full Friend 6602 assembly · preview only', 'ready');
+  });
 }
 
 async function verifyAssets(assets) {
@@ -304,6 +533,7 @@ class PreviewInput {
 class PreviewStage {
   constructor({ canvas, character, clips, mode, initialAction = null }) {
     this.canvas = canvas;
+    this.character = character;
     this.mode = mode;
     this.scene = new Scene();
     this.scene.background = new Color(0x86a08c);
@@ -318,7 +548,6 @@ class PreviewStage {
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.04;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.clock = new Clock();
     this.position = new Vector3(0, PLAYER_HEIGHT, 0);
     this.facingYaw = Math.PI;
@@ -332,6 +561,8 @@ class PreviewStage {
     this.justLanded = false;
     this.demoWalkRemaining = 0;
     this.activeAction = 'idle';
+    this.selectedTraitType = null;
+    this.lastResize = null;
     this.emoteIndex = 0;
     this.disposed = false;
 
@@ -460,12 +691,47 @@ class PreviewStage {
     });
   }
 
+  setTraitInspection(traitType) {
+    const result = applyCharacterTraitInspection(this.character, traitType);
+    this.selectedTraitType = result.selectedTraitType;
+    document.documentElement.dataset.selectedTrait = result.selectedTraitType || 'full';
+    return result;
+  }
+
   resize() {
-    const width = Math.max(1, dom.stageWrap.clientWidth);
-    const height = Math.max(1, dom.stageWrap.clientHeight);
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height, false);
+    this.lastResize = resizePreviewRenderer({
+      renderer: this.renderer,
+      camera: this.camera,
+      width: dom.stageWrap.clientWidth,
+      height: dom.stageWrap.clientHeight,
+      devicePixelRatio: window.devicePixelRatio,
+    });
+  }
+
+  getInspectionFraming() {
+    if (!this.selectedTraitType) return null;
+    const bounds = new Box3().makeEmpty();
+    this.character.traverse((object) => {
+      if ((object?.isMesh || object?.isSkinnedMesh) && object.visible) {
+        bounds.expandByObject(object, true);
+      }
+    });
+    if (bounds.isEmpty()) return null;
+
+    const center = bounds.getCenter(new Vector3());
+    const size = bounds.getSize(new Vector3());
+    const verticalFov = MathUtils.degToRad(this.camera.fov);
+    const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * this.camera.aspect);
+    const verticalDistance = size.y / (2 * Math.tan(verticalFov / 2));
+    const horizontalDistance = Math.max(size.x, size.z) / (2 * Math.tan(horizontalFov / 2));
+    return {
+      target: center,
+      distance: MathUtils.clamp(
+        Math.max(verticalDistance, horizontalDistance) * 1.45,
+        1.15,
+        5.4,
+      ),
+    };
   }
 
   frame() {
@@ -559,12 +825,14 @@ class PreviewStage {
       this.setActiveAction('idle');
     }
 
-    const target = this.position.clone();
-    target.y = 1.05 + this.jumpHeight * 0.25;
-    const horizontalDistance = this.cameraDistance * Math.cos(this.orbitPitch);
+    const inspectionFraming = this.getInspectionFraming();
+    const target = inspectionFraming?.target || this.position.clone();
+    if (!inspectionFraming) target.y = 1.05 + this.jumpHeight * 0.25;
+    const cameraDistance = inspectionFraming?.distance || this.cameraDistance;
+    const horizontalDistance = cameraDistance * Math.cos(this.orbitPitch);
     this.camera.position.set(
       target.x + Math.sin(this.orbitYaw) * horizontalDistance,
-      target.y + 1.05 + Math.sin(this.orbitPitch) * this.cameraDistance,
+      target.y + (inspectionFraming ? 0 : 1.05) + Math.sin(this.orbitPitch) * cameraDistance,
       target.z + Math.cos(this.orbitYaw) * horizontalDistance,
     );
     this.camera.lookAt(target);
@@ -587,7 +855,13 @@ class PreviewStage {
     return Object.freeze({
       renderCalls: this.renderer.info.render.calls,
       triangles: this.renderer.info.render.triangles,
+      pixelRatio: this.renderer.getPixelRatio(),
+      drawingBuffer: Object.freeze([
+        this.renderer.domElement.width,
+        this.renderer.domElement.height,
+      ]),
       characterVisible: Boolean(this.rig.visual?.visible),
+      selectedTraitType: this.selectedTraitType,
       rigPosition: Object.freeze(this.rig.group.position.toArray()),
       cameraPosition: Object.freeze(this.camera.position.toArray()),
       cameraDirection: Object.freeze(cameraDirection.toArray()),
@@ -629,10 +903,12 @@ async function boot() {
     const cards = await loadCharacterCards(CARD_PATHS);
     const { card } = resolveCharacterCard(cards, invocation);
     populateCard(card);
+    setupCharacterCardEditor(card);
 
     if (invocation.mode === 'card') {
       dom.stageWrap.hidden = true;
       dom.actionStrip.hidden = true;
+      dom.showFullCharacter.disabled = true;
       dom.controlsCopy.textContent = 'Card mode · metadata only';
       setStatus('Character card verified', 'ready');
       return;
@@ -661,6 +937,7 @@ async function boot() {
       mode: invocation.mode,
       initialAction: invocation.action || null,
     });
+    renderTraitInspector(assets, stage);
     renderActionButtons(invocation.mode === 'play', (id) => stage.performAction(id));
     if (invocation.mode !== 'play') {
       dom.touchControls.hidden = true;
@@ -674,10 +951,12 @@ async function boot() {
       performAction: (id) => (
         invocation.mode === 'play' ? stage.performAction(id) : false
       ),
+      selectTrait: (traitType) => stage.setTraitInspection(traitType),
       getState: () => Object.freeze({
         cardId: card.card_id,
         mode: invocation.mode,
         activeAction: stage.activeAction,
+        selectedTraitType: stage.selectedTraitType,
         position: Object.freeze(stage.position.toArray()),
         writesAuthoritativeState: false,
         diagnostics: stage.getDiagnostics(),

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+* Expanded the standalone Story Archive into a Friend 6602 character workshop.
+  Each verified trait now opens exact asset and provenance details plus an
+  automatically fitted isolated 3D view, while Full Friend restores the
+  complete assembly. An explicit desktop Chromium file picker exposes only
+  eight Markdown story-authoring sections and conflict-checks the latest local
+  Obsidian card before Save; verified identity, traits, rig, actions, and
+  sources remain protected. Preview resizing now refreshes the capped device
+  pixel ratio so moving the tab between standard and Retina displays stays
+  sharp without a reload.
 * Added the Pond–Grove Trait Echo v1.1 environment pass: canonical `Carrot` and
   `Earthworm` heads now read as rounded trees and a mushroom landmark, while
   `Flower Hill`, `Blooming Tree`, `Resting Green Leaf`, and `Purp Mush` create
