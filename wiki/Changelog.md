@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+* Expanded **The Path Remembers You** into a 75-metre winding whiteout with
+  sparse half-buried stakes, snow drifts, and a plausible dead-end fork, so the
+  player begins genuinely out of sight of town and earns the need for guidance.
+  Touch layouts now keep a labeled **Hint** control in a stable 72 × 66 px slot
+  instead of adding and removing it with objective state. During the arrival,
+  Hint reveals the matching older prints and a larger, high-contrast wind cue
+  bounded to the next 12 metres; the canonical town Hint palette and 24-metre
+  range return after the gate. Save and town authority remain unchanged.
+* Added **The Path Remembers You**, a 45–90 second fresh-save arrival that
+  teaches movement, camera look, Hint, interaction, and a first relationship
+  posture inside a temporary whiteout. At the snow-covered crossroads, desktop
+  `H` and a new touch **Hint** action share the existing semantic trail system
+  and reveal older prints with the same missing triangle in the player’s left
+  boot heel. A snow-dusted Lumen waits beside a near-spent lantern and open
+  gate, remembers the route the player denies walking, and responds to one of
+  three durable arrival postures with warmth rather than an answer. The player
+  takes the lantern and crosses the threshold in their own time; only then does
+  the existing self-written letter appear and Day One begin. Established saves,
+  town authority, progression, and the four-second non-authoritative Hint
+  contract remain unchanged.
 * Added the Pond–Grove Trait Echo v1.1 environment pass: canonical `Carrot` and
   `Earthworm` heads now read as rounded trees and a mushroom landmark, while
   `Flower Hill`, `Blooming Tree`, `Resting Green Leaf`, and `Purp Mush` create

@@ -74,6 +74,7 @@ test('dialogue gestures use the existing semantic Lumen action vocabulary', () =
   assert.deepEqual(authoredGestures, [
     STORY_ACTIONS_V1.lumen.happyHandGesture,
     STORY_ACTIONS_V1.lumen.acknowledging,
+    STORY_ACTIONS_V1.lumen.acknowledging,
     STORY_ACTIONS_V1.lumen.relievedSigh,
     STORY_ACTIONS_V1.lumen.thoughtfulHeadShake,
   ]);

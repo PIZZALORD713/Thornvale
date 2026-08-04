@@ -70,6 +70,7 @@ function createHarness() {
     'touchJumpButton',
     'touchInteractButton',
     'touchInteractLabel',
+    'touchHintButton',
   ];
   const elements = new Map(ids.map((id) => [id, new FakeTarget()]));
   elements.get('touchMoveZone').rect = { left: 0, top: 0, width: 120, height: 120 };
@@ -160,6 +161,43 @@ test('jump and interaction emit one semantic edge and interruption clears held s
   controls.dispose();
 });
 
+test('the touch Hint button emits the same semantic objective-hint action as desktop H', () => {
+  const { documentRef, windowRef, elements } = createHarness();
+  const input = new InputManager();
+  const controls = new TouchControls(input, { documentRef, windowRef }).init().setEnabled(true);
+  const hint = elements.get('touchHintButton');
+
+  assert.equal(hint.disabled, true);
+  assert.equal(hint.hidden, false, 'Hint keeps a stable place in the touch action stack');
+  controls.setHintAvailable(true);
+  assert.equal(hint.disabled, false);
+  assert.equal(hint.hidden, false);
+
+  hint.dispatch('pointerdown', { pointerId: 31 });
+  hint.dispatch('pointerdown', { pointerId: 31 });
+  assert.equal(input.consumeActionPress('objective-hint'), true);
+  assert.equal(input.consumeActionPress('objective-hint'), false);
+  hint.dispatch('pointerup', { pointerId: 31 });
+  hint.dispatch('click', { detail: 1 });
+  assert.equal(input.consumeActionPress('objective-hint'), false);
+  hint.dispatch('click', { detail: 0 });
+  assert.equal(input.consumeActionPress('objective-hint'), true);
+  assert.equal(input.consumeActionPress('objective-hint'), false);
+
+  hint.dispatch('pointerdown', { pointerId: 32 });
+  windowRef.dispatch('blur');
+  assert.equal(hint.captured.size, 0);
+  assert.equal(controls.hintPointerId, null);
+  assert.equal(controls.hintAvailable, false, 'lifecycle cleanup clears stale projected availability');
+
+  controls.setHintAvailable(true);
+  controls.setHintAvailable(false);
+  assert.equal(hint.disabled, true);
+  assert.equal(hint.hidden, false);
+  assert.equal(hint.attributes.get('aria-disabled'), 'true');
+  controls.dispose();
+});
+
 test('every lifecycle interruption releases captured pointers and returns touch to neutral', () => {
   const { documentRef, windowRef, elements } = createHarness();
   const input = new InputManager();
@@ -167,6 +205,8 @@ test('every lifecycle interruption releases captured pointers and returns touch 
   const move = elements.get('touchMoveZone');
   const look = elements.get('touchLookZone');
   const jump = elements.get('touchJumpButton');
+  const hint = elements.get('touchHintButton');
+  controls.setHintAvailable(true);
   let pointerId = 40;
 
   const arm = () => {
@@ -175,6 +215,7 @@ test('every lifecycle interruption releases captured pointers and returns touch 
     look.dispatch('pointerdown', { pointerId: pointerId + 50, clientX: 200, clientY: 200 });
     look.dispatch('pointermove', { pointerId: pointerId + 50, clientX: 220, clientY: 190 });
     jump.dispatch('pointerdown', { pointerId: pointerId + 100 });
+    hint.dispatch('pointerdown', { pointerId: pointerId + 150 });
     assert.ok(input.getMovementInput().x > 0.99);
     assert.equal(input.isActionHeld('jump'), true);
   };
@@ -185,6 +226,7 @@ test('every lifecycle interruption releases captured pointers and returns touch 
     assert.equal(move.captured.size, 0);
     assert.equal(look.captured.size, 0);
     assert.equal(jump.captured.size, 0);
+    assert.equal(hint.captured.size, 0);
   };
 
   for (const type of ['resize', 'orientationchange', 'pagehide']) {
@@ -205,6 +247,7 @@ test('every lifecycle interruption releases captured pointers and returns touch 
   look.dispatch('lostpointercapture', { pointerId: pointerId + 50 });
   assert.deepEqual({ ...input.consumeLookDelta() }, { x: 0, y: 0 });
   jump.dispatch('lostpointercapture', { pointerId: pointerId + 100 });
+  hint.dispatch('lostpointercapture', { pointerId: pointerId + 150 });
   assertNeutral();
 
   arm();

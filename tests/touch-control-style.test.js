@@ -62,6 +62,7 @@ function createHarness() {
     'touchJumpButton',
     'touchInteractButton',
     'touchInteractLabel',
+    'touchHintButton',
   ];
   const elements = new Map(ids.map((id) => [id, new FakeTarget()]));
   const documentRef = new FakeTarget();
@@ -136,7 +137,10 @@ test('mobile action markup provides themed rollback, inline icons, and interacti
   );
 
   const interactMarkup = buttonMarkup(html, 'touchInteractButton');
+  const hintMarkup = buttonMarkup(html, 'touchHintButton');
   const jumpMarkup = buttonMarkup(html, 'touchJumpButton');
+  assert.doesNotMatch(hintMarkup, /\shidden(?:\s|=|>)/, 'Hint must retain a stable visible slot');
+  assert.match(hintMarkup, />Hint</, 'Hint must keep a visible text label');
   assert.match(interactMarkup, /<svg\b[\s\S]*<\/svg>/, 'Interact must include an inline SVG icon');
   assert.match(jumpMarkup, /<svg\b[\s\S]*<\/svg>/, 'Jump must include an inline SVG icon');
 
@@ -174,6 +178,14 @@ test('premium touch controls retain reduced-motion and high-contrast affordances
   assert.ok(
     highContrast.some((block) => touchSelector.test(block)),
     'High-contrast media coverage must include a touch-control selector',
+  );
+});
+
+test('touch story choices reflow after keyboard badges are hidden', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(
+    html,
+    /html\[data-controls="touch"\]\s+\.story-choice\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+18px;/s,
   );
 });
 

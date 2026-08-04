@@ -353,9 +353,9 @@ export class StoryUI {
     const config = Array.isArray(value)
       ? { ...options, choices: value }
       : asOptions(value);
-    const choices = Array.isArray(config.choices) ? config.choices.slice(0, 2) : [];
-    if (choices.length !== 2) {
-      return Promise.reject(new Error('[StoryUI] choose() requires exactly two choices.'));
+    const choices = Array.isArray(config.choices) ? config.choices.slice(0, 3) : [];
+    if (choices.length < 2 || choices.length > 3) {
+      return Promise.reject(new Error('[StoryUI] choose() requires two or three choices.'));
     }
 
     const promise = this._present({
@@ -368,7 +368,7 @@ export class StoryUI {
       detail: config.detail ?? config.note,
       actionLabel: null,
       keyHint: config.keyHint ?? 'Choose with',
-      key: config.key ?? '1 / 2',
+      key: config.key ?? choices.map((_choice, index) => index + 1).join(' / '),
     });
 
     this._renderChoices(choices);
@@ -558,6 +558,7 @@ export class StoryUI {
   _renderChoices(choices) {
     const fragment = this.document.createDocumentFragment();
     this._choiceButtons.length = 0;
+    this.elements.storyChoices.dataset.count = String(choices.length);
 
     choices.forEach((choice, index) => {
       const normalized = typeof choice === 'string'
@@ -678,10 +679,15 @@ export class StoryUI {
       this._choiceButtons[1]?.click();
       return;
     }
+    if (!this.elements.storyChoices.hidden && (event.code === 'Digit3' || event.code === 'Numpad3')) {
+      event.preventDefault();
+      this._choiceButtons[2]?.click();
+      return;
+    }
 
     if ((event.key === 'Enter' || event.key === ' ') && !target?.closest?.('button')) {
       event.preventDefault();
-      // An irreversible choice must be deliberate: use 1/2, or Tab to a
+      // An irreversible choice must be deliberate: use a numbered option, or Tab to a
       // choice and activate that focused button. Enter-mashing cannot silently
       // select the first (comply) option.
       if (this.elements.storyChoices.hidden && !this.elements.storyAction.hidden) {

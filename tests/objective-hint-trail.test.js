@@ -90,6 +90,29 @@ test('show clones the route into a bounded ivory, sage, and gold wind field', ()
   trail.dispose();
 });
 
+test('whiteout cues use larger high-contrast carriers without changing the default palette', () => {
+  const trail = new ObjectiveHintTrail(new Scene(), {
+    reducedMotion: true,
+    spacing: 1,
+    maxMarkers: 5,
+  }).init();
+
+  trail.show({ points: [[0, 0], [0, 8]], palette: 'whiteout' });
+  const color = new Color();
+  color.fromBufferAttribute(trail.geometry.attributes.color, 0);
+  assert.equal(color.getHex(), 0xffac4f);
+  color.fromBufferAttribute(trail.geometry.attributes.color, 1);
+  assert.equal(color.getHex(), 0x506985);
+  assert.equal(trail.mesh.userData.palette, 'whiteout');
+  assert.ok(trail.geometry.attributes.aSize.getX(0) > 9);
+
+  trail.show({ points: [[0, 0], [0, 8]] });
+  color.fromBufferAttribute(trail.geometry.attributes.color, 0);
+  assert.equal(color.getHex(), 0xf2c56f, 'later town cues restore the canonical palette');
+  assert.equal(trail.mesh.userData.palette, 'default');
+  trail.dispose();
+});
+
 test('normal gust forms irregular three-dimensional clumps instead of a sampled line', () => {
   const trail = new ObjectiveHintTrail(new Scene(), {
     spacing: 0.09,

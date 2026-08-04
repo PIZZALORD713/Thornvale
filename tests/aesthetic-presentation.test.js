@@ -256,8 +256,12 @@ test('Steward Lumen uses a stable monogram instead of a collection number', () =
 
 test('the refined authored copy keeps the current IDs and effects intact', () => {
   assert.equal(
-    CORE_HOOK_V03.objectives.meetSteward.text,
-    'Meet the steward who kept the gate open for you.',
+    CORE_HOOK_V03.objectives.findCrossroads.text,
+    'Walk toward the snow-covered crossroads.',
+  );
+  assert.equal(
+    CORE_HOOK_V03.objectives.followRememberedPath.text,
+    'Ask the wind for a direction, or choose a road yourself.',
   );
   assert.equal(
     CORE_HOOK_V03.choice.detail,
@@ -268,5 +272,6 @@ test('the refined authored copy keeps the current IDs and effects intact', () =>
     'The warm way closes. A path no one named opens.',
   );
   assert.equal(CORE_HOOK_V03.ids.choice, 'ledger_record');
+  assert.equal(CORE_HOOK_V03.ids.arrivalChoice, 'arrival_posture');
   assert.equal(CORE_HOOK_V03.outcomes.alter.ending, 'escape');
 });
