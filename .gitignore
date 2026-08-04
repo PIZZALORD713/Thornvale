@@ -7,3 +7,5 @@ output/playwright/
 output/pizza-lab/
 .pizza-lab/
 .vs/
+.vercel/
+.env*.local
