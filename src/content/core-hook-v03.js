@@ -287,7 +287,7 @@ export const CORE_HOOK_V03 = deepFreeze({
         },
         {
           id: 'lumen-arrival-response.offer',
-          text: 'Take the lantern. Come warm yourself when you are ready.',
+          text: 'Come warm yourself.',
         },
       ],
     },

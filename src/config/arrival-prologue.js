@@ -27,6 +27,55 @@ const HINT_ROUTE_POINTS = [
 const CROSSROADS_ROUTE_INDEX = 5;
 const STEWARD_ROUTE_INDEX = 12;
 
+const WRONG_FORK_POINTS = [
+  HINT_ROUTE_POINTS[CROSSROADS_ROUTE_INDEX],
+  [2.8, 0, 39.4],
+  [-2.4, 0, 40.2],
+  [-7.6, 0, 44.1],
+  [-11, 0, 49],
+];
+
+function buildSkirtPines() {
+  const pines = [];
+  for (const side of [-1, 1]) {
+    for (let index = 0; index < 8; index += 1) {
+      pines.push({
+        x: side * (39 + (index % 3) * 2.3),
+        z: 16 + index * 7.5,
+      });
+    }
+  }
+  for (let index = 0; index < 11; index += 1) {
+    pines.push({
+      x: -42 + index * 8.4,
+      z: 65 + (index % 2) * 4,
+    });
+  }
+  return pines;
+}
+
+const ARRIVAL_SKIRT_PINES = buildSkirtPines();
+const ARRIVAL_SKIRT_BRUSH = [
+  ...Array.from({ length: 5 }, (_, index) => ({
+    x: -34 + index * 17,
+    z: 69 + (index % 2) * 2,
+  })),
+  ...[-1, 1].flatMap((side) => [30, 44, 58].map((z, index) => ({
+    x: side * (34 + (index % 2)),
+    z,
+  }))),
+];
+const ARRIVAL_SKIRT_DRIFTS = [
+  ...[-31, -15, 3, 22].map((x, index) => ({
+    x,
+    z: 69 + (index % 3) - 1,
+  })),
+  ...[-1, 1].flatMap((side) => [32, 50].map((z, index) => ({
+    x: side * (32 + index),
+    z,
+  }))),
+];
+
 function sampleFootprints(points, spacing = 0.9) {
   const result = [];
   for (let index = 0; index < points.length - 1; index += 1) {
@@ -72,13 +121,7 @@ export const ARRIVAL_PROLOGUE_V1 = deepFreeze({
   snowTracks: {
     approach: HINT_ROUTE_POINTS.slice(0, CROSSROADS_ROUTE_INDEX + 1),
     remembered: HINT_ROUTE_POINTS.slice(CROSSROADS_ROUTE_INDEX, STEWARD_ROUTE_INDEX + 1),
-    wrongFork: [
-      HINT_ROUTE_POINTS[CROSSROADS_ROUTE_INDEX],
-      [2.8, 0, 39.4],
-      [-2.4, 0, 40.2],
-      [-7.6, 0, 44.1],
-      [-11, 0, 49],
-    ],
+    wrongFork: WRONG_FORK_POINTS,
   },
   footprints: {
     fresh: [
@@ -94,8 +137,13 @@ export const ARRIVAL_PROLOGUE_V1 = deepFreeze({
     ),
   },
   environment: {
-    snowField: { width: 54, length: 60, center: { x: 0, z: 35 } },
+    snowField: { width: 112, length: 120, center: { x: 0, z: 35 } },
     fog: { near: 2.8, far: 14.5 },
+    skirt: {
+      pines: ARRIVAL_SKIRT_PINES,
+      brush: ARRIVAL_SKIRT_BRUSH,
+      drifts: ARRIVAL_SKIRT_DRIFTS,
+    },
     distanceMarkers: [
       { x: -14.8, z: 52.8, rotation: -0.25 },
       { x: -8.9, z: 50.1, rotation: 0.18 },
@@ -118,6 +166,43 @@ export const ARRIVAL_PROLOGUE_V1 = deepFreeze({
     crossroadsRadius: 2,
     gateCrossingRadius: 1.45,
     hintDistance: 12,
+  },
+  tutorial: {
+    lookYawRadians: Math.PI / 9,
+    moveDistance: 3,
+    hintStallSeconds: 2.5,
+    wrongForkDistance: 5,
+    cues: {
+      desktop: {
+        look: { key: 'Mouse', text: 'Look into the storm' },
+        move: { key: 'WASD', text: 'Follow your fresh prints' },
+        hint: { key: 'H', text: 'Ask the wind' },
+      },
+      touch: {
+        look: { key: 'Drag', text: 'Look into the storm' },
+        move: { key: 'Move', text: 'Follow your fresh prints' },
+        hint: { key: 'Hint', text: 'Ask the wind' },
+      },
+    },
+  },
+  fold: {
+    leash: 10,
+    recoveryDistance: 4.2,
+    pulseDurationMs: 260,
+    cooldownMs: 1600,
+    reviewedRoutes: [
+      HINT_ROUTE_POINTS.slice(0, CROSSROADS_ROUTE_INDEX + 1),
+      HINT_ROUTE_POINTS.slice(CROSSROADS_ROUTE_INDEX, STEWARD_ROUTE_INDEX + 1),
+      WRONG_FORK_POINTS,
+    ],
+    waypost: {
+      x: -14.8,
+      y: 0,
+      z: 52.8,
+      rotation: -0.25,
+      ribbonColor: 0xc98a4b,
+    },
+    freshPrints: sampleFootprints(HINT_ROUTE_POINTS.slice(1, 4), 1.05),
   },
 });
 

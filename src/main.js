@@ -64,6 +64,7 @@ import { TouchControls } from './ui/TouchControls.js';
 import { MobileDisplayNotice } from './ui/MobileDisplayNotice.js';
 import { FishingHUD } from './ui/FishingHUD.js';
 import { DayNightSystem } from './game/DayNightSystem.js';
+import { ArrivalTutorial } from './game/ArrivalTutorial.js';
 import { GameSession } from './game/GameSession.js';
 import { CoreHookDirector } from './game/CoreHookDirector.js';
 import { DayOneDirector } from './game/DayOneDirector.js';
@@ -71,7 +72,10 @@ import { DayOneActionController } from './game/DayOneActionController.js';
 import { WoodcuttingDirector } from './game/WoodcuttingDirector.js';
 import { FishingController } from './game/FishingController.js';
 import {
+  distanceToReviewedCorridor,
   hasPlayerFallenOutOfWorld,
+  isArrivalFoldEligible,
+  isWithinReviewedCorridor,
   resolveCurrentRecoveryPoint,
 } from './game/PlayerRecovery.js';
 import { InteractableSystem } from './game/InteractableSystem.js';
@@ -117,6 +121,7 @@ let fishingController;
 let fishingUnsubscribe;
 let fishingHUD;
 let arrivalWorld;
+let arrivalTutorial;
 let storyWorld;
 let objectiveHintTrail;
 let stewardActor;
@@ -150,12 +155,19 @@ let playerGatePoint;
 let cameraOcclusionTarget = null;
 let playerFriendsiesSelection = null;
 let resizeFrameId = 0;
+let arrivalHintIdleSeconds = 0;
+let arrivalHintSucceeded = false;
+let arrivalFoldActive = false;
+let arrivalFoldCooldownMs = 0;
+let arrivalFoldRequiresReentry = false;
 
 const playerGlowDay = new Color(0xffc9dc);
 const playerGlowNight = new Color(0xa9c4ff);
 
 const VISUAL_OFFSET_STORAGE_KEY = 'thornvale2.visualOffsetY';
 const VISUAL_OFFSET_STEP = 0.002;
+const arrivalFoldConfig = ARRIVAL_PROLOGUE_V1.fold;
+const arrivalTutorialConfig = ARRIVAL_PROLOGUE_V1.tutorial;
 const params = new URLSearchParams(window.location.search);
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
 const visualQuality = params.get('quality') || (reducedMotion ? 'medium' : 'high');
@@ -391,6 +403,10 @@ async function init() {
   });
 
   if (storyEnabled) {
+    arrivalTutorial = new ArrivalTutorial({
+      spawn: ARRIVAL_PROLOGUE_V1.anchors.spawn,
+      tutorial: arrivalTutorialConfig,
+    });
     dayOneDirector = new DayOneDirector({
       session: gameSession,
       content: DAY_ONE_V01,
@@ -1271,6 +1287,7 @@ function animate() {
   syncTouchHintAvailability();
   dayOneActionController?.update?.(dt);
   arrivalWorld?.update?.(dt);
+  updateArrivalFold(dt);
   storyWorld?.update(dt);
   objectiveHintTrail?.update?.(dt);
   dayOneWorld?.update?.(dt);
@@ -1291,6 +1308,8 @@ function animate() {
         || (Boolean(interactableSystem.activeInteractable) && !interactableSystem.inFlight),
     );
   }
+
+  updateArrivalTutorial(dt);
 
   const twilightActive = (dayNightSystem?.mix || 0) >= 0.42;
   worldAnimator?.update?.(dt, twilightActive);
@@ -1359,7 +1378,7 @@ function handleGlobalInput() {
   }
 
   if (inputManager.consumeActionPress('objective-hint')) {
-    showObjectiveHint();
+    arrivalHintSucceeded = showObjectiveHint() || arrivalHintSucceeded;
   }
 
   const requestedTimeToggle = inputManager.consumeKeyPress('KeyN');
@@ -1400,6 +1419,135 @@ function handleGlobalInput() {
   }
 }
 
+function isCommittedToArrivalWrongFork(position) {
+  if (!position) return false;
+  const crossroads = ARRIVAL_PROLOGUE_V1.anchors.crossroads;
+  const distanceFromCrossroads = Math.hypot(
+    position.x - crossroads.x,
+    position.z - crossroads.z,
+  );
+  if (distanceFromCrossroads < arrivalTutorialConfig.wrongForkDistance) {
+    return false;
+  }
+  return distanceToReviewedCorridor(
+    position,
+    [ARRIVAL_PROLOGUE_V1.snowTracks.wrongFork],
+  ) <= ARRIVAL_PROLOGUE_V1.timing.crossroadsRadius;
+}
+
+function updateArrivalTutorial(dt) {
+  if (!arrivalTutorial || !storyUI || !gameSession) return;
+  const snapshot = gameSession.snapshot();
+  const objective = coreHookDirector?.currentObjective?.();
+  const followPath = objective?.id === CORE_HOOK_V03.objectives.followRememberedPath.id;
+  const inputActive = Boolean(
+    worldEntered
+    && storyEnabled
+    && !storyBlocking
+    && !arrivalFoldActive,
+  );
+  const position = characterMotor?.getPosition?.();
+  const speed = Number(characterMotor?.horizontalSpeed) || 0;
+
+  if (followPath && inputActive && speed < 0.35) {
+    arrivalHintIdleSeconds += Math.max(0, Number(dt) || 0);
+  } else if (!followPath) {
+    arrivalHintIdleSeconds = 0;
+  }
+
+  const hintReady = Boolean(
+    followPath
+    && (
+    arrivalHintIdleSeconds >= arrivalTutorialConfig.hintStallSeconds
+      || isCommittedToArrivalWrongFork(position)
+    ),
+  );
+  const tutorialState = arrivalTutorial.update({
+    yaw: cameraRig?.getYaw?.(),
+    position,
+    eventsSeen: snapshot.eventsSeen,
+    inputActive,
+    hintSucceeded: arrivalHintSucceeded,
+    hintReady,
+    nearInteraction: Boolean(
+      interactableSystem?.activeInteractable
+      || interactableSystem?.inFlight,
+    ),
+    controlMode,
+  });
+  storyUI.setControlCue(tutorialState.cue);
+  touchControls?.setHintEmphasis?.(
+    touchControlMode
+    && tutorialState.step === 'hint'
+    && Boolean(tutorialState.cue),
+  );
+}
+
+function updateArrivalFold(dt) {
+  if (!arrivalWorld || !playerController || !characterMotor || !gameSession) return;
+  const arrivalComplete = gameSession.hasEvent(CORE_HOOK_V03.events.stewardMet);
+  if (arrivalComplete || storyBlocking || !worldEntered) {
+    if (arrivalFoldActive) {
+      arrivalWorld.cancelFoldPresentation();
+      arrivalFoldActive = false;
+      playerController.setActionLocked(false);
+    }
+    return;
+  }
+
+  if (arrivalFoldActive) {
+    if (arrivalWorld.consumeFoldRelocationCue()) {
+      const waypost = arrivalFoldConfig.waypost;
+      const yaw = Number(cameraRig?.getYaw?.()) || 0;
+      playerController.teleport(new Vector3(
+        waypost.x - Math.sin(yaw) * arrivalFoldConfig.recoveryDistance,
+        Math.max(2, (Number(waypost.y) || 0) + 2),
+        waypost.z - Math.cos(yaw) * arrivalFoldConfig.recoveryDistance,
+      ));
+    }
+    if (!arrivalWorld.getFoldPresentationState().active) {
+      arrivalFoldActive = false;
+      arrivalFoldCooldownMs = arrivalFoldConfig.cooldownMs;
+      arrivalFoldRequiresReentry = true;
+      playerController.setActionLocked(false);
+    }
+    return;
+  }
+
+  arrivalFoldCooldownMs = Math.max(
+    0,
+    arrivalFoldCooldownMs - Math.max(0, Number(dt) || 0) * 1000,
+  );
+  const position = characterMotor.getPosition();
+  if (
+    arrivalFoldRequiresReentry
+    && isWithinReviewedCorridor(
+      position,
+      arrivalFoldConfig.reviewedRoutes,
+      arrivalFoldConfig.leash,
+    )
+  ) {
+    arrivalFoldRequiresReentry = false;
+  }
+
+  if (!isArrivalFoldEligible({
+    position,
+    reviewedRoutes: arrivalFoldConfig.reviewedRoutes,
+    leash: arrivalFoldConfig.leash,
+    arrivalComplete,
+    cooldownRemainingMs: arrivalFoldCooldownMs,
+    requiresCorridorReentry: arrivalFoldRequiresReentry,
+  })) return;
+
+  if (!arrivalWorld.beginFoldPresentation()) return;
+  arrivalFoldActive = true;
+  playerController.setActionLocked(true);
+  objectiveHintTrail?.hide?.();
+  storyUI?.setControlCue?.(null);
+  touchControls?.setHintEmphasis?.(false);
+  soundscape?.playInteraction?.('magic');
+}
+
 function syncTouchHintAvailability(objective = coreHookDirector?.currentObjective?.()) {
   const targetKey = objective?.id ? OBJECTIVE_HINT_TARGETS[objective.id] : null;
   touchControls?.setHintAvailable?.(
@@ -1409,14 +1557,10 @@ function syncTouchHintAvailability(objective = coreHookDirector?.currentObjectiv
 
 function handleObjectiveChange(objective) {
   objectiveHintTrail?.hide?.();
+  arrivalHintIdleSeconds = 0;
+  storyUI?.setControlCue?.(null);
+  touchControls?.setHintEmphasis?.(false);
   syncTouchHintAvailability(objective);
-  if (objective?.id === CORE_HOOK_V03.objectives.followRememberedPath.id) {
-    hud?.setStatus?.(
-      touchControlMode
-        ? 'Need a direction? Tap Hint — Ask the wind.'
-        : 'Need a direction? Press H — Ask the wind.',
-    );
-  }
 }
 
 function showObjectiveHint() {

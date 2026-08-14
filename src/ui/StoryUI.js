@@ -148,6 +148,7 @@ export class StoryUI {
     this.document.addEventListener('focusout', this._onFocusOut, true);
 
     this._clearObjectiveCue();
+    this.setControlCue(null);
     this._clearBeatCue();
 
     this.initialized = true;
@@ -166,6 +167,7 @@ export class StoryUI {
       config.label ?? config.eyebrow ?? 'A little next step',
     );
     this.elements.storyObjectiveText.textContent = text;
+    this.setControlCue(null);
     this._setObjectiveCue(config.cue);
     this.elements.storyObjective.setAttribute('aria-label', `${this.elements.storyObjectiveLabel.textContent}: ${text}`);
     this.elements.storyObjective.setAttribute('aria-hidden', 'false');
@@ -186,8 +188,37 @@ export class StoryUI {
     this._ensureInit();
     this.elements.storyObjective.classList.remove('is-visible', 'is-updating');
     this.elements.storyObjective.setAttribute('aria-hidden', 'true');
+    this.setControlCue(null);
     this._clearObjectiveCue();
     if (this.elements.objectiveAnnouncement) this.elements.objectiveAnnouncement.textContent = '';
+    return this;
+  }
+
+  /** Project one non-blocking, device-aware instruction inside the objective. */
+  setControlCue(value) {
+    const objective = this.elements.storyObjective;
+    if (!objective) return this;
+    const key = asText(value?.key ?? value?.control).trim();
+    const instruction = asText(value?.text ?? value?.label).trim();
+    if (!key || !instruction) {
+      if (!objective.dataset.controlCue) return this;
+      delete objective.dataset.controlCue;
+      objective.classList.remove('has-control-cue');
+      return this;
+    }
+    const label = `${key} · ${instruction}`;
+    if (objective.dataset.controlCue === label) return this;
+    objective.dataset.controlCue = label;
+    objective.classList.add('has-control-cue');
+    const announcement = this.elements.objectiveAnnouncement;
+    if (announcement) {
+      announcement.textContent = '';
+      globalThis.setTimeout?.(() => {
+        if (objective.dataset.controlCue === label) {
+          announcement.textContent = `${key}: ${instruction}`;
+        }
+      }, 0);
+    }
     return this;
   }
 

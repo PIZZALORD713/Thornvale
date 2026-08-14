@@ -7,6 +7,24 @@
 - **Player-feeling shift:** Exposed and uncertain → relieved by earned warmth → curious about a contradiction.
 - **Fresh-player hypothesis:** An uncoached player can reach the gate, use or understand Hint, notice the matching old tread, and want another conversation with Lumen.
 
+## V2 refinement contract
+
+- Teach through response, not a separate tutorial: show only Look, then Move,
+  then the optional Hint invitation inside the existing objective surface.
+- Clear Look after 20 degrees of cumulative yaw, Move after three metres, and
+  Hint only after a successful semantic Hint action. Reaching the crossroads
+  retires any unfinished Look or Move cue without scolding the player.
+- Keep the existing contextual `E`/Action prompts as the sole interaction
+  teaching near Lumen and the lantern; do not teach sprint or jump here.
+- Conceal the physical edge with a 20–30 metre presentation skirt of dense
+  pines, buried brush, deep drifts, and worsening snow.
+- Treat the approach, remembered route, and wrong fork as one reviewed
+  corridor. More than ten metres off every segment may trigger a 200–300 ms
+  whiteout fold to the broken three-pronged waypost with its snapped prong and
+  ochre ribbon. Preserve facing and held movement; mutate no session state.
+- Keep the matching older tread as the opening's only canonical contradiction.
+  The fold is optional edge recovery, not a second mystery or new story branch.
+
 ## Beat contract
 
 - **Cozy pleasure:** A near-spent lantern, an open gate, and a snow-covered Lumen make the welcome feel prepared and costly.

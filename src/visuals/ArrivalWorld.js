@@ -83,6 +83,12 @@ export class ArrivalWorld {
     this.interactables = [];
     this.completed = false;
     this.fogBaseline = null;
+    this.foldFx = {
+      active: false,
+      elapsed: 0,
+      pending: false,
+      used: false,
+    };
   }
 
   init() {
@@ -97,8 +103,10 @@ export class ArrivalWorld {
     this._buildSnowTracks();
     this._buildDistanceMarkers();
     this._buildDrifts();
+    this._addSkirt();
     this._buildCrossroads();
     this._buildFootprints();
+    this._addFoldLandmark();
     this._buildOpenGate();
     this._buildWaitingLantern();
     this.scene?.add?.(this.root);
@@ -229,7 +237,15 @@ export class ArrivalWorld {
     });
     const poleGeometry = this._geometry(new CylinderGeometry(0.045, 0.065, 1.35, 6));
     const capGeometry = this._geometry(new SphereGeometry(0.095, 8, 6));
+    const waypost = this.content.fold?.waypost;
     for (const [index, marker] of (this.content.environment?.distanceMarkers || []).entries()) {
+      if (
+        waypost
+        && Math.hypot(
+          (Number(marker.x) || 0) - (Number(waypost.x) || 0),
+          (Number(marker.z) || 0) - (Number(waypost.z) || 0),
+        ) < 0.35
+      ) continue;
       const group = new Group();
       group.name = `arrival_distance_marker_${index}`;
       group.position.set(marker.x, 0, marker.z);
@@ -261,6 +277,51 @@ export class ArrivalWorld {
       mound.receiveShadow = true;
       mound.userData.cameraCollision = false;
       this.root.add(mound);
+    }
+  }
+
+  _addSkirt() {
+    const skirt = this.content.environment?.skirt;
+    if (!skirt) return;
+    const material = (color, roughness = 1) => this._material(MeshStandardMaterial, {
+      color, roughness, metalness: 0,
+    });
+    const pineMaterial = material(0x43554f, 0.94);
+    const pineGeometry = this._geometry(new CylinderGeometry(0, 1, 1, 7));
+    for (const [index, pine] of (skirt.pines || []).entries()) {
+      const height = Math.max(2.5, Number(pine.height) || 7.7 + (index % 4) * 0.7);
+      const radius = Math.max(0.6, Number(pine.radius) || 2.15 + (index % 3) * 0.22);
+      const canopy = new Mesh(pineGeometry, pineMaterial);
+      canopy.name = `arrival_skirt_pine_${index}`;
+      canopy.position.set(Number(pine.x) || 0, height * 0.5, Number(pine.z) || 0);
+      canopy.scale.set(radius, height, radius);
+      canopy.rotation.y = Number(pine.rotation) || (index % 2 ? 0.15 : -0.12);
+      canopy.castShadow = false;
+      this.root.add(canopy);
+    }
+    const moundGeometry = this._geometry(new SphereGeometry(1, 9, 6));
+    for (const [kind, entries, color] of [
+      ['brush', skirt.brush || [], 0x697069],
+      ['drift', skirt.drifts || [], 0xf0f5f7],
+    ]) {
+      const moundMaterial = material(color);
+      for (const [index, item] of entries.entries()) {
+        const brush = kind === 'brush';
+        const side = Math.abs(Number(item.x) || 0) > 30 && Number(item.z) < 60;
+        const height = Number(brush ? item.scaleY : item.height) || (brush ? 1.15 : 0.6);
+        const mound = new Mesh(moundGeometry, moundMaterial);
+        mound.name = `arrival_skirt_${kind}_${index}`;
+        mound.position.set(Number(item.x) || 0, Math.max(0.04, height * 0.24), Number(item.z) || 0);
+        mound.scale.set(
+          Math.max(0.4, Number(item.scaleX) || (brush || side ? 3.3 : 6.6)),
+          Math.max(0.2, height),
+          Math.max(0.4, Number(item.scaleZ) || (brush || !side ? 3 : 6.8)),
+        );
+        mound.rotation.y = Number(item.rotation) || 0;
+        mound.castShadow = false;
+        mound.receiveShadow = kind === 'drift';
+        this.root.add(mound);
+      }
     }
   }
 
@@ -358,6 +419,93 @@ export class ArrivalWorld {
     );
     this.rememberedTrail.visible = false;
     this.root.add(freshTrail, this.rememberedTrail);
+  }
+
+  _addFoldLandmark() {
+    const fold = this.content.fold;
+    const anchor = fold?.waypost;
+    if (!anchor) return;
+
+    const wood = this._material(MeshStandardMaterial, {
+      color: 0x5f4b45,
+      roughness: 0.96,
+      metalness: 0,
+    });
+    const ribbon = this._material(MeshStandardMaterial, {
+      color: Number(anchor.ribbonColor) || 0xc98a4b,
+      roughness: 0.98,
+      metalness: 0,
+      transparent: true,
+      opacity: 0.82,
+      side: DoubleSide,
+    });
+    const poleGeometry = this._geometry(new CylinderGeometry(0.075, 0.11, 2.25, 7));
+    const prongGeometry = this._geometry(new CylinderGeometry(0.045, 0.065, 1, 6));
+
+    const group = new Group();
+    group.name = 'arrival_fold_waypost';
+    group.position.set(Number(anchor.x) || 0, Number(anchor.y) || 0, Number(anchor.z) || 0);
+    group.rotation.z = Number(anchor.rotation) || 0;
+    Object.assign(group.userData, {
+      cameraCollision: false,
+      prongCount: 3,
+      snappedProngCount: 1,
+    });
+    const addPart = (name, geometry, material, x, y, z, scale, rotation = 0) => {
+      const part = new Mesh(geometry, material);
+      part.name = name;
+      part.position.set(x, y, z);
+      if (scale) part.scale.set(...scale);
+      part.rotation.z = rotation;
+      part.castShadow = true;
+      group.add(part);
+    };
+    addPart('arrival_fold_waypost_pole', poleGeometry, wood, 0, 1.12, 0);
+
+    for (let index = 0; index < 3; index += 1) {
+      addPart(
+        `arrival_fold_waypost_prong_${index}`,
+        prongGeometry,
+        wood,
+        (index - 1) * 0.2,
+        2.12,
+        0,
+        [1, [0.82, 0.68, 0.38][index], 1],
+        [-0.58, 0, 0.62][index],
+      );
+    }
+    addPart(
+      'arrival_fold_waypost_ribbon',
+      this._geometry(new PlaneGeometry(0.62, 0.18)),
+      ribbon,
+      0.34,
+      1.82,
+      0.055,
+      null,
+      -0.22,
+    );
+    this.root.add(group);
+
+    const prints = Array.isArray(fold.freshPrints) ? fold.freshPrints : [];
+    if (prints.length > 0) {
+      const material = this._material(MeshBasicMaterial, {
+        color: 0x687c90,
+        transparent: true,
+        opacity: 0.54,
+        depthWrite: false,
+        side: DoubleSide,
+      });
+      const trail = new Group();
+      trail.name = 'arrival_fold_fresh_footprints';
+      trail.userData.treadSignature = this.content.treadSignature;
+      this._addFootprintTrail(
+        trail,
+        prints,
+        material,
+        'arrival_fold_fresh_print',
+      );
+      this.root.add(trail);
+    }
   }
 
   _buildOpenGate() {
@@ -458,7 +606,10 @@ export class ArrivalWorld {
     const events = new Set(snapshot?.eventsSeen || []);
     this.completed = events.has('steward-lumen-met');
     this.root.visible = !this.completed;
-    if (this.completed) this._restoreFog();
+    if (this.completed) {
+      this.cancelFoldPresentation();
+      this._restoreFog();
+    }
     this.setLanternTaken(events.has('arrival-lantern-taken'));
     if (!events.has('arrival-crossroads-reached')) this.rememberedTrail.visible = false;
     return this;
@@ -485,14 +636,101 @@ export class ArrivalWorld {
     this.scene.fog.far = this.fogBaseline.far;
   }
 
+  _foldDuration() {
+    return (Number(this.content.fold?.pulseDurationMs) || 250) / 1000;
+  }
+
+  _resetFold() {
+    this._setSkyWhiteout(0);
+    if (this.completed) this._restoreFog();
+    else this._applyWhiteoutFog();
+  }
+
+  _setSkyWhiteout(value) {
+    const uniform = this.scene?.getObjectByName?.('kawaiiSkyDome')
+      ?.material?.uniforms?.uWhiteout;
+    if (uniform) uniform.value = Number(value) || 0;
+  }
+
+  _applyFold(intensity) {
+    const safeIntensity = Number(intensity) || 0;
+    this._setSkyWhiteout(safeIntensity);
+    if (this.scene?.fog) {
+      const normalNear = Number(this.content.environment?.fog?.near) || 2.8;
+      const normalFar = Number(this.content.environment?.fog?.far) || 14.5;
+      this.scene.fog.color.setHex(0xf7fbfd);
+      this.scene.fog.near = normalNear + (0.15 - normalNear) * safeIntensity;
+      this.scene.fog.far = normalFar + (1.45 - normalFar) * safeIntensity;
+    }
+  }
+
+  _updateFold(dt) {
+    if (!this.foldFx.active) return;
+    const duration = this._foldDuration();
+    this.foldFx.elapsed = Math.min(
+      duration,
+      this.foldFx.elapsed + dt,
+    );
+    const progress = Math.min(1, this.foldFx.elapsed / duration);
+    const occluded = progress >= 0.36 && progress <= 0.78;
+    if (
+      progress >= 0.36
+      && !this.foldFx.used
+    ) this.foldFx.pending = true;
+
+    const intensity = this.reducedMotion
+      ? (occluded ? 0.96 : 0.64)
+      : Math.sin(Math.PI * progress);
+    this._applyFold(intensity);
+
+    if (progress >= 1) {
+      this.foldFx.active = false;
+      this._resetFold();
+    }
+  }
+
+  beginFoldPresentation() {
+    if (
+      this.completed
+      || !this.content.fold?.waypost
+      || this.foldFx.active
+    ) return false;
+    Object.assign(this.foldFx, {
+      active: true, elapsed: 0, pending: false, used: false,
+    });
+    return true;
+  }
+
+  getFoldPresentationState() {
+    return { active: this.foldFx.active };
+  }
+
+  consumeFoldRelocationCue() {
+    if (
+      !this.foldFx.pending
+      || this.foldFx.used
+    ) return false;
+    this.foldFx.pending = false;
+    this.foldFx.used = true;
+    return true;
+  }
+
+  cancelFoldPresentation() {
+    Object.assign(this.foldFx, {
+      active: false, elapsed: 0, pending: false, used: false,
+    });
+    this._resetFold();
+  }
+
   update(dt) {
     if (!this.completed) this._applyWhiteoutFog();
+    const safeDt = Math.min(Math.max(Number(dt) || 0, 0), 0.1);
+    this._updateFold(safeDt);
     if (
       this.completed
       || this.reducedMotion
       || !this.snow?.geometry?.attributes?.position
     ) return;
-    const safeDt = Math.min(Math.max(Number(dt) || 0, 0), 0.1);
     this.snowTime += safeDt;
     for (let index = 0; index < this.snowPositions.length; index += 3) {
       this.snowPositions[index + 1] -= safeDt * (0.72 + ((index / 3) % 7) * 0.045);
@@ -503,6 +741,7 @@ export class ArrivalWorld {
   }
 
   dispose() {
+    this.cancelFoldPresentation();
     this._restoreFog();
     this.scene?.remove?.(this.root);
     for (const resource of this.resources) resource.dispose?.();

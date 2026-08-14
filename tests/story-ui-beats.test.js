@@ -8,6 +8,7 @@ const REQUIRED_IDS = [
   'storyObjectiveCueImage',
   'storyObjectiveLabel',
   'storyObjectiveText',
+  'storyObjectiveAnnouncement',
   'storyLayer',
   'storyCard',
   'storyPortrait',
@@ -263,6 +264,37 @@ function assertKeyHint(documentRef, prefix, key) {
   assert.equal(hint.children[0].textContent, `${prefix} `);
   assert.equal(hint.children[1].textContent, key);
 }
+
+test('StoryUI projects and announces one accessible control cue inside the objective surface', async (t) => {
+  const { documentRef, ui } = createUI(t);
+  const root = documentRef.getElementById('storyObjective');
+
+  ui.setObjective({ label: 'What the storm left', text: 'Walk toward the crossroads.' });
+  ui.setControlCue({
+    id: 'look',
+    key: 'Mouse',
+    text: 'Look into the storm',
+    controlMode: 'desktop',
+  });
+
+  assert.equal(root.dataset.controlCue, 'Mouse · Look into the storm');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(
+    documentRef.getElementById('storyObjectiveAnnouncement').textContent,
+    'Mouse: Look into the storm',
+  );
+
+  ui.setControlCue({ id: 'hint', key: 'Hint', text: 'Ask the wind', controlMode: 'touch' });
+  assert.equal(root.dataset.controlCue, 'Hint · Ask the wind');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(
+    documentRef.getElementById('storyObjectiveAnnouncement').textContent,
+    'Hint: Ask the wind',
+  );
+
+  ui.clearObjective();
+  assert.equal(root.dataset.controlCue, undefined);
+});
 
 test('StoryUI presents and keyboard-selects all three arrival postures', async (t) => {
   const { documentRef, ui } = createUI(t);

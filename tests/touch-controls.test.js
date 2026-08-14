@@ -18,6 +18,7 @@ class FakeTarget {
     this.rect = rect;
     this.listeners = new Map();
     this.style = {};
+    this.dataset = {};
     this.classList = new FakeClassList();
     this.hidden = false;
     this.inert = false;
@@ -172,6 +173,9 @@ test('the touch Hint button emits the same semantic objective-hint action as des
   controls.setHintAvailable(true);
   assert.equal(hint.disabled, false);
   assert.equal(hint.hidden, false);
+  controls.setHintEmphasis(true);
+  assert.equal(controls.hintEmphasis, true);
+  assert.equal(elements.get('touchControls').dataset.hintEmphasis, 'true');
 
   hint.dispatch('pointerdown', { pointerId: 31 });
   hint.dispatch('pointerdown', { pointerId: 31 });
@@ -192,6 +196,8 @@ test('the touch Hint button emits the same semantic objective-hint action as des
 
   controls.setHintAvailable(true);
   controls.setHintAvailable(false);
+  assert.equal(controls.hintEmphasis, false);
+  assert.equal(elements.get('touchControls').dataset.hintEmphasis, 'false');
   assert.equal(hint.disabled, true);
   assert.equal(hint.hidden, false);
   assert.equal(hint.attributes.get('aria-disabled'), 'true');

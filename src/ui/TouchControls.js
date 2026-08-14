@@ -23,6 +23,7 @@ export class TouchControls {
     this.interactionAvailable = false;
     this.interactionLabel = '';
     this.hintAvailable = false;
+    this.hintEmphasis = false;
     this.movePointerId = null;
     this.lookPointerId = null;
     this.jumpPointerId = null;
@@ -129,12 +130,20 @@ export class TouchControls {
 
   setHintAvailable(available = true) {
     this.hintAvailable = Boolean(available);
+    if (!this.hintAvailable) this.hintEmphasis = false;
     this.projectState('hintAvailable', this.hintAvailable);
+    this.projectState('hintEmphasis', this.hintEmphasis);
     if (this.elements.hintButton) {
       this.elements.hintButton.disabled = !this.hintAvailable;
       this.elements.hintButton.hidden = false;
       this.elements.hintButton.setAttribute?.('aria-disabled', String(!this.hintAvailable));
     }
+    return this;
+  }
+
+  setHintEmphasis(emphasized = true) {
+    this.hintEmphasis = Boolean(emphasized && this.hintAvailable);
+    this.projectState('hintEmphasis', this.hintEmphasis);
     return this;
   }
 
@@ -333,6 +342,7 @@ export class TouchControls {
     this.projectState('interactionAvailable', this.interactionAvailable);
     this.projectState('hintActive', this.hintPointerId !== null);
     this.projectState('hintAvailable', this.hintAvailable);
+    this.projectState('hintEmphasis', this.hintEmphasis);
     if (this.elements.interactButton) {
       this.elements.interactButton.disabled = !this.interactionAvailable;
       this.elements.interactButton.hidden = !this.interactionAvailable;
@@ -358,6 +368,7 @@ export class TouchControls {
     this.sprinting = false;
     this.interactionAvailable = false;
     this.hintAvailable = false;
+    this.hintEmphasis = false;
     if (this.elements.interactButton) {
       this.elements.interactButton.disabled = true;
       this.elements.interactButton.hidden = true;
