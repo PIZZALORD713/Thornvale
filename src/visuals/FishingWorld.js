@@ -1,5 +1,4 @@
 import {
-  Box3,
   BufferGeometry,
   CylinderGeometry,
   Group,
@@ -14,67 +13,20 @@ import {
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { STEWARDSHIP_V01 } from '../content/stewardship-v01.js';
+import { prepareRigidEquipmentAsset } from './RigidEquipmentAsset.js';
 
 export const FRIENDSIES_FISHING_POLE_URL = '/friendsies/tools/fishing-pole-v1.glb';
 
 export function prepareFishingPoleAsset(root) {
-  root.updateWorldMatrix(true, true);
-  root.traverse((object) => {
-    if (object.isSkinnedMesh) object.skeleton.update();
-  });
-
   // hand:Guess is rigidly weighted to Attachment.R, but retaining the whole
   // character skeleton makes an equipment-only transform behave differently
   // before and after the first render. Bake frame zero into ordinary meshes so
   // normalization is deterministic and the pole can be placed like a prop.
-  const presentation = new Group();
-  presentation.name = 'friendsies_fishing_pole_frame_zero';
-  let meshCount = 0;
-  root.traverse((object) => {
-    if (!object.isMesh) return;
-    meshCount += 1;
-    const geometry = object.geometry.clone();
-    if (object.isSkinnedMesh) {
-      const positions = geometry.getAttribute('position');
-      const vertex = new Vector3();
-      for (let index = 0; index < positions.count; index += 1) {
-        vertex.fromBufferAttribute(positions, index);
-        object.applyBoneTransform(index, vertex);
-        positions.setXYZ(index, vertex.x, vertex.y, vertex.z);
-      }
-      positions.needsUpdate = true;
-    }
-    geometry.applyMatrix4(object.matrixWorld);
-    if (geometry.getAttribute('normal')) geometry.computeVertexNormals();
-
-    const mesh = new Mesh(geometry, object.material);
-    mesh.name = object.name || `friendsies_fishing_pole_mesh_${meshCount}`;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    mesh.frustumCulled = false;
-    mesh.userData.cameraCollision = false;
-    mesh.userData.physicsCollision = false;
-    presentation.add(mesh);
+  return prepareRigidEquipmentAsset(root, {
+    name: 'friendsies_fishing_pole_frame_zero',
+    label: 'Canonical fishing pole',
+    longest: 2.25,
   });
-  if (meshCount < 1) throw new Error('Canonical fishing pole contains no renderable mesh');
-
-  presentation.updateWorldMatrix(true, true);
-  const bounds = new Box3().setFromObject(presentation, true);
-  const size = bounds.getSize(new Vector3());
-  if (bounds.isEmpty() || ![size.x, size.y, size.z].every(Number.isFinite)) {
-    throw new Error('Canonical fishing pole bounds are empty or non-finite');
-  }
-  const longest = Math.max(size.x, size.y, size.z);
-  if (!(longest > 0)) throw new Error('Canonical fishing pole has zero extent');
-
-  // Keep the source binary unchanged. Normalize its frame-zero hand-trait pose
-  // under the same ThornVale-owned anchor as the procedural rod.
-  presentation.scale.setScalar(2.25 / longest);
-  presentation.updateWorldMatrix(true, true);
-  const normalized = new Box3().setFromObject(presentation, true);
-  const center = normalized.getCenter(new Vector3());
-  presentation.position.sub(center);
-  return presentation;
 }
 
 export async function loadCanonicalFishingPole(url = FRIENDSIES_FISHING_POLE_URL) {
