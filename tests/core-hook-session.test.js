@@ -8,6 +8,7 @@ import {
 import { CoreHookDirector } from '../src/game/CoreHookDirector.js';
 import { CORE_HOOK_V03 } from '../src/content/core-hook-v03.js';
 import { STORY_ACTIONS_V1 } from '../src/content/story-actions-v1.js';
+import { ARRIVAL_PROLOGUE_V1 } from '../src/config/arrival-prologue.js';
 
 class MemoryStorage {
   constructor() {
@@ -52,6 +53,7 @@ function completeDayOneDraft(draft) {
 
 function createHarness({
   choice = 'comply',
+  arrivalChoice = 'personal-truth',
   playerName = '  Juniper\nVale  ',
   storage = new MemoryStorage(),
   ringAnomalyBell,
@@ -68,7 +70,7 @@ function createHarness({
     signature: 'Juniper Vale',
   }),
   stewardActionHandler = null,
-  stewardPosition = { x: 1.6, y: 0, z: 9.4 },
+  stewardPosition = { ...CORE_HOOK_V03.anchors.steward.welcome },
   onObjectiveChange = null,
 } = {}) {
   const calls = [];
@@ -111,7 +113,7 @@ function createHarness({
     },
     async choose(value) {
       calls.push(`choose:${value.id}`);
-      return choice;
+      return value.id === CORE_HOOK_V03.arrivalChoice.id ? arrivalChoice : choice;
     },
     async showEnding(value) {
       calls.push(`ending:${value.id}`);
@@ -217,6 +219,7 @@ function createHarness({
     interactables: [
       { id: 'ledger', position: { x: -2, y: 0.8, z: 3 } },
       { id: 'bell', position: CORE_HOOK_V03.anchors.interactables.bell },
+      { id: CORE_HOOK_V03.ids.lantern, position: ARRIVAL_PROLOGUE_V1.anchors.lantern },
     ],
     stewardInteractable: {
       id: 'steward-8914',
@@ -229,7 +232,7 @@ function createHarness({
 }
 
 test('objective targets resolve from authored descriptors and follow moving actors', async () => {
-  const stewardPosition = { x: 1.6, y: 0, z: 9.4 };
+  const stewardPosition = { ...CORE_HOOK_V03.anchors.steward.welcome };
   const observed = [];
   const harness = createHarness({
     stewardPosition,
@@ -239,10 +242,19 @@ test('objective targets resolve from authored descriptors and follow moving acto
   });
 
   const before = harness.session.snapshot();
-  assert.equal(harness.director.currentObjective(), CORE_HOOK_V03.objectives.meetSteward);
+  assert.equal(harness.director.currentObjective(), CORE_HOOK_V03.objectives.findCrossroads);
   assert.deepEqual(harness.session.snapshot(), before, 'querying the objective must not mutate session state');
 
   await harness.director.start();
+  const crossroadsTarget = harness.director.resolveObjectiveTarget();
+  assert.equal(crossroadsTarget.id, CORE_HOOK_V03.objectives.findCrossroads.target.id);
+  assert.deepEqual(
+    { ...crossroadsTarget.getPosition() },
+    ARRIVAL_PROLOGUE_V1.anchors.crossroads,
+  );
+
+  harness.director.update(0.016, ARRIVAL_PROLOGUE_V1.anchors.crossroads);
+  await Promise.resolve();
   const stewardTarget = harness.director.resolveObjectiveTarget();
   assert.equal(stewardTarget.id, CORE_HOOK_V03.ids.steward);
   assert.equal(stewardTarget.radius, 2.35);
@@ -256,7 +268,7 @@ test('objective targets resolve from authored descriptors and follow moving acto
     { x: -0.2, z: 4.8 },
     'the published provider must follow Lumen without republishing',
   );
-  assert.equal(observed.at(-1).objective, CORE_HOOK_V03.objectives.meetSteward);
+  assert.equal(observed.at(-1).objective, CORE_HOOK_V03.objectives.followRememberedPath);
 
   const ledgerTarget = harness.director.resolveObjectiveTarget(CORE_HOOK_V03.objectives.signLedger);
   assert.equal(ledgerTarget.id, CORE_HOOK_V03.ids.ledger);
@@ -279,7 +291,7 @@ test('objective observer failures cannot block the authored route', async () => 
   });
 
   await harness.director.start();
-  assert.ok(harness.calls.includes(`objective:${CORE_HOOK_V03.objectives.meetSteward.id}`));
+  assert.ok(harness.calls.includes(`objective:${CORE_HOOK_V03.objectives.findCrossroads.id}`));
   assert.ok(harness.calls.includes('error:objective-change:cue projection unavailable'));
   assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.steward), true);
 });
@@ -295,8 +307,7 @@ test('the truthful Ledger stays reviewable during Day One without creating the f
     }),
   });
 
-  await harness.director.start();
-  await harness.director.interact(CORE_HOOK_V03.ids.steward);
+  await completeArrival(harness);
 
   assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.ledger), true);
   assert.ok(harness.calls.includes(`objective:${CORE_HOOK_V03.objectives.signLedger.id}`));
@@ -322,8 +333,7 @@ test('Ledger enrollment opens Day One while dusk and the Bell wait for recorded 
     }),
   });
 
-  await harness.director.start();
-  await harness.director.interact(CORE_HOOK_V03.ids.steward);
+  await completeArrival(harness);
 
   assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.ledger), true);
   assert.equal(harness.director.isInteractableEnabled(CORE_HOOK_V03.ids.bell), false);
@@ -365,10 +375,21 @@ async function triggerDistanceAnomaly(director) {
   await anomaly;
 }
 
-async function advanceToChoice(harness) {
+async function completeArrival(harness) {
   const { director } = harness;
   await director.start();
-  await director.interact('steward-8914');
+  director.update(0.016, ARRIVAL_PROLOGUE_V1.anchors.crossroads);
+  await Promise.resolve();
+  await director.interact(CORE_HOOK_V03.ids.steward);
+  await director.interact(CORE_HOOK_V03.ids.lantern);
+  const completion = director.update(0.016, ARRIVAL_PROLOGUE_V1.anchors.gateInside);
+  assert.ok(completion instanceof Promise);
+  await completion;
+}
+
+async function advanceToChoice(harness) {
+  const { director } = harness;
+  await completeArrival(harness);
   await director.interact('ledger');
   await director.interact('bell');
   await triggerDistanceAnomaly(director);
@@ -526,6 +547,22 @@ test('GameSession saves versioned state, reloads it, and resets cleanly', () => 
   assert.equal(storage.getItem(CORE_HOOK_V03.storageKey), null);
 });
 
+for (const posture of ['personal-truth', 'notice-care', 'hidden-structure']) {
+  test(`arrival posture ${posture} is remembered without changing Lumen’s offer of warmth`, async () => {
+    const harness = createHarness({ arrivalChoice: posture });
+    await completeArrival(harness);
+
+    assert.equal(
+      harness.session.getChoice(CORE_HOOK_V03.ids.arrivalChoice),
+      posture,
+    );
+    assert.equal(harness.session.phase, 'day-routine');
+    assert.equal(harness.session.stewardRelationship, 'warm');
+    assert.ok(harness.calls.includes('say:lumen-arrival-response'));
+    assert.ok(harness.calls.includes('letter:arrival-letter'));
+  });
+}
+
 test('CoreHookDirector enforces the authored interaction order', async () => {
   const harness = createHarness({ choice: 'comply' });
   const { calls, director, session } = harness;
@@ -536,7 +573,19 @@ test('CoreHookDirector enforces the authored interaction order', async () => {
   assert.equal(director.isInteractableEnabled('bell'), false);
   assert.equal((await director.interact('bell')).handled, false);
 
+  director.update(0.016, ARRIVAL_PROLOGUE_V1.anchors.crossroads);
+  await Promise.resolve();
   await director.interact('steward-8914');
+  assert.equal(session.phase, 'arrival');
+  assert.equal(session.getChoice(CORE_HOOK_V03.ids.arrivalChoice), 'personal-truth');
+  assert.equal(director.isInteractableEnabled(CORE_HOOK_V03.ids.lantern), true);
+  assert.equal(director.isInteractableEnabled('ledger'), false);
+
+  await director.interact(CORE_HOOK_V03.ids.lantern);
+  assert.equal(session.hasEvent(CORE_HOOK_V03.events.lanternTaken), true);
+  const arrival = director.update(0.016, ARRIVAL_PROLOGUE_V1.anchors.gateInside);
+  assert.ok(arrival instanceof Promise);
+  await arrival;
   assert.equal(session.phase, 'day-routine');
   assert.equal(session.knowsRule('bell-once-at-dusk'), true);
   assert.equal(director.promptFor('ledger'), CORE_HOOK_V03.prompts.signLedger);
@@ -581,8 +630,11 @@ test('CoreHookDirector enforces the authored interaction order', async () => {
   assert.equal(session.ending, 'assimilate');
 
   const requiredOrder = [
-    'letter:arrival-letter',
+    'letter:arrival-trusted-memory',
     'say:lumen-welcome',
+    'choose:arrival-posture',
+    'say:lumen-arrival-response',
+    'letter:arrival-letter',
     'sign:arrival-signature',
     'say:lumen-first-bell',
     'bell:anomaly',
@@ -601,7 +653,7 @@ test('CoreHookDirector enforces the authored interaction order', async () => {
   }
 });
 
-test('Lumen performs all four semantic story actions in authored order', async () => {
+test('Lumen performs the authored semantic story actions in order', async () => {
   const harness = createHarness({ stewardActionHandler: () => true });
   await advanceToChoice(harness);
   await harness.director.interact('steward-8914');
@@ -610,6 +662,7 @@ test('Lumen performs all four semantic story actions in authored order', async (
     harness.calls.filter((entry) => entry.startsWith('action:')),
     [
       `action:${STORY_ACTIONS_V1.lumen.happyHandGesture}`,
+      `action:${STORY_ACTIONS_V1.lumen.acknowledging}`,
       `action:${STORY_ACTIONS_V1.lumen.acknowledging}`,
       `action:${STORY_ACTIONS_V1.lumen.relievedSigh}`,
       `action:${STORY_ACTIONS_V1.lumen.thoughtfulHeadShake}`,
@@ -643,15 +696,19 @@ test('a missing or throwing Lumen action falls back without blocking story state
   const result = await harness.director.interact('steward-8914');
 
   assert.equal(result.handled, true);
-  assert.equal(harness.session.hasEvent(CORE_HOOK_V03.events.stewardMet), true);
+  assert.equal(harness.session.hasEvent(CORE_HOOK_V03.events.arrivalResponseChosen), true);
+  assert.equal(harness.session.hasEvent(CORE_HOOK_V03.events.stewardMet), false);
   assert.ok(harness.calls.includes('error:steward-action:pilot clip unavailable'));
   assert.ok(harness.calls.includes('actor:joy'));
+
+  await harness.director.interact(CORE_HOOK_V03.ids.lantern);
+  await harness.director.update(0.016, ARRIVAL_PROLOGUE_V1.anchors.gateInside);
+  assert.equal(harness.session.hasEvent(CORE_HOOK_V03.events.stewardMet), true);
 });
 
 test('the ledger requires a visible name and persists it before Lumen responds', async () => {
   const blankHarness = createHarness({ playerName: ' \n\t ' });
-  await blankHarness.director.start();
-  await blankHarness.director.interact('steward-8914');
+  await completeArrival(blankHarness);
   await assert.rejects(
     blankHarness.director.interact('ledger'),
     /requires a player name/,
@@ -676,8 +733,7 @@ test('the ledger requires a visible name and persists it before Lumen responds',
     },
   });
 
-  await harness.director.start();
-  await harness.director.interact('steward-8914');
+  await completeArrival(harness);
   const interaction = harness.director.interact('ledger');
   await responseStarted;
 
@@ -719,8 +775,7 @@ test('the supernatural second bell is durable and can only fire once', async () 
   });
   const { director, session, storage } = harness;
 
-  await director.start();
-  await director.interact('steward-8914');
+  await completeArrival(harness);
   await director.interact('ledger');
   await director.interact('bell');
 
@@ -779,8 +834,7 @@ test('cancelling the second-Bell fly-in during disposal does not save a ring tha
   });
   const { director, session } = harness;
 
-  await director.start();
-  await director.interact('steward-8914');
+  await completeArrival(harness);
   await director.interact('ledger');
   await director.interact('bell');
   for (let index = 0; index < 10; index += 1) director.update(0.25, director.bellPosition);
@@ -799,8 +853,7 @@ test('cancelling the second-Bell fly-in during disposal does not save a ring tha
 
 test('a restored first-Bell save resumes beside the Bell so the return journey keeps its breathing space', async () => {
   const original = createHarness();
-  await original.director.start();
-  await original.director.interact('steward-8914');
+  await completeArrival(original);
   await original.director.interact('ledger');
   await original.director.interact('bell');
   assert.equal(original.session.phase, 'dusk');

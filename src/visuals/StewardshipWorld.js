@@ -1,5 +1,4 @@
 import {
-  Box3,
   BoxGeometry,
   ConeGeometry,
   CylinderGeometry,
@@ -15,6 +14,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { STEWARDSHIP_V01 } from '../content/stewardship-v01.js';
+import { prepareRigidEquipmentAsset } from './RigidEquipmentAsset.js';
 
 export const FRIENDSIES_AXE_URL = '/friendsies/tools/axe-v1.glb';
 
@@ -45,40 +45,18 @@ function createMaterial(name, color, options = {}) {
   return material;
 }
 
-function prepareAxeAsset(root) {
-  let meshCount = 0;
-  root.traverse((object) => {
-    if (!object.isMesh) return;
-    meshCount += 1;
-    object.castShadow = true;
-    object.receiveShadow = true;
-    object.frustumCulled = false;
-    object.userData.cameraCollision = false;
-    object.userData.physicsCollision = false;
+export function prepareAxeAsset(root) {
+  // hand:Axe is a rigid trait carried by the collection skeleton. Bake the
+  // frame-zero skin into ordinary meshes before normalizing it as equipment;
+  // otherwise its armature offset is applied again after cloning/rendering and
+  // the visible mesh can land metres away from the pickup anchor.
+  return prepareRigidEquipmentAsset(root, {
+    name: 'friendsies_axe_frame_zero',
+    label: 'Canonical Axe',
+    longest: 1.08,
+    rotateY: Math.PI,
+    rotateZ: -0.18,
   });
-  if (meshCount < 1) throw new Error('Canonical Axe contains no renderable mesh');
-
-  root.updateWorldMatrix(true, true);
-  const bounds = new Box3().setFromObject(root, true);
-  const size = bounds.getSize(new Vector3());
-  if (bounds.isEmpty() || ![size.x, size.y, size.z].every(Number.isFinite)) {
-    throw new Error('Canonical Axe bounds are empty or non-finite');
-  }
-  const longest = Math.max(size.x, size.y, size.z);
-  if (!(longest > 0)) throw new Error('Canonical Axe has zero extent');
-
-  // The canonical hand trait retains its collection rig. Normalize the rigid
-  // frame-zero presentation under a stable ThornVale-owned action anchor.
-  const scale = 1.08 / longest;
-  root.scale.setScalar(scale);
-  root.updateWorldMatrix(true, true);
-  const normalized = new Box3().setFromObject(root, true);
-  const center = normalized.getCenter(new Vector3());
-  root.position.x -= center.x;
-  root.position.z -= center.z;
-  root.position.y -= normalized.min.y;
-  root.rotation.set(0, Math.PI, -0.18);
-  return root;
 }
 
 export async function loadCanonicalAxe(url = FRIENDSIES_AXE_URL) {
@@ -262,12 +240,39 @@ export class StewardshipWorld {
   }
 
   _createAxePickup() {
+    const [x, , z] = this.content.axePickup.position;
+    const station = new Group();
+    station.name = 'stewardship_axe_station';
+    station.position.set(x, 0, z);
+    const block = new Mesh(
+      new CylinderGeometry(0.38, 0.46, 0.62, 10),
+      this.materials.bark,
+    );
+    block.name = 'stewardship_axe_station_block';
+    block.position.set(-0.72, 0.31, 0);
+    block.castShadow = true;
+    block.receiveShadow = true;
+    const blockTop = new Mesh(
+      new CylinderGeometry(0.36, 0.36, 0.035, 12),
+      this.materials.cut,
+    );
+    blockTop.name = 'stewardship_axe_station_cut';
+    blockTop.position.set(-0.72, 0.638, 0);
+    blockTop.castShadow = true;
+    station.add(block, blockTop);
+    this.axeStation = station;
+    this.root.add(station);
+
     const pickup = new Group();
     pickup.name = 'stewardship_axe_pickup';
     pickup.position.set(...this.content.axePickup.position);
+    this.axePickupDisplay = new Group();
+    this.axePickupDisplay.name = 'stewardship_axe_pickup_display';
+    this.axePickupDisplay.position.set(-0.72, 0.08, 0);
     this.axePickupFallback = makeProceduralAxe(this.materials);
     this.axePickupFallback.rotation.z = -0.62;
-    pickup.add(this.axePickupFallback);
+    this.axePickupDisplay.add(this.axePickupFallback);
+    pickup.add(this.axePickupDisplay);
     this.axePickup = pickup;
     this.root.add(pickup);
 
@@ -330,11 +335,11 @@ export class StewardshipWorld {
       if (this.disposed) return false;
       const pickup = cloneSkeleton(template);
       pickup.name = 'friendsies_axe_pickup_canonical';
-      pickup.rotation.z -= 0.5;
-      this.axePickup.add(pickup);
+      pickup.rotation.set(0, Math.PI / 2, -0.5);
+      this.axePickupDisplay.add(pickup);
       const action = cloneSkeleton(template);
       action.name = 'friendsies_axe_action_canonical';
-      action.rotation.z -= 0.25;
+      action.rotation.set(0, Math.PI / 2, -0.25);
       this.actionAxe.add(action);
       this.axePickupFallback.visible = false;
       this.actionAxeFallback.visible = false;

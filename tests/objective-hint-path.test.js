@@ -8,12 +8,13 @@ import {
   OBJECTIVE_HINT_TARGETS,
   resolveObjectiveHintPath,
 } from '../src/config/objective-hints.js';
+import { ARRIVAL_PROLOGUE_V1 } from '../src/config/arrival-prologue.js';
 import { TOWN_LAYOUT } from '../src/config/town.js';
 import { CORE_HOOK_V03 } from '../src/content/core-hook-v03.js';
 import { DAY_ONE_V01 } from '../src/content/day-one-v01.js';
 
 const STEWARD_TARGETS = Object.freeze({
-  'meet-steward': { x: 1.6, y: 0, z: 9.4 },
+  'follow-remembered-path': ARRIVAL_PROLOGUE_V1.anchors.stewardWelcome,
   'day-one-meet-steward': { x: 1.6, y: 0, z: 9.4 },
   'return-to-lumen': { x: -0.2, y: 0, z: 4.8 },
   'hear-correction': { x: 0.25, y: 0, z: 3.45 },
@@ -21,6 +22,9 @@ const STEWARD_TARGETS = Object.freeze({
 
 function targetFor(id, targetKey) {
   if (targetKey === 'steward') return STEWARD_TARGETS[id];
+  if (targetKey === 'crossroads') return ARRIVAL_PROLOGUE_V1.anchors.crossroads;
+  if (targetKey === 'lantern') return ARRIVAL_PROLOGUE_V1.anchors.lantern;
+  if (targetKey === 'gateInside') return ARRIVAL_PROLOGUE_V1.anchors.gateInside;
   if (targetKey === 'ledger') return TOWN_LAYOUT.landmarks.ledger;
   if (targetKey === 'bell') return TOWN_LAYOUT.landmarks.bell;
   return TOWN_LAYOUT.dayOne[targetKey];
@@ -77,7 +81,10 @@ function segmentIntersectsHorizontalBox(start, end, { x, z, size }, clearance = 
 
 test('every active objective resolves to its configured safe target role', () => {
   const expectedTargets = {
-    'meet-steward': 'steward',
+    'arrival-crossroads': 'crossroads',
+    'follow-remembered-path': 'steward',
+    'take-lumen-lantern': 'lantern',
+    'cross-welcome-gate': 'gateInside',
     'day-one-meet-steward': 'steward',
     'sign-ledger': 'ledger',
     'day-one-sign-ledger': 'ledger',
@@ -184,6 +191,34 @@ test('guidance begins at the exact player ground snapshot before joining a safe 
 
   start.x = 400;
   assert.equal(points[0].x, 2.4, 'the returned route snapshots the accepted player origin');
+});
+
+test('the arrival Hint follows the reviewed whiteout trail toward the matching older prints', () => {
+  const start = ARRIVAL_PROLOGUE_V1.anchors.crossroads;
+  const target = ARRIVAL_PROLOGUE_V1.anchors.stewardWelcome;
+  const points = resolveObjectiveHintPath({
+    objective: 'follow-remembered-path',
+    start,
+    target,
+    maxDistance: Infinity,
+  });
+
+  assert.ok(points);
+  assert.deepEqual(points[0], start);
+  assert.ok(pointIndex(points, 14.5, 33.4) > 0);
+  assert.ok(pathLength(points) >= 35, 'the remembered route must feel meaningfully remote');
+  assert.ok(distanceXZ(points.at(-1), target) <= 2.35);
+  assert.equal(isObjectiveHintPathSafe(points), true);
+
+  const whiteoutCue = resolveObjectiveHintPath({
+    objective: 'follow-remembered-path',
+    start,
+    target,
+    maxDistance: ARRIVAL_PROLOGUE_V1.timing.hintDistance,
+  });
+  assert.ok(whiteoutCue);
+  assert.ok(pathLength(whiteoutCue) <= ARRIVAL_PROLOGUE_V1.timing.hintDistance + 1e-6);
+  assert.ok(pathLength(whiteoutCue) >= ARRIVAL_PROLOGUE_V1.timing.hintDistance - 1e-6);
 });
 
 test('player pickup selects a farther safe corridor snap when the nearest join crosses a cottage', () => {
@@ -326,6 +361,7 @@ test('Bell guidance preserves the authored three-dimensional hill surface', () =
 
 test('default guidance is bounded and excludes unvalidated connector routes', () => {
   assert.deepEqual(OBJECTIVE_HINT_SAFE_ROUTE_IDS, [
+    'arrival-whiteout',
     'arrival',
     'berry-bakery',
     'lavender-library',

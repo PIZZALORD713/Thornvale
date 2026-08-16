@@ -8,6 +8,7 @@ const REQUIRED_IDS = [
   'storyObjectiveCueImage',
   'storyObjectiveLabel',
   'storyObjectiveText',
+  'storyObjectiveAnnouncement',
   'storyLayer',
   'storyCard',
   'storyPortrait',
@@ -227,6 +228,10 @@ class FakeDocument extends FakeElement {
     return new FakeElement(this, '', tagName);
   }
 
+  createDocumentFragment() {
+    return new FakeElement(this, '', '#fragment');
+  }
+
   createTextNode(text) {
     const node = new FakeElement(this, '', '#text');
     node.textContent = String(text);
@@ -259,6 +264,65 @@ function assertKeyHint(documentRef, prefix, key) {
   assert.equal(hint.children[0].textContent, `${prefix} `);
   assert.equal(hint.children[1].textContent, key);
 }
+
+test('StoryUI projects and announces one accessible control cue inside the objective surface', async (t) => {
+  const { documentRef, ui } = createUI(t);
+  const root = documentRef.getElementById('storyObjective');
+
+  ui.setObjective({ label: 'What the storm left', text: 'Walk toward the crossroads.' });
+  ui.setControlCue({
+    id: 'look',
+    key: 'Mouse',
+    text: 'Look into the storm',
+    controlMode: 'desktop',
+  });
+
+  assert.equal(root.dataset.controlCue, 'Mouse · Look into the storm');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(
+    documentRef.getElementById('storyObjectiveAnnouncement').textContent,
+    'Mouse: Look into the storm',
+  );
+
+  ui.setControlCue({ id: 'hint', key: 'Hint', text: 'Ask the wind', controlMode: 'touch' });
+  assert.equal(root.dataset.controlCue, 'Hint · Ask the wind');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(
+    documentRef.getElementById('storyObjectiveAnnouncement').textContent,
+    'Hint: Ask the wind',
+  );
+
+  ui.clearObjective();
+  assert.equal(root.dataset.controlCue, undefined);
+});
+
+test('StoryUI presents and keyboard-selects all three arrival postures', async (t) => {
+  const { documentRef, ui } = createUI(t);
+  const choice = ui.choose({
+    title: 'The path remembers you',
+    choices: [
+      { id: 'personal-truth', label: 'I’ve never walked this path.' },
+      { id: 'relationship', label: 'Why did you wait for me?' },
+      { id: 'hidden-structure', label: 'Who is “we”?' },
+    ],
+  });
+
+  assert.equal(documentRef.getElementById('storyChoices').dataset.count, '3');
+  assertKeyHint(documentRef, 'Choose with', '1 / 2 / 3');
+  const event = {
+    type: 'keydown',
+    key: '3',
+    code: 'Digit3',
+    target: documentRef.body,
+    defaultPrevented: false,
+    preventDefault() { this.defaultPrevented = true; },
+  };
+  documentRef.dispatchEvent(event);
+
+  assert.equal(event.defaultPrevented, true);
+  assert.equal(await choice, 'hidden-structure');
+  assert.equal(ui.isBlocking(), false);
+});
 
 test('StoryUI objective cues decorate the glyph without replacing authoritative text', (t) => {
   const { documentRef, ui } = createUI(t);

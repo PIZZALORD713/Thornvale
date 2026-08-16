@@ -22,10 +22,13 @@ export class TouchControls {
     this.enabled = false;
     this.interactionAvailable = false;
     this.interactionLabel = '';
+    this.hintAvailable = false;
+    this.hintEmphasis = false;
     this.movePointerId = null;
     this.lookPointerId = null;
     this.jumpPointerId = null;
     this.interactPointerId = null;
+    this.hintPointerId = null;
     this.lookPosition = { x: 0, y: 0 };
     this.sprinting = false;
   }
@@ -39,6 +42,7 @@ export class TouchControls {
       jumpButton: this.document?.getElementById?.('touchJumpButton'),
       interactButton: this.document?.getElementById?.('touchInteractButton'),
       interactLabel: this.document?.getElementById?.('touchInteractLabel'),
+      hintButton: this.document?.getElementById?.('touchHintButton'),
     };
 
     if (!this.elements.root) return this;
@@ -67,6 +71,11 @@ export class TouchControls {
       this.listen(this.elements.interactButton, type, (event) => this.onInteractEnd(event));
     }
     this.listen(this.elements.interactButton, 'click', (event) => this.onInteractClick(event));
+    this.listen(this.elements.hintButton, 'pointerdown', (event) => this.onHintStart(event));
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+      this.listen(this.elements.hintButton, type, (event) => this.onHintEnd(event));
+    }
+    this.listen(this.elements.hintButton, 'click', (event) => this.onHintClick(event));
 
     for (const type of ['blur', 'pagehide', 'resize', 'orientationchange']) {
       this.listen(this.window, type, () => this.clear());
@@ -116,6 +125,25 @@ export class TouchControls {
       this.elements.interactButton.disabled = !this.interactionAvailable;
       this.elements.interactButton.hidden = !this.interactionAvailable;
     }
+    return this;
+  }
+
+  setHintAvailable(available = true) {
+    this.hintAvailable = Boolean(available);
+    if (!this.hintAvailable) this.hintEmphasis = false;
+    this.projectState('hintAvailable', this.hintAvailable);
+    this.projectState('hintEmphasis', this.hintEmphasis);
+    if (this.elements.hintButton) {
+      this.elements.hintButton.disabled = !this.hintAvailable;
+      this.elements.hintButton.hidden = false;
+      this.elements.hintButton.setAttribute?.('aria-disabled', String(!this.hintAvailable));
+    }
+    return this;
+  }
+
+  setHintEmphasis(emphasized = true) {
+    this.hintEmphasis = Boolean(emphasized && this.hintAvailable);
+    this.projectState('hintEmphasis', this.hintEmphasis);
     return this;
   }
 
@@ -252,6 +280,29 @@ export class TouchControls {
     this.consumeEvent(event);
   }
 
+  onHintStart(event) {
+    if (!this.enabled || !this.hintAvailable || this.hintPointerId !== null) return;
+    this.hintPointerId = event.pointerId;
+    this.projectState('hintActive', true);
+    this.capture(event.currentTarget, event.pointerId);
+    this.input?.pressAction?.('objective-hint', TOUCH_SOURCE);
+    this.consumeEvent(event);
+  }
+
+  onHintEnd(event) {
+    if (event.pointerId !== this.hintPointerId) return;
+    this.release(event.currentTarget, event.pointerId);
+    this.hintPointerId = null;
+    this.projectState('hintActive', false);
+    this.consumeEvent(event);
+  }
+
+  onHintClick(event) {
+    if (!this.enabled || !this.hintAvailable || Number(event.detail) !== 0) return;
+    this.input?.pressAction?.('objective-hint', TOUCH_SOURCE);
+    this.consumeEvent(event);
+  }
+
   capture(target, pointerId) {
     try {
       target?.setPointerCapture?.(pointerId);
@@ -289,6 +340,18 @@ export class TouchControls {
     this.projectState('jumpActive', this.jumpPointerId !== null);
     this.projectState('interactionActive', this.interactPointerId !== null);
     this.projectState('interactionAvailable', this.interactionAvailable);
+    this.projectState('hintActive', this.hintPointerId !== null);
+    this.projectState('hintAvailable', this.hintAvailable);
+    this.projectState('hintEmphasis', this.hintEmphasis);
+    if (this.elements.interactButton) {
+      this.elements.interactButton.disabled = !this.interactionAvailable;
+      this.elements.interactButton.hidden = !this.interactionAvailable;
+    }
+    if (this.elements.hintButton) {
+      this.elements.hintButton.disabled = !this.hintAvailable;
+      this.elements.hintButton.hidden = false;
+      this.elements.hintButton.setAttribute?.('aria-disabled', String(!this.hintAvailable));
+    }
   }
 
   clear() {
@@ -296,15 +359,24 @@ export class TouchControls {
     this.release(this.elements.lookZone, this.lookPointerId);
     this.release(this.elements.jumpButton, this.jumpPointerId);
     this.release(this.elements.interactButton, this.interactPointerId);
+    this.release(this.elements.hintButton, this.hintPointerId);
     this.movePointerId = null;
     this.lookPointerId = null;
     this.jumpPointerId = null;
     this.interactPointerId = null;
+    this.hintPointerId = null;
     this.sprinting = false;
     this.interactionAvailable = false;
+    this.hintAvailable = false;
+    this.hintEmphasis = false;
     if (this.elements.interactButton) {
       this.elements.interactButton.disabled = true;
       this.elements.interactButton.hidden = true;
+    }
+    if (this.elements.hintButton) {
+      this.elements.hintButton.disabled = true;
+      this.elements.hintButton.hidden = false;
+      this.elements.hintButton.setAttribute?.('aria-disabled', 'true');
     }
     this.input?.clearInputSource?.(TOUCH_SOURCE);
     this.centerMoveKnob();

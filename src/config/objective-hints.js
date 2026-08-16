@@ -1,4 +1,5 @@
 import { getTownStaticColliderEnvelopes, TOWN_LAYOUT } from './town.js';
+import { ARRIVAL_PROLOGUE_V1 } from './arrival-prologue.js';
 
 export const OBJECTIVE_HINT_DURATION = 4;
 export const OBJECTIVE_HINT_MAX_DISTANCE = 24;
@@ -10,6 +11,7 @@ export const OBJECTIVE_HINT_START_SNAP_DISTANCE = 10;
 // south connectors are deliberately excluded: their building-end envelopes
 // are presentation paths, not validated guidance corridors.
 export const OBJECTIVE_HINT_SAFE_ROUTE_IDS = Object.freeze([
+  ARRIVAL_PROLOGUE_V1.hintRoute.id,
   'arrival',
   'berry-bakery',
   'lavender-library',
@@ -23,7 +25,10 @@ export const OBJECTIVE_HINT_SAFE_ROUTE_IDS = Object.freeze([
 // Null is intentional for resolution objectives. Their persistent comply or
 // alter route belongs to StoryWorld and must remain the sole authority.
 export const OBJECTIVE_HINT_TARGETS = Object.freeze({
-  'meet-steward': 'steward',
+  'arrival-crossroads': 'crossroads',
+  'follow-remembered-path': 'steward',
+  'take-lumen-lantern': 'lantern',
+  'cross-welcome-gate': 'gateInside',
   'day-one-meet-steward': 'steward',
   'sign-ledger': 'ledger',
   'day-one-sign-ledger': 'ledger',
@@ -201,6 +206,7 @@ function createGraph(layout) {
     edges: [],
     adjacency: new Map(),
     routeNodes: new Map(),
+    targetNodes: new Map(),
   };
 
   const addNode = (id, value) => {
@@ -223,7 +229,10 @@ function createGraph(layout) {
     return true;
   };
 
-  const routeById = new Map((layout.paths || []).map((route) => [route.id, route]));
+  const routeById = new Map([
+    ...(layout.paths || []).map((route) => [route.id, route]),
+    [ARRIVAL_PROLOGUE_V1.hintRoute.id, ARRIVAL_PROLOGUE_V1.hintRoute],
+  ]);
   for (const routeId of OBJECTIVE_HINT_SAFE_ROUTE_IDS) {
     const route = routeById.get(routeId);
     if (!route || !Array.isArray(route.points) || route.points.length < 2) return null;
@@ -241,7 +250,9 @@ function createGraph(layout) {
 
   const plaza = toPoint(layout.plaza);
   if (!plaza || !addNode('plaza:hub', { x: plaza.x, y: 0, z: plaza.z })) return null;
-  for (const routeId of OBJECTIVE_HINT_SAFE_ROUTE_IDS.filter((id) => id !== 'forest-edge-camp')) {
+  for (const routeId of OBJECTIVE_HINT_SAFE_ROUTE_IDS.filter((id) => (
+    id !== 'forest-edge-camp' && id !== ARRIVAL_PROLOGUE_V1.hintRoute.id
+  ))) {
     const nodes = graph.routeNodes.get(routeId);
     const endpoints = [nodes[0], nodes.at(-1)];
     endpoints.sort((left, right) => (
@@ -253,6 +264,29 @@ function createGraph(layout) {
     }
     addEdge(`plaza:${routeId}`, 'plaza:hub', endpoint, `plaza:${routeId}`);
   }
+
+  const prologueNodes = graph.routeNodes.get(ARRIVAL_PROLOGUE_V1.hintRoute.id);
+  const arrivalNodes = graph.routeNodes.get('arrival');
+  if (!prologueNodes || !arrivalNodes) return null;
+  const prologueEnd = prologueNodes.at(-1);
+  const arrivalJoin = arrivalNodes[2];
+  if (distanceXZ(graph.nodes.get(prologueEnd), graph.nodes.get(arrivalJoin)) > 1) return null;
+  addEdge(
+    'join:arrival-whiteout-to-town',
+    prologueEnd,
+    arrivalJoin,
+    ARRIVAL_PROLOGUE_V1.hintRoute.id,
+  );
+  const prologueTargetNode = (target) => prologueNodes.find((nodeId) => (
+    distanceXZ(graph.nodes.get(nodeId), target) <= 0.05
+  ));
+  const crossroadsNode = prologueTargetNode(ARRIVAL_PROLOGUE_V1.anchors.crossroads);
+  const lanternNode = prologueTargetNode(ARRIVAL_PROLOGUE_V1.anchors.lantern);
+  const gateInsideNode = prologueTargetNode(ARRIVAL_PROLOGUE_V1.anchors.gateInside);
+  if (!crossroadsNode || !lanternNode || !gateInsideNode) return null;
+  graph.targetNodes.set('crossroads', crossroadsNode);
+  graph.targetNodes.set('lantern', lanternNode);
+  graph.targetNodes.set('gateInside', gateInsideNode);
 
   const roseEnd = graph.routeNodes.get('rose-post-office').at(-1);
   const forestStart = graph.routeNodes.get('forest-edge-camp')[0];
@@ -344,6 +378,9 @@ function findReachableStartSnap(point, graph, layout) {
 }
 
 function canonicalTarget(targetKey, layout) {
+  if (targetKey === 'crossroads') return toPoint(ARRIVAL_PROLOGUE_V1.anchors.crossroads);
+  if (targetKey === 'lantern') return toPoint(ARRIVAL_PROLOGUE_V1.anchors.lantern);
+  if (targetKey === 'gateInside') return toPoint(ARRIVAL_PROLOGUE_V1.anchors.gateInside);
   if (targetKey === 'ledger') return toPoint(layout.landmarks?.ledger);
   if (targetKey === 'bell') return toPoint(layout.landmarks?.bell);
   if (targetKey === 'fishingSpot') return toPoint(layout.dayOne?.fishingSpot);
@@ -355,13 +392,17 @@ function targetAttachment(targetKey, target, graph, layout) {
     const snap = snapToEdges(
       target,
       graph,
-      (edge) => edge.routeId === 'arrival' || edge.routeId === 'plaza:arrival',
+      (edge) => (
+        edge.routeId === ARRIVAL_PROLOGUE_V1.hintRoute.id
+        || edge.routeId === 'arrival'
+        || edge.routeId === 'plaza:arrival'
+      ),
     );
     return snap && snap.distance <= 2.35 ? { snap } : null;
   }
 
   const expected = canonicalTarget(targetKey, layout);
-  const nodeId = `target:${targetKey}`;
+  const nodeId = graph.targetNodes.get(targetKey) || `target:${targetKey}`;
   if (!expected || !graph.nodes.has(nodeId) || distanceXZ(expected, target) > 1) return null;
   return { nodeId };
 }

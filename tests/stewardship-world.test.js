@@ -11,7 +11,10 @@ import {
 
 import { GameSession } from '../src/game/GameSession.js';
 import { WoodcuttingDirector } from '../src/game/WoodcuttingDirector.js';
-import { StewardshipWorld } from '../src/visuals/StewardshipWorld.js';
+import {
+  prepareAxeAsset,
+  StewardshipWorld,
+} from '../src/visuals/StewardshipWorld.js';
 import {
   FishingWorld,
   prepareFishingPoleAsset,
@@ -131,8 +134,14 @@ test('the canonical Axe replaces both procedural views without changing gameplay
   assert.equal(world.axeAssetStatus, 'canonical');
   assert.equal(world.axePickupFallback.visible, false);
   assert.equal(world.actionAxeFallback.visible, false);
-  assert.ok(world.axePickup.getObjectByName('friendsies_axe_pickup_canonical'));
-  assert.ok(world.actionAxe.getObjectByName('friendsies_axe_action_canonical'));
+  const pickup = world.axePickup.getObjectByName('friendsies_axe_pickup_canonical');
+  const action = world.actionAxe.getObjectByName('friendsies_axe_action_canonical');
+  assert.ok(pickup);
+  assert.ok(action);
+  assert.deepEqual(world.axePickupDisplay.position.toArray(), [-0.72, 0.08, 0]);
+  assert.equal(pickup.rotation.y, Math.PI / 2);
+  assert.equal(action.rotation.y, Math.PI / 2);
+  assert.ok(world.root.getObjectByName('stewardship_axe_station_block'));
   assert.deepEqual(
     world.interactables.map(({ id }) => id),
     [
@@ -144,6 +153,46 @@ test('the canonical Axe replaces both procedural views without changing gameplay
     ],
   );
   world.dispose();
+});
+
+test('collecting the Axe clears the tool but leaves its readable station behind', () => {
+  const session = new GameSession({ storage: null });
+  const director = new WoodcuttingDirector({ session });
+  const world = new StewardshipWorld({
+    axeLoader: async () => new Group(),
+  }).init();
+
+  world.setState(session.snapshot(), { animate: false });
+  assert.equal(world.axePickup.visible, true);
+  assert.equal(world.axeStation.visible, true);
+
+  director.collectAxe();
+  world.setState(session.snapshot());
+  assert.equal(world.axePickup.visible, false);
+  assert.equal(world.axeStation.visible, true);
+  world.dispose();
+});
+
+test('Axe normalization bakes an offset source into centered static equipment', () => {
+  const source = new Group();
+  const mesh = new Mesh(new BoxGeometry(0.2, 1.2, 0.1), new MeshBasicMaterial());
+  mesh.position.set(3, 4, 5);
+  source.add(mesh);
+
+  const prepared = prepareAxeAsset(source);
+  prepared.updateWorldMatrix(true, true);
+  const bounds = new Box3().setFromObject(prepared, true);
+  const center = bounds.getCenter(new Vector3());
+  const size = bounds.getSize(new Vector3());
+
+  assert.equal(prepared.name, 'friendsies_axe_frame_zero');
+  assert.ok(center.length() < 1e-8, `normalized center drifted to ${center.toArray()}`);
+  assert.ok(Math.abs(Math.max(size.x, size.y, size.z) - 1.08) < 1e-6);
+  assert.equal(prepared.children[0].isSkinnedMesh, undefined);
+  assert.equal(prepared.children[0].isMesh, true);
+  mesh.material.dispose();
+  mesh.geometry.dispose();
+  prepared.children[0].geometry.dispose();
 });
 
 test('Axe load failure remains local and preserves both procedural tool views', async () => {

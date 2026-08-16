@@ -1,6 +1,7 @@
 import { STORY_ACTIONS_V1 } from './story-actions-v1.js';
 import { KEY_OBJECT_CUES_V1 } from './key-object-cues-v1.js';
 import { TOWN_LAYOUT } from '../config/town.js';
+import { ARRIVAL_PROLOGUE_V1 } from '../config/arrival-prologue.js';
 
 function deepFreeze(value) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
@@ -16,9 +17,11 @@ export const CORE_HOOK_V03 = deepFreeze({
 
   ids: {
     steward: 'steward-8914',
+    lantern: 'arrival-lantern',
     ledger: 'ledger',
     bell: 'bell',
     rule: 'bell-once-at-dusk',
+    arrivalChoice: 'arrival_posture',
     choice: 'ledger_record',
   },
 
@@ -30,6 +33,10 @@ export const CORE_HOOK_V03 = deepFreeze({
   gestures: STORY_ACTIONS_V1.lumen,
 
   events: {
+    arrivalMemorySeen: 'arrival-trusted-memory-seen',
+    crossroadsReached: 'arrival-crossroads-reached',
+    arrivalResponseChosen: 'arrival-response-chosen',
+    lanternTaken: 'arrival-lantern-taken',
     letterSeen: 'arrival-letter-seen',
     stewardMet: 'steward-lumen-met',
     firstAfternoonComplete: 'first-afternoon-complete',
@@ -52,13 +59,17 @@ export const CORE_HOOK_V03 = deepFreeze({
       },
     },
     steward: {
-      welcome: { x: 1.6, y: 0, z: 9.4, facing: Math.PI },
+      welcome: ARRIVAL_PROLOGUE_V1.anchors.stewardWelcome,
       routine: { x: -0.2, y: 0, z: 4.8, facing: Math.PI * 0.82 },
       correction: { x: 0.25, y: 0, z: 3.45, facing: -Math.PI / 2 },
       complyEnding: { x: -0.25, y: 0, z: 4.9, facing: Math.PI },
       alterEnding: { x: 0.15, y: 0, z: 3.55, facing: -Math.PI / 2 },
     },
     player: {
+      arrival: ARRIVAL_PROLOGUE_V1.anchors.spawn,
+      crossroads: ARRIVAL_PROLOGUE_V1.anchors.crossroads,
+      gateInside: ARRIVAL_PROLOGUE_V1.anchors.gateInside,
+      gateRecovery: ARRIVAL_PROLOGUE_V1.anchors.gateRecovery,
       // A restored save between Bell rings resumes on the hill approach, not
       // at the front gate beside Lumen, preserving the authored return walk.
       firstBellReturn: { x: 3, y: 3.3, z: -33.4 },
@@ -90,7 +101,8 @@ export const CORE_HOOK_V03 = deepFreeze({
   },
 
   prompts: {
-    meetSteward: 'Speak with Steward Lumen',
+    meetSteward: 'Ask Steward Lumen about the path',
+    takeLantern: 'Take the lantern Lumen kept for you',
     signLedger: 'Enter your name in the Community Ledger',
     reviewLedger: 'Review today’s Ledger entries',
     ringBell: 'Ring once, now that the lanterns are blooming',
@@ -99,13 +111,47 @@ export const CORE_HOOK_V03 = deepFreeze({
   },
 
   objectives: {
-    meetSteward: {
-      id: 'meet-steward',
-      label: 'A place kept warm',
-      text: 'Meet the steward who kept the gate open for you.',
-      title: 'A place kept warm',
-      detail: 'Meet the steward who kept the gate open for you.',
+    findCrossroads: {
+      id: 'arrival-crossroads',
+      label: 'What the storm left',
+      text: 'Walk toward the snow-covered crossroads.',
+      title: 'What the storm left',
+      detail: 'Your fresh footprints are the only marks the whiteout kept.',
+      target: {
+        kind: 'anchor',
+        id: 'arrival-crossroads',
+        position: ARRIVAL_PROLOGUE_V1.anchors.crossroads,
+        radius: ARRIVAL_PROLOGUE_V1.timing.crossroadsRadius,
+      },
+    },
+    followRememberedPath: {
+      id: 'follow-remembered-path',
+      label: 'The path remembers',
+      text: 'Ask the wind for a direction, or choose a road yourself.',
+      title: 'The path remembers',
+      detail: 'Need a direction? Use Hint to ask the wind.',
       target: { kind: 'interactable', id: 'steward-8914' },
+    },
+    takeLantern: {
+      id: 'take-lumen-lantern',
+      label: 'A warmth kept waiting',
+      text: 'Take the lantern Lumen kept burning for you.',
+      title: 'A warmth kept waiting',
+      detail: 'Lumen offers the light without asking you to agree.',
+      target: { kind: 'interactable', id: 'arrival-lantern', radius: 1.6 },
+    },
+    crossGate: {
+      id: 'cross-welcome-gate',
+      label: 'Cross in your own time',
+      text: 'Carry the lantern through Thornvale’s open gate.',
+      title: 'Cross in your own time',
+      detail: 'The invitation waits. The crossing is yours.',
+      target: {
+        kind: 'anchor',
+        id: 'arrival-gate-inside',
+        position: ARRIVAL_PROLOGUE_V1.anchors.gateInside,
+        radius: ARRIVAL_PROLOGUE_V1.timing.gateCrossingRadius,
+      },
     },
     signLedger: {
       id: 'sign-ledger',
@@ -182,6 +228,19 @@ export const CORE_HOOK_V03 = deepFreeze({
     },
   },
 
+  arrivalMemory: {
+    id: 'arrival-trusted-memory',
+    eyebrow: 'WHAT YOU REMEMBER',
+    title: 'The storm did not take everything.',
+    body: [
+      'You remember choosing Thornvale.',
+      'You remember every mile before the storm.',
+      'You do not remember this path.',
+    ],
+    detail: 'Ahead, the whiteout opens just enough to walk.',
+    actionLabel: 'Step into the snow',
+  },
+
   letter: {
     id: 'arrival-letter',
     eyebrow: 'A LETTER IN YOUR HANDWRITING',
@@ -206,39 +265,29 @@ export const CORE_HOOK_V03 = deepFreeze({
       beats: [
         {
           id: 'lumen-welcome.arrival',
-          text: 'Oh, there you are. We kept your place warm.',
+          text: 'There you are. We kept the path you prefer.',
           gesture: STORY_ACTIONS_V1.lumen.happyHandGesture,
         },
         {
-          id: 'lumen-welcome.introduction',
-          text: "I’m Lumen, Thornvale’s steward. Nothing complicated is expected of a new neighbor.",
+          id: 'lumen-welcome.waited',
+          text: 'I’m Lumen. The lantern nearly gave up, but I thought you might still need it.',
+        },
+      ],
+    },
+    arrivalResponse: {
+      id: 'lumen-arrival-response',
+      speaker: 'Steward Lumen',
+      portraitTokenId: 8914,
+      portrait: '8914',
+      beats: [
+        {
+          id: 'lumen-arrival-response.heard',
+          text: 'You don’t have to settle that in the snow.',
+          gesture: STORY_ACTIONS_V1.lumen.acknowledging,
         },
         {
-          id: 'lumen-welcome.plot',
-          text: 'There is a provisional plot along the west clover path, where the meadow meets the old forest. We left a camp cot and seed bed for you.',
-          cue: KEY_OBJECT_CUES_V1.camp,
-        },
-        {
-          id: 'lumen-welcome.ledger-invitation',
-          text: 'Before you settle in, enter your name in the Community Ledger.',
-          cue: KEY_OBJECT_CUES_V1.ledger,
-        },
-        {
-          id: 'lumen-welcome.ledger-purpose',
-          text: 'It keeps a little account of every task, so no neighbor has to remember alone.',
-        },
-        {
-          id: 'lumen-welcome.afternoon',
-          text: 'Then gather what you need, make yourself a meal, tend the seed bed, and settle the shelter.',
-        },
-        {
-          id: 'lumen-welcome.bell-courtesy',
-          text: 'When the lanterns bloom, follow the warm pavers to the hill, ring the bell once, and return to me.',
-          cue: KEY_OBJECT_CUES_V1.bell,
-        },
-        {
-          id: 'lumen-welcome.rule',
-          text: 'Only once, and only at dusk. Routines keep everyone from worrying.',
+          id: 'lumen-arrival-response.offer',
+          text: 'Come warm yourself.',
         },
       ],
     },
@@ -379,6 +428,31 @@ export const CORE_HOOK_V03 = deepFreeze({
       altered: true,
       cue: KEY_OBJECT_CUES_V1.ledger,
     },
+  },
+
+  arrivalChoice: {
+    id: 'arrival-posture',
+    speaker: 'Steward Lumen',
+    eyebrow: 'THE GATE IS OPEN',
+    title: 'What do you ask first?',
+    body: 'Lumen glances toward the path behind you, then waits for your answer.',
+    choices: [
+      {
+        id: 'personal-truth',
+        label: '“I’ve never walked this path.”',
+        detail: 'Protect the memory you trust.',
+      },
+      {
+        id: 'notice-care',
+        label: '“Why did you wait for me?”',
+        detail: 'Notice what his welcome cost.',
+      },
+      {
+        id: 'hidden-structure',
+        label: '“Who is ‘we’?”',
+        detail: 'Probe the town behind the kindness.',
+      },
+    ],
   },
 
   choice: {

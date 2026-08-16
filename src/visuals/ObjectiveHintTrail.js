@@ -34,6 +34,17 @@ const WIND_COLORS = Object.freeze({
   gold: new Color(0xf2c56f),
 });
 
+const WHITEOUT_WIND_COLORS = Object.freeze({
+  ivory: new Color(0x506985),
+  sage: new Color(0x775b86),
+  gold: new Color(0xffac4f),
+});
+
+const WIND_PALETTES = Object.freeze({
+  default: WIND_COLORS,
+  whiteout: WHITEOUT_WIND_COLORS,
+});
+
 function createWindParticleGeometry(count) {
   const geometry = new BufferGeometry();
   geometry.setAttribute(
@@ -375,6 +386,7 @@ export class ObjectiveHintTrail {
     this.elapsed = 0;
     this.activeDuration = this.duration;
     this.cueId = null;
+    this.palette = 'default';
     this._markers = [];
     this._carrierFrame = [];
     this._routePoints = [];
@@ -426,6 +438,7 @@ export class ObjectiveHintTrail {
     getTargetPosition = null,
     connectToTarget = Boolean(getTargetPosition),
     targetLeash = this.targetLeash,
+    palette = 'default',
   } = {}) {
     if (this.disposed) return false;
     if (!this.initialized) this.init();
@@ -459,6 +472,7 @@ export class ObjectiveHintTrail {
     this._smoothedTarget = approach ? initialLiveTarget.clone() : null;
     this._targetLeash = positiveNumber(targetLeash, this.targetLeash);
     this.activeDuration = activeDuration;
+    this.palette = Object.hasOwn(WIND_PALETTES, palette) ? palette : 'default';
     this._rebuildFlowPath();
     this._configureCarrierPool();
 
@@ -466,6 +480,7 @@ export class ObjectiveHintTrail {
     this.elapsed = 0;
     this.cueId = cueId === null || cueId === undefined ? null : String(cueId);
     this.mesh.userData.cueId = this.cueId;
+    this.mesh.userData.palette = this.palette;
     this.geometry.setDrawRange(0, this._markers.length);
     this.mesh.visible = true;
     this._setOpacity(0.78);
@@ -498,6 +513,8 @@ export class ObjectiveHintTrail {
       reducedMotion: this.reducedMotion,
     }, this._carrierFrame);
     this._markers.length = this._carrierFrame.length;
+    const colors = WIND_PALETTES[this.palette] || WIND_COLORS;
+    const sizeScale = this.palette === 'whiteout' ? 1.4 : 1;
     for (let index = 0; index < this._carrierFrame.length; index += 1) {
       const carrier = this._carrierFrame[index];
       const marker = this._markers[index] || (this._markers[index] = {
@@ -515,10 +532,11 @@ export class ObjectiveHintTrail {
         decaySeed: (index * 0.61803398875 + 0.23) % 1,
       });
       marker.windRole = carrier.role;
-      WIND_COLORS[carrier.role].toArray(this.geometry.attributes.color.array, index * 3);
-      this.geometry.attributes.aSize.array[index] = carrier.role === 'gold'
+      colors[carrier.role].toArray(this.geometry.attributes.color.array, index * 3);
+      this.geometry.attributes.aSize.array[index] = (carrier.role === 'gold'
         ? 9
-        : (carrier.role === 'sage' ? 6.4 + marker.heightSeed * 3.4 : 4.2 + marker.heightSeed * 4.2);
+        : (carrier.role === 'sage' ? 6.4 + marker.heightSeed * 3.4 : 4.2 + marker.heightSeed * 4.2))
+        * sizeScale;
     }
     this.geometry.attributes.color.needsUpdate = true;
     this.geometry.attributes.aSize.needsUpdate = true;
@@ -672,6 +690,7 @@ export class ObjectiveHintTrail {
     this.active = false;
     this.elapsed = 0;
     this.cueId = null;
+    this.palette = 'default';
     this._markers.length = 0;
     this._carrierFrame.length = 0;
     this._routePoints.length = 0;
@@ -687,6 +706,7 @@ export class ObjectiveHintTrail {
       this.geometry.setDrawRange(0, 0);
       this.mesh.visible = false;
       this.mesh.userData.cueId = null;
+      this.mesh.userData.palette = 'default';
     }
     if (this.material) this._setOpacity(0.78);
     return this;

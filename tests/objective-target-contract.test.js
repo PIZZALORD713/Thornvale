@@ -8,6 +8,7 @@ import { TOWN_LAYOUT } from '../src/config/town.js';
 
 const INTERACTABLE_IDS = new Set([
   CORE_HOOK_V03.ids.steward,
+  CORE_HOOK_V03.ids.lantern,
   CORE_HOOK_V03.ids.ledger,
   CORE_HOOK_V03.ids.bell,
   ...Object.values(DAY_ONE_V01.ids),
@@ -22,7 +23,7 @@ test('every active objective declares a finite, reachable target contract', () =
     ...Object.values(CORE_HOOK_V03.objectives),
     ...Object.values(DAY_ONE_V01.objectives),
   ];
-  assert.equal(objectives.length, 20);
+  assert.equal(objectives.length, 23);
 
   for (const objective of objectives) {
     const target = objective.target;

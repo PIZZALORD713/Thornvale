@@ -24,6 +24,7 @@ const fragmentShader = /* glsl */`
   uniform float uTime;
   uniform float uGrainSeed;
   uniform float uNightMix;
+  uniform float uWhiteout;
   uniform vec3 uDayTop;
   uniform vec3 uDayHorizon;
   uniform vec3 uNightTop;
@@ -60,7 +61,7 @@ const fragmentShader = /* glsl */`
 
     float grain = hash21(gl_FragCoord.xy + floor(uGrainSeed)) - 0.5;
     color += grain * 0.006;
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(mix(color, vec3(0.97, 0.99, 1.0), uWhiteout), 1.0);
   }
 `;
 
@@ -84,6 +85,7 @@ export class KawaiiSky {
         uTime: { value: 0 },
         uGrainSeed: { value: this._grainSeed },
         uNightMix: { value: 0 },
+        uWhiteout: { value: 0 },
         uDayTop: { value: new Color(0x7fc8ff) },
         uDayHorizon: { value: new Color(0xffd5dc) },
         uNightTop: { value: new Color(0x100e2b) },

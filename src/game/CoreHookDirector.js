@@ -81,6 +81,7 @@ export class CoreHookDirector {
     this.disposed = false;
     this.busy = false;
     this.anomalyElapsed = 0;
+    this.arrivalPromise = null;
     this.anomalyPromise = null;
     this.resolutionPromise = null;
     this.activeObjective = null;
@@ -121,7 +122,16 @@ export class CoreHookDirector {
       return this.session.snapshot();
     }
 
-    if (!this.session.hasEvent(this.content.events.letterSeen)) {
+    if (!this.session.hasEvent(this.content.events.stewardMet)) {
+      if (!this.session.hasEvent(this.content.events.arrivalMemorySeen)) {
+        await this._withBlocking(async () => {
+          await this._ui('showLetter', this.content.arrivalMemory);
+          if (generation === this.generation) {
+            this.session.markEvent(this.content.events.arrivalMemorySeen);
+          }
+        });
+      }
+    } else if (!this.session.hasEvent(this.content.events.letterSeen)) {
       await this._withBlocking(async () => {
         await this._ui('showLetter', this.content.letter);
         if (generation === this.generation) {
@@ -155,7 +165,18 @@ export class CoreHookDirector {
       const choice = this.session.getChoice(this.content.ids.choice);
       return this.content.objectives[this.content.outcomes[choice]?.objective] || null;
     }
-    if (!this.session.hasEvent(events.stewardMet)) return this.content.objectives.meetSteward;
+    if (!this.session.hasEvent(events.stewardMet)) {
+      if (!this.session.hasEvent(events.crossroadsReached)) {
+        return this.content.objectives.findCrossroads;
+      }
+      if (!this.session.hasEvent(events.arrivalResponseChosen)) {
+        return this.content.objectives.followRememberedPath;
+      }
+      if (!this.session.hasEvent(events.lanternTaken)) {
+        return this.content.objectives.takeLantern;
+      }
+      return this.content.objectives.crossGate;
+    }
     if (!this.session.hasEvent(events.ledgerSigned)) return this.content.objectives.signLedger;
     if (!this._isDayOneComplete()) {
       return this._getDayOneObjective() || this.content.objectives.firstAfternoon;
@@ -237,6 +258,39 @@ export class CoreHookDirector {
     this.deps.stewardActor?.update?.(safeDt);
     if (!this.busy && playerPosition) this.deps.stewardActor?.lookAt?.(playerPosition);
 
+    const events = this.content.events;
+    if (!this.session.hasEvent(events.stewardMet)) {
+      if (
+        !this.busy
+        && playerPosition
+        && !this.session.hasEvent(events.crossroadsReached)
+        && horizontalDistance(playerPosition, this.content.anchors.player.crossroads)
+          <= (this.content.objectives.findCrossroads.target.radius || 2)
+      ) {
+        this.session.markEvent(events.crossroadsReached);
+        void this._setCurrentObjective();
+      }
+
+      if (
+        !this.busy
+        && playerPosition
+        && this.session.hasEvent(events.lanternTaken)
+        && horizontalDistance(playerPosition, this.content.anchors.player.gateInside)
+          <= (this.content.objectives.crossGate.target.radius || 1.45)
+        && !this.arrivalPromise
+      ) {
+        this.arrivalPromise = this._completeArrival()
+          .catch((error) => {
+            this._reportError(error, 'arrival');
+            return this.session.snapshot();
+          })
+          .finally(() => {
+            this.arrivalPromise = null;
+          });
+      }
+      return this.arrivalPromise;
+    }
+
     const choice = this.session.getChoice(this.content.ids.choice);
     if (
       !this.busy
@@ -309,10 +363,11 @@ export class CoreHookDirector {
     const events = this.content.events;
 
     if (role === 'steward') {
-      return this.session.hasEvent(events.stewardMet)
+      return this.session.hasEvent(events.arrivalResponseChosen)
         ? this.content.prompts.hearCorrection
         : this.content.prompts.meetSteward;
     }
+    if (role === 'lantern') return this.content.prompts.takeLantern;
     if (role === 'ledger') {
       if (!this.session.hasEvent(events.ledgerSigned)) return this.content.prompts.signLedger;
       if (this.session.hasEvent(events.anomalyBellRang)) return this.content.prompts.inspectLedger;
@@ -328,6 +383,8 @@ export class CoreHookDirector {
     const role = this._roleFor(id);
     const events = this.content.events;
     const met = this.session.hasEvent(events.stewardMet);
+    const arrivalResponse = this.session.hasEvent(events.arrivalResponseChosen);
+    const lanternTaken = this.session.hasEvent(events.lanternTaken);
     const signed = this.session.hasEvent(events.ledgerSigned);
     const dayOneComplete = this._isDayOneComplete();
     const firstBell = this.session.hasEvent(events.firstBellRung);
@@ -335,7 +392,8 @@ export class CoreHookDirector {
     const falseRecord = this.session.hasEvent(events.falseRecordSeen);
     const choiceMade = this.session.hasEvent(events.choiceMade);
 
-    if (role === 'steward') return !met || (falseRecord && !choiceMade);
+    if (role === 'steward') return (!met && !arrivalResponse) || (falseRecord && !choiceMade);
+    if (role === 'lantern') return arrivalResponse && !met && !lanternTaken;
     if (role === 'ledger') {
       return (met && !signed) || (signed && !anomaly) || (anomaly && !falseRecord);
     }
@@ -355,6 +413,7 @@ export class CoreHookDirector {
     this._setBlocking(true);
     try {
       if (role === 'steward') await this._interactSteward();
+      else if (role === 'lantern') await this._interactLantern();
       else if (role === 'ledger') await this._interactLedger();
       else if (role === 'bell') await this._interactBell();
 
@@ -375,6 +434,7 @@ export class CoreHookDirector {
     this.generation += 1;
     this.busy = false;
     this.anomalyElapsed = 0;
+    this.arrivalPromise = null;
     this.anomalyPromise = null;
     this.resolutionPromise = null;
     this.session.reset();
@@ -385,7 +445,7 @@ export class CoreHookDirector {
     await this._safeCall(this.deps.resetPlayer);
     this.deps.stewardActor?.play?.('idle');
     await this._setNeighborliness(null, false);
-    await this._setObjective(this.content.objectives.meetSteward);
+    await this._setObjective(this.content.objectives.findCrossroads);
     this.deps.hud?.setStatus?.(this.content.status.reset);
     return this.session.snapshot();
   }
@@ -395,6 +455,7 @@ export class CoreHookDirector {
     this.disposed = true;
     this.generation += 1;
     this.busy = false;
+    this.arrivalPromise = null;
     this.anomalyPromise = null;
     this.resolutionPromise = null;
     this.activeObjective = null;
@@ -411,19 +472,25 @@ export class CoreHookDirector {
   async _interactSteward() {
     const events = this.content.events;
     if (!this.session.hasEvent(events.stewardMet)) {
+      if (!this.session.hasEvent(events.crossroadsReached)) {
+        this.session.markEvent(events.crossroadsReached);
+      }
       await this._sayDialogue(this.content.dialogue.welcome, 'joy');
 
-      const change = this.content.neighborliness.welcome;
-      this.session.transact((draft) => {
-        pushUnique(draft.eventsSeen, events.stewardMet);
-        pushUnique(draft.rulesKnown, this.content.ids.rule);
-        draft.phase = 'day-routine';
-        draft.relationship.steward = 'warm';
-        draft.neighborliness = clampScore(draft.neighborliness + change.amount);
-      });
+      const selected = await this._ui('choose', this.content.arrivalChoice);
+      const posture = typeof selected === 'string' ? selected : selected?.id ?? selected?.value;
+      const allowedPostures = new Set(
+        this.content.arrivalChoice.choices.map((choice) => choice.id),
+      );
+      if (!allowedPostures.has(posture)) {
+        throw new TypeError(`Unknown arrival posture: ${posture}`);
+      }
 
-      await this._moveSteward('routine');
-      await this._setNeighborliness(change);
+      this.session.transact((draft) => {
+        draft.choices[this.content.ids.arrivalChoice] = posture;
+        pushUnique(draft.eventsSeen, events.arrivalResponseChosen);
+      });
+      await this._sayDialogue(this.content.dialogue.arrivalResponse);
       await this._setCurrentObjective();
       return;
     }
@@ -437,6 +504,44 @@ export class CoreHookDirector {
     const choice = typeof selected === 'string' ? selected : selected?.id ?? selected?.value;
     if (!this.content.outcomes[choice]) throw new TypeError(`Unknown core-hook choice: ${choice}`);
     await this._resolveChoice(choice);
+  }
+
+  async _interactLantern() {
+    const events = this.content.events;
+    if (this.session.hasEvent(events.lanternTaken)) return;
+    this.session.markEvent(events.lanternTaken);
+    this._interactionFeedback(this.content.ids.lantern, 'kindness', 0.24);
+    await this._setCurrentObjective();
+  }
+
+  async _completeArrival() {
+    const events = this.content.events;
+    if (this.session.hasEvent(events.stewardMet)) return this.session.snapshot();
+    const generation = this.generation;
+    this.busy = true;
+    this._setBlocking(true);
+    try {
+      await this._ui('showLetter', this.content.letter);
+      if (generation !== this.generation || this.disposed) return this.session.snapshot();
+
+      const change = this.content.neighborliness.welcome;
+      this.session.transact((draft) => {
+        pushUnique(draft.eventsSeen, events.letterSeen);
+        pushUnique(draft.eventsSeen, events.stewardMet);
+        pushUnique(draft.rulesKnown, this.content.ids.rule);
+        draft.phase = 'day-routine';
+        draft.relationship.steward = 'warm';
+        draft.neighborliness = clampScore(draft.neighborliness + change.amount);
+      });
+
+      await this._moveSteward('routine');
+      await this._setNeighborliness(change);
+      await this._setCurrentObjective();
+      return this.session.snapshot();
+    } finally {
+      if (generation === this.generation) this.busy = false;
+      this._setBlocking(false);
+    }
   }
 
   async _interactLedger() {
@@ -858,6 +963,7 @@ export class CoreHookDirector {
 
   _roleFor(id) {
     if (id === this.stewardId || id === this.content.ids.steward) return 'steward';
+    if (id === this.content.ids.lantern) return 'lantern';
     if (id === this.content.ids.ledger) return 'ledger';
     if (id === this.content.ids.bell) return 'bell';
     return null;

@@ -25,7 +25,11 @@ import { InputManager } from './core/InputManager.js';
 import { CharacterMotor } from './physics/CharacterMotor.js';
 import { CameraRig } from './game/camera/CameraRig.js';
 import { configureCameraRig } from './config/camera.js';
-import { resolveObjectiveHintPath } from './config/objective-hints.js';
+import { ARRIVAL_PROLOGUE_V1 } from './config/arrival-prologue.js';
+import {
+  OBJECTIVE_HINT_TARGETS,
+  resolveObjectiveHintPath,
+} from './config/objective-hints.js';
 import { TOWN_LAYOUT } from './config/town.js';
 import { resolveControlMode, resolveTouchControlStyle } from './config/controls.js';
 import {
@@ -41,6 +45,7 @@ import { FriendsiesAnimator } from './visuals/FriendsiesAnimator.js';
 import { createKawaiiAvatar } from './visuals/KawaiiAvatar.js';
 import { loadFriendsiesAnimationPack } from './visuals/loadFriendsiesAnimationPack.js';
 import { StewardActor } from './visuals/StewardActor.js';
+import { ArrivalWorld } from './visuals/ArrivalWorld.js';
 import { StoryWorld } from './visuals/StoryWorld.js';
 import { ObjectiveHintTrail } from './visuals/ObjectiveHintTrail.js';
 import {
@@ -59,6 +64,7 @@ import { TouchControls } from './ui/TouchControls.js';
 import { MobileDisplayNotice } from './ui/MobileDisplayNotice.js';
 import { FishingHUD } from './ui/FishingHUD.js';
 import { DayNightSystem } from './game/DayNightSystem.js';
+import { ArrivalTutorial } from './game/ArrivalTutorial.js';
 import { GameSession } from './game/GameSession.js';
 import { CoreHookDirector } from './game/CoreHookDirector.js';
 import { DayOneDirector } from './game/DayOneDirector.js';
@@ -66,7 +72,10 @@ import { DayOneActionController } from './game/DayOneActionController.js';
 import { WoodcuttingDirector } from './game/WoodcuttingDirector.js';
 import { FishingController } from './game/FishingController.js';
 import {
+  distanceToReviewedCorridor,
   hasPlayerFallenOutOfWorld,
+  isArrivalFoldEligible,
+  isWithinReviewedCorridor,
   resolveCurrentRecoveryPoint,
 } from './game/PlayerRecovery.js';
 import { InteractableSystem } from './game/InteractableSystem.js';
@@ -111,6 +120,8 @@ let woodcuttingDirector;
 let fishingController;
 let fishingUnsubscribe;
 let fishingHUD;
+let arrivalWorld;
+let arrivalTutorial;
 let storyWorld;
 let objectiveHintTrail;
 let stewardActor;
@@ -140,15 +151,23 @@ let stewardCastReady = false;
 let animationClips = [];
 let townLandmarks = {};
 let playerSpawnPoint;
+let playerGatePoint;
 let cameraOcclusionTarget = null;
 let playerFriendsiesSelection = null;
 let resizeFrameId = 0;
+let arrivalHintIdleSeconds = 0;
+let arrivalHintSucceeded = false;
+let arrivalFoldActive = false;
+let arrivalFoldCooldownMs = 0;
+let arrivalFoldRequiresReentry = false;
 
 const playerGlowDay = new Color(0xffc9dc);
 const playerGlowNight = new Color(0xa9c4ff);
 
 const VISUAL_OFFSET_STORAGE_KEY = 'thornvale2.visualOffsetY';
 const VISUAL_OFFSET_STEP = 0.002;
+const arrivalFoldConfig = ARRIVAL_PROLOGUE_V1.fold;
+const arrivalTutorialConfig = ARRIVAL_PROLOGUE_V1.tutorial;
 const params = new URLSearchParams(window.location.search);
 const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
 const visualQuality = params.get('quality') || (reducedMotion ? 'medium' : 'high');
@@ -196,6 +215,10 @@ function setLoading(progress, message) {
 async function init() {
   hud = new HUD().init();
   storyUI = new StoryUI({ onBlockingChange: handleStoryBlocking }).init();
+  if (storyEnabled) {
+    gameSession = new GameSession();
+    if (params.get('story') === 'reset' || params.get('reset') === '1') gameSession.reset();
+  }
   configureControlPresentation();
   mobileDisplayNotice = new MobileDisplayNotice({
     eligible: showAppleAppModeHint,
@@ -205,6 +228,7 @@ async function init() {
   setLoading(0.06, 'Waking the valley…');
 
   scene = new Scene();
+  arrivalWorld = storyEnabled ? new ArrivalWorld(scene, { reducedMotion }).init() : null;
   storyWorld = new StoryWorld(scene, { reducedMotion }).init();
   objectiveHintTrail = new ObjectiveHintTrail(scene, { reducedMotion }).init();
   camera = new PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.08, 180);
@@ -272,7 +296,10 @@ async function init() {
   const traitEchoVariant = town.traitEchoVariant || 'v1';
   document.documentElement.dataset.assetVariant = assetVariant;
   document.documentElement.dataset.traitEchoVariant = traitEchoVariant;
-  const interactables = town.interactables || [];
+  const interactables = [
+    ...(town.interactables || []),
+    ...(arrivalWorld?.interactables || []),
+  ];
   townLandmarks = town.landmarks || {};
   traitEchoes = town.traitEchoes || null;
   ambientLife = town.ambientLife || null;
@@ -280,7 +307,20 @@ async function init() {
   dayOneWorld = town.dayOneWorld || null;
   stewardshipWorld = town.stewardshipWorld || null;
   fishingWorld = town.fishingWorld || null;
-  const spawnPoint = town.spawnPoint || new Vector3(0, 2, 14);
+  const gateSpawnPoint = town.spawnPoint || new Vector3(0, 2, 14);
+  playerGatePoint = gateSpawnPoint.clone();
+  const arrivalIncomplete = Boolean(
+    storyEnabled
+    && gameSession
+    && !gameSession.hasEvent(CORE_HOOK_V03.events.stewardMet),
+  );
+  const spawnPoint = arrivalIncomplete
+    ? new Vector3(
+        ARRIVAL_PROLOGUE_V1.anchors.spawn.x,
+        ARRIVAL_PROLOGUE_V1.anchors.spawn.y,
+        ARRIVAL_PROLOGUE_V1.anchors.spawn.z,
+      )
+    : gateSpawnPoint;
   playerSpawnPoint = spawnPoint.clone();
   worldAnimator = town.worldAnimator || (town.updateWorld
     ? { update: town.updateWorld }
@@ -363,8 +403,10 @@ async function init() {
   });
 
   if (storyEnabled) {
-    gameSession = new GameSession();
-    if (params.get('story') === 'reset' || params.get('reset') === '1') gameSession.reset();
+    arrivalTutorial = new ArrivalTutorial({
+      spawn: ARRIVAL_PROLOGUE_V1.anchors.spawn,
+      tutorial: arrivalTutorialConfig,
+    });
     dayOneDirector = new DayOneDirector({
       session: gameSession,
       content: DAY_ONE_V01,
@@ -426,7 +468,7 @@ async function init() {
       getDayOneLedgerRecord: () => dayOneDirector?.ledgerRecordFor() || null,
       getStewardPosition: () => stewardActor?.position || null,
       setStoryBlocking: handleStoryBlocking,
-      onObjectiveChange: () => objectiveHintTrail?.hide?.(),
+      onObjectiveChange: handleObjectiveChange,
       onError: (error) => {
         console.error('[CoreHookDirector]', error);
         hud.setStatus('A page slipped out of the story. Please try that courtesy again.');
@@ -482,6 +524,7 @@ async function init() {
     woodcuttingDirector,
     fishingController,
     interactableSystem,
+    arrivalWorld,
     storyWorld,
     objectiveHintTrail,
     worldAnimator,
@@ -496,6 +539,11 @@ async function init() {
 }
 
 function projectSessionState(snapshot, options = {}) {
+  try {
+    arrivalWorld?.setState?.(snapshot);
+  } catch (error) {
+    console.warn('[ArrivalWorld] Snapshot projection failed.', error);
+  }
   const presentation = applyAestheticPresentationState(snapshot, options);
   applyDayOnePresentationState(snapshot);
   return presentation;
@@ -715,13 +763,14 @@ function moveSteward(anchor, options = {}) {
 }
 
 function resetPlayerToArrival(position = null) {
-  if (!playerController || !playerSpawnPoint) return;
+  if (!playerController) return;
   objectiveHintTrail?.hide?.();
+  const arrival = CORE_HOOK_V03.anchors.player.arrival;
   const target = position?.isVector3
     ? position.clone()
     : position
       ? new Vector3(position.x, position.y, position.z)
-      : playerSpawnPoint;
+      : new Vector3(arrival.x, arrival.y, arrival.z);
   playerController.teleport(target);
   configureCameraRig(cameraRig);
   cameraRig.resetPosition();
@@ -733,7 +782,9 @@ function recoverPlayerAfterWorldFall() {
 
   const recoveryPoint = resolveCurrentRecoveryPoint(
     gameSession?.snapshot?.(),
-    playerSpawnPoint,
+    gameSession?.hasEvent?.(CORE_HOOK_V03.events.stewardMet)
+      ? playerGatePoint
+      : playerSpawnPoint,
     DAY_ONE_V01.anchors.campRecovery,
   );
   if (!recoveryPoint) return false;
@@ -757,7 +808,7 @@ function waitForRecoveryFrame(delay) {
 async function recoverPlayerAfterPassOut({ recoverySite = 'gate' } = {}) {
   const anchor = recoverySite === 'shelter'
     ? DAY_ONE_V01.anchors.campRecovery
-    : playerSpawnPoint;
+    : playerGatePoint;
   const cover = hud?.elements?.lockOverlay;
   objectiveHintTrail?.hide?.();
   playerController?.setActionLocked?.(true);
@@ -847,6 +898,7 @@ function handleStoryBlocking(blocking) {
   mobileDisplayNotice?.setStoryBlocking?.(storyBlocking);
   inputManager?.setGameplayEnabled?.(!storyBlocking);
   touchControls?.setEnabled?.(worldEntered && !storyBlocking);
+  if (!storyBlocking) syncTouchHintAvailability();
   if (storyBlocking) {
     objectiveHintTrail?.hide?.();
     hud?.elements?.lockOverlay?.classList.add('hidden');
@@ -1232,7 +1284,10 @@ function animate() {
   }
 
   coreHookDirector?.update(dt, characterMotor?.getPosition?.());
+  syncTouchHintAvailability();
   dayOneActionController?.update?.(dt);
+  arrivalWorld?.update?.(dt);
+  updateArrivalFold(dt);
   storyWorld?.update(dt);
   objectiveHintTrail?.update?.(dt);
   dayOneWorld?.update?.(dt);
@@ -1253,6 +1308,8 @@ function animate() {
         || (Boolean(interactableSystem.activeInteractable) && !interactableSystem.inFlight),
     );
   }
+
+  updateArrivalTutorial(dt);
 
   const twilightActive = (dayNightSystem?.mix || 0) >= 0.42;
   worldAnimator?.update?.(dt, twilightActive);
@@ -1321,7 +1378,7 @@ function handleGlobalInput() {
   }
 
   if (inputManager.consumeActionPress('objective-hint')) {
-    showObjectiveHint();
+    arrivalHintSucceeded = showObjectiveHint() || arrivalHintSucceeded;
   }
 
   const requestedTimeToggle = inputManager.consumeKeyPress('KeyN');
@@ -1362,6 +1419,150 @@ function handleGlobalInput() {
   }
 }
 
+function isCommittedToArrivalWrongFork(position) {
+  if (!position) return false;
+  const crossroads = ARRIVAL_PROLOGUE_V1.anchors.crossroads;
+  const distanceFromCrossroads = Math.hypot(
+    position.x - crossroads.x,
+    position.z - crossroads.z,
+  );
+  if (distanceFromCrossroads < arrivalTutorialConfig.wrongForkDistance) {
+    return false;
+  }
+  return distanceToReviewedCorridor(
+    position,
+    [ARRIVAL_PROLOGUE_V1.snowTracks.wrongFork],
+  ) <= ARRIVAL_PROLOGUE_V1.timing.crossroadsRadius;
+}
+
+function updateArrivalTutorial(dt) {
+  if (!arrivalTutorial || !storyUI || !gameSession) return;
+  const snapshot = gameSession.snapshot();
+  const objective = coreHookDirector?.currentObjective?.();
+  const followPath = objective?.id === CORE_HOOK_V03.objectives.followRememberedPath.id;
+  const inputActive = Boolean(
+    worldEntered
+    && storyEnabled
+    && !storyBlocking
+    && !arrivalFoldActive,
+  );
+  const position = characterMotor?.getPosition?.();
+  const speed = Number(characterMotor?.horizontalSpeed) || 0;
+
+  if (followPath && inputActive && speed < 0.35) {
+    arrivalHintIdleSeconds += Math.max(0, Number(dt) || 0);
+  } else if (!followPath) {
+    arrivalHintIdleSeconds = 0;
+  }
+
+  const hintReady = Boolean(
+    followPath
+    && (
+    arrivalHintIdleSeconds >= arrivalTutorialConfig.hintStallSeconds
+      || isCommittedToArrivalWrongFork(position)
+    ),
+  );
+  const tutorialState = arrivalTutorial.update({
+    yaw: cameraRig?.getYaw?.(),
+    position,
+    eventsSeen: snapshot.eventsSeen,
+    inputActive,
+    hintSucceeded: arrivalHintSucceeded,
+    hintReady,
+    nearInteraction: Boolean(
+      interactableSystem?.activeInteractable
+      || interactableSystem?.inFlight,
+    ),
+    controlMode,
+  });
+  storyUI.setControlCue(tutorialState.cue);
+  touchControls?.setHintEmphasis?.(
+    touchControlMode
+    && tutorialState.step === 'hint'
+    && Boolean(tutorialState.cue),
+  );
+}
+
+function updateArrivalFold(dt) {
+  if (!arrivalWorld || !playerController || !characterMotor || !gameSession) return;
+  const arrivalComplete = gameSession.hasEvent(CORE_HOOK_V03.events.stewardMet);
+  if (arrivalComplete || storyBlocking || !worldEntered) {
+    if (arrivalFoldActive) {
+      arrivalWorld.cancelFoldPresentation();
+      arrivalFoldActive = false;
+      playerController.setActionLocked(false);
+    }
+    return;
+  }
+
+  if (arrivalFoldActive) {
+    if (arrivalWorld.consumeFoldRelocationCue()) {
+      const waypost = arrivalFoldConfig.waypost;
+      const yaw = Number(cameraRig?.getYaw?.()) || 0;
+      playerController.teleport(new Vector3(
+        waypost.x - Math.sin(yaw) * arrivalFoldConfig.recoveryDistance,
+        Math.max(2, (Number(waypost.y) || 0) + 2),
+        waypost.z - Math.cos(yaw) * arrivalFoldConfig.recoveryDistance,
+      ));
+    }
+    if (!arrivalWorld.getFoldPresentationState().active) {
+      arrivalFoldActive = false;
+      arrivalFoldCooldownMs = arrivalFoldConfig.cooldownMs;
+      arrivalFoldRequiresReentry = true;
+      playerController.setActionLocked(false);
+    }
+    return;
+  }
+
+  arrivalFoldCooldownMs = Math.max(
+    0,
+    arrivalFoldCooldownMs - Math.max(0, Number(dt) || 0) * 1000,
+  );
+  const position = characterMotor.getPosition();
+  if (
+    arrivalFoldRequiresReentry
+    && isWithinReviewedCorridor(
+      position,
+      arrivalFoldConfig.reviewedRoutes,
+      arrivalFoldConfig.leash,
+    )
+  ) {
+    arrivalFoldRequiresReentry = false;
+  }
+
+  if (!isArrivalFoldEligible({
+    position,
+    reviewedRoutes: arrivalFoldConfig.reviewedRoutes,
+    leash: arrivalFoldConfig.leash,
+    arrivalComplete,
+    cooldownRemainingMs: arrivalFoldCooldownMs,
+    requiresCorridorReentry: arrivalFoldRequiresReentry,
+  })) return;
+
+  if (!arrivalWorld.beginFoldPresentation()) return;
+  arrivalFoldActive = true;
+  playerController.setActionLocked(true);
+  objectiveHintTrail?.hide?.();
+  storyUI?.setControlCue?.(null);
+  touchControls?.setHintEmphasis?.(false);
+  soundscape?.playInteraction?.('magic');
+}
+
+function syncTouchHintAvailability(objective = coreHookDirector?.currentObjective?.()) {
+  const targetKey = objective?.id ? OBJECTIVE_HINT_TARGETS[objective.id] : null;
+  touchControls?.setHintAvailable?.(
+    Boolean(worldEntered && !storyBlocking && storyEnabled && targetKey),
+  );
+}
+
+function handleObjectiveChange(objective) {
+  objectiveHintTrail?.hide?.();
+  arrivalHintIdleSeconds = 0;
+  storyUI?.setControlCue?.(null);
+  touchControls?.setHintEmphasis?.(false);
+  syncTouchHintAvailability(objective);
+}
+
 function showObjectiveHint() {
   if (
     !worldEntered
@@ -1395,7 +1596,15 @@ function showObjectiveHint() {
       }
     : null;
   const destination = target?.getPosition?.();
-  const points = resolveObjectiveHintPath({ objective, start, target: destination });
+  const arrivalIncomplete = !gameSession?.hasEvent?.(CORE_HOOK_V03.events.stewardMet);
+  const points = resolveObjectiveHintPath({
+    objective,
+    start,
+    target: destination,
+    maxDistance: arrivalIncomplete
+      ? ARRIVAL_PROLOGUE_V1.timing.hintDistance
+      : undefined,
+  });
   if (!points) {
     objectiveHintTrail.hide();
     hud?.setStatus?.('No new trail answers just now. Follow the path already before you.');
@@ -1414,10 +1623,18 @@ function showObjectiveHint() {
     getTargetPosition: target?.getPosition,
     connectToTarget: reachesTarget,
     targetLeash: Math.max(arrivalRadius, 2.5),
+    palette: arrivalIncomplete ? 'whiteout' : 'default',
   });
   if (shown) {
+    if (objective?.id === CORE_HOOK_V03.objectives.followRememberedPath.id) {
+      arrivalWorld?.revealRememberedTrail?.();
+    }
     const label = objective?.cue?.label || objective?.title || 'the next courtesy';
-    hud?.setStatus?.(`A courteous wind gathers toward ${label}.`);
+    hud?.setStatus?.(
+      objective?.id === CORE_HOOK_V03.objectives.followRememberedPath.id
+        ? 'The wind uncovers older prints. The left heel is missing the same triangle as yours.'
+        : `A courteous wind gathers toward ${label}.`,
+    );
   }
   return shown;
 }
@@ -1525,6 +1742,8 @@ function dispose() {
   coreHookDirector?.dispose();
   objectiveHintTrail?.dispose?.();
   objectiveHintTrail = null;
+  arrivalWorld?.dispose?.();
+  arrivalWorld = null;
   dayOneDirector?.dispose();
   woodcuttingDirector = null;
   dayOneWorld?.dispose();
@@ -1556,6 +1775,7 @@ function dispose() {
     window.thornvale.fishingController = null;
     window.thornvale.interactableSystem = null;
     window.thornvale.dayOneActionController = null;
+    window.thornvale.arrivalWorld = null;
     window.thornvale.objectiveHintTrail = null;
     window.thornvale.environmentLighting = null;
   }
